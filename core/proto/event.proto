@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package victor.core.v1;
+
+message Event {
+  string id = 1;
+  string source = 2;
+  string payload = 3;
+  int64 timestamp_unix_ms = 4;
+}
