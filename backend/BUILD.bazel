@@ -1,0 +1,14 @@
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+
+kt_jvm_library(
+    name = "backend_lib",
+    srcs = glob(["*.kt"]),
+)
+
+java_binary(
+    name = "backend",
+    main_class = "victor.backend.MainKt",
+    runtime_deps = [":backend_lib"],
+    visibility = ["//visibility:public"],
+)
+
