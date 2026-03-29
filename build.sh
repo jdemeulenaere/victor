@@ -1,8 +1,8 @@
-#!/bin/bash
-# High-level build script for the Victor Bazel Monorepo
+#!/usr/bin/env bash
+# High-level build script for the Victor Bazel monorepo.
 
-set -e
+set -euo pipefail
 
-echo "🔨 Building all targets in the Victor monorepo..."
+echo "Building all Bazel targets in the Victor monorepo..."
 bazel build //...
-echo "✅ Build complete!"
+echo "Build complete."
