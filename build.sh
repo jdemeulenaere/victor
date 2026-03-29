@@ -5,5 +5,4 @@ set -e
 
 echo "🔨 Building all targets in the Victor monorepo..."
 bazel build //...
-
 echo "✅ Build complete!"
