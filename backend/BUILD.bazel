@@ -3,6 +3,11 @@ load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 kt_jvm_library(
     name = "backend_lib",
     srcs = glob(["*.kt"]),
+    deps = [
+        "//core/proto:victor_api_java_grpc",
+        "@maven_armeria//:com_linecorp_armeria_armeria",
+        "@maven_armeria//:com_linecorp_armeria_armeria_grpc",
+    ],
 )
 
 java_binary(
