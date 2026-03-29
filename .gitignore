@@ -1,0 +1,9 @@
+bazel-*
+node_modules/
+__pycache__/
+.idea/
+.vscode/
+*.swp
+*.class
+*.jar
+.bazel_root/

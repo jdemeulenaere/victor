@@ -1,0 +1,26 @@
+module(
+    name = "victor",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "rules_kotlin", version = "1.9.6")
+
+bazel_dep(name = "rules_python", version = "1.7.0")
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    python_version = "3.12.0",
+)
+use_repo(python, "python_3_12_0")
+
+bazel_dep(name = "aspect_rules_ts", version = "3.3.1")
+bazel_dep(name = "aspect_rules_js", version = "2.0.1")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+# We will add package.json lock parsing here once needed
+# npm.npm_translate_lock(
+#     name = "npm",
+#     pnpm_lock = "//:pnpm-lock.yaml",
+# )
+# use_repo(npm, "npm")
