@@ -11,4 +11,3 @@ java_binary(
     runtime_deps = [":backend_lib"],
     visibility = ["//visibility:public"],
 )
-
