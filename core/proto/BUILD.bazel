@@ -1,7 +1,21 @@
+load("@grpc-java//:java_grpc_library.bzl", "java_grpc_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
 proto_library(
-    name = "events_proto",
+    name = "victor_api_proto",
     srcs = ["event.proto"],
+    visibility = ["//visibility:public"],
+)
+
+java_proto_library(
+    name = "victor_api_java_proto",
+    deps = [":victor_api_proto"],
+    visibility = ["//visibility:public"],
+)
+
+java_grpc_library(
+    name = "victor_api_java_grpc",
+    srcs = [":victor_api_proto"],
+    deps = [":victor_api_java_proto"],
     visibility = ["//visibility:public"],
 )

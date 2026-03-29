@@ -1,55 +1,57 @@
-import React, { useState } from 'react';
+import { FormEvent, useState } from 'react';
+import { grpcInfo, sayHello } from './grpcWebGreeter';
 
-const App: React.FC = () => {
-  const [eventLog, setEventLog] = useState<string[]>([]);
-  const [inputVal, setInputVal] = useState<string>("");
+const App = () => {
+  const [name, setName] = useState('world');
+  const [responseMessage, setResponseMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleWakeEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputVal.trim()) return;
-    setEventLog((prev: string[]) => [`=> System Override: "${inputVal}"`, ...prev]);
-    setInputVal("");
-    // TODO: Emit protobuf Event over gRPC to backend here
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      setResponseMessage(await sayHello(name));
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+      setResponseMessage('');
+    } finally {
+      setLoading(false);
+    }
   };
 
-
   return (
-    <div className="dashboard-container">
-      <header className="header">
-        <div className="status-indicator active" />
-        <h1 className="title">V.I.C.T.O.R</h1>
-        <span className="subtitle">Core Process: Online</span>
-      </header>
-      
-      <main className="main-content">
-        <section className="terminal">
-          <div className="terminal-header">Active Event Stream</div>
-          <div className="terminal-body">
-            {eventLog.length === 0 ? (
-              <div className="log-entry system">Standing by. Waiting for wake events...</div>
-            ) : (
-              eventLog.map((log, i) => (
-                <div key={i} className="log-entry user">{log}</div>
-              ))
-            )}
-          </div>
-        </section>
+    <main className="app">
+      <h1>Simple Bazel Monorepo</h1>
+      <p>Kotlin backend + TypeScript web + Python script, all in one Bazel workspace.</p>
+      <p className="meta">
+        Service: <code>{grpcInfo.service}</code>
+      </p>
+      <p className="meta">
+        RPC: <code>{grpcInfo.method}</code>
+      </p>
+      <p className="meta">
+        gRPC base URL: <code>{grpcInfo.baseUrl}</code>
+      </p>
 
-        <section className="controls">
-          <form onSubmit={handleWakeEvent} className="input-form">
-            <input 
-              type="text" 
-              className="event-input" 
-              placeholder="Inject Manual Wake Event... (e.g. 'Read latest emails')" 
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-            />
-            <button type="submit" className="glass-btn pulse">SEND EVENT</button>
-          </form>
-        </section>
-      </main>
-    </div>
+      <form onSubmit={onSubmit} className="form">
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="name"
+          aria-label="name"
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? 'Calling...' : 'Call SayHello'}
+        </button>
+      </form>
+
+      {responseMessage ? <pre>{responseMessage}</pre> : null}
+      {errorMessage ? <pre className="error">{errorMessage}</pre> : null}
+    </main>
   );
-}
+};
 
 export default App;

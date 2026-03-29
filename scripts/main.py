@@ -1,5 +1,10 @@
+import sys
+
+
 def main():
-    print("Hello from Victor's Scripts")
+    name = sys.argv[1] if len(sys.argv) > 1 else "from Python"
+    print(f"Hello {name}")
+
 
 if __name__ == "__main__":
     main()
