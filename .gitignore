@@ -1,5 +1,6 @@
 bazel-*
 node_modules/
+.pnpm-store/
 __pycache__/
 .idea/
 .vscode/

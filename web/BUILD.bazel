@@ -1,5 +1,41 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//:vite/package_json.bzl", vite_bin = "bin")
+
+npm_link_all_packages(name = "node_modules")
+
 filegroup(
-    name = "web_srcs",
-    srcs = glob(["*.ts"]),
-    visibility = ["//visibility:public"],
+    name = "srcs",
+    srcs = glob([
+        "src/**/*",
+        "public/**/*",
+        "*.html",
+        "*.ts",
+        "*.tsx",
+        "*.json",
+    ], allow_empty = True),
+)
+
+vite_bin.vite_binary(
+    name = "dev",
+    args = ["dev", "--host"],
+    data = [
+        ":srcs",
+        ":node_modules",
+        "package.json",
+        "vite.config.ts",
+    ],
+    chdir = package_name(),
+)
+
+vite_bin.vite(
+    name = "build",
+    args = ["build"],
+    srcs = [
+        ":srcs",
+        ":node_modules",
+        "package.json",
+        "vite.config.ts",
+    ],
+    out_dirs = ["dist"],
+    chdir = package_name(),
 )
