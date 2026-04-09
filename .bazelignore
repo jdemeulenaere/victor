@@ -1,3 +1,7 @@
-.bazel_root
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-victor
+
 node_modules
-web/node_modules
+example/greeter/web/node_modules

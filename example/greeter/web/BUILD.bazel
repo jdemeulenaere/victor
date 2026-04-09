@@ -1,6 +1,12 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@npm//web:typescript/package_json.bzl", typescript_bin = "bin")
-load("@npm//web:vite/package_json.bzl", vite_bin = "bin")
+load(
+    "@npm//example/greeter/web:typescript/package_json.bzl",
+    typescript_bin = "bin",
+)
+load(
+    "@npm//example/greeter/web:vite/package_json.bzl",
+    vite_bin = "bin",
+)
 
 npm_link_all_packages(name = "node_modules")
 

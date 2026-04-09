@@ -1,5 +1,12 @@
 import { FormEvent, useState } from 'react';
-import { grpcInfo, sayHello } from './grpcWebGreeter';
+import {
+  GreeterClient,
+  GREETER_SAY_HELLO_METHOD,
+  GREETER_SERVICE,
+} from './generated/greeter_client';
+
+const grpcBaseUrl = import.meta.env.VITE_BACKEND_GRPC_BASE_URL ?? '/grpc';
+const greeterClient = new GreeterClient({ baseUrl: grpcBaseUrl });
 
 const App = () => {
   const [name, setName] = useState('world');
@@ -13,7 +20,8 @@ const App = () => {
     setErrorMessage('');
 
     try {
-      setResponseMessage(await sayHello(name));
+      const response = await greeterClient.sayHello({ name });
+      setResponseMessage(response.message);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
       setResponseMessage('');
@@ -24,16 +32,16 @@ const App = () => {
 
   return (
     <main className="app">
-      <h1>Simple Bazel Monorepo</h1>
-      <p>Kotlin backend + TypeScript web + Python script, all in one Bazel workspace.</p>
+      <h1>gRPC Kotlin + React Demo</h1>
+      <p>This React app calls the Kotlin gRPC service using generated TypeScript client code.</p>
       <p className="meta">
-        Service: <code>{grpcInfo.service}</code>
+        Service: <code>{GREETER_SERVICE}</code>
       </p>
       <p className="meta">
-        RPC: <code>{grpcInfo.method}</code>
+        RPC: <code>{GREETER_SAY_HELLO_METHOD}</code>
       </p>
       <p className="meta">
-        gRPC base URL: <code>{grpcInfo.baseUrl}</code>
+        gRPC base URL: <code>{grpcBaseUrl}</code>
       </p>
 
       <form onSubmit={onSubmit} className="form">

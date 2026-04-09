@@ -3,7 +3,7 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 
 proto_library(
     name = "victor_api_proto",
-    srcs = ["event.proto"],
+    srcs = ["greeter.proto"],
     visibility = ["//visibility:public"],
 )
 

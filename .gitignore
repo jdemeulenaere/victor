@@ -1,15 +1,8 @@
 bazel-*
 node_modules/
-web/node_modules/
 dist/
-web/dist/
-.pnpm-store/
 __pycache__/
+.pnpm-store/
 .idea/
 .vscode/
 .DS_Store
-*.swp
-*.class
-*.jar
-.bazel_root/
-*.iml

@@ -5,10 +5,12 @@ package victor.api.v1;
 option java_multiple_files = true;
 option java_package = "victor.api.v1";
 
+// Request for Greeter.SayHello.
 message HelloRequest {
   string name = 1;
 }
 
+// Response for Greeter.SayHello.
 message HelloResponse {
   string message = 1;
 }

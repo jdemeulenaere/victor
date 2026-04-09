@@ -1,0 +1,25 @@
+load("@@grpc+//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "python_client",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = [
+        ":victor_api_py_pb2",
+        ":victor_api_py_pb2_grpc",
+        "@@grpc+//src/python/grpcio/grpc:grpcio",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+py_proto_library(
+    name = "victor_api_py_pb2",
+    deps = ["//example/greeter/proto:victor_api_proto"],
+)
+
+py_grpc_library(
+    name = "victor_api_py_pb2_grpc",
+    srcs = ["//example/greeter/proto:victor_api_proto"],
+    deps = [":victor_api_py_pb2"],
+)
