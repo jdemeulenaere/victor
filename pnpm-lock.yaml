@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  web:
+  example/greeter/web:
     dependencies:
       react:
         specifier: '*'

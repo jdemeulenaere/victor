@@ -1,7 +1,6 @@
 common --enable_bzlmod
 
 build --incompatible_strict_action_env
-
 build --color=yes
 build --show_progress_rate_limit=0.2
 
