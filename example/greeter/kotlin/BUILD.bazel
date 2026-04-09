@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_binary")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 
 kt_jvm_library(
@@ -5,8 +6,8 @@ kt_jvm_library(
     srcs = glob(["*.kt"]),
     deps = [
         "//example/greeter/proto:victor_api_java_grpc",
-        "@maven_armeria//:com_linecorp_armeria_armeria",
-        "@maven_armeria//:com_linecorp_armeria_armeria_grpc",
+        "@maven//:com_linecorp_armeria_armeria",
+        "@maven//:com_linecorp_armeria_armeria_grpc",
     ],
 )
 
