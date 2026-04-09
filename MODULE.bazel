@@ -3,36 +3,59 @@ module(
     version = "0.1.0",
 )
 
-bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_java", version = "9.6.1")
 bazel_dep(name = "rules_proto", version = "7.1.0")
-bazel_dep(name = "rules_kotlin", version = "1.9.6")
-bazel_dep(name = "grpc-java", version = "1.78.0")
-bazel_dep(name = "rules_jvm_external", version = "6.3")
+bazel_dep(name = "rules_kotlin", version = "2.3.20")
+bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
+bazel_dep(name = "grpc", version = "1.80.0")
+bazel_dep(name = "grpc-java", version = "1.78.0.bcr.1")
+bazel_dep(name = "rules_jvm_external", version = "6.9")
+bazel_dep(name = "rules_python", version = "1.9.0")
 
-bazel_dep(name = "rules_python", version = "1.7.0")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+single_version_override(
+    module_name = "rules_swift",
+    version = "3.1.2",
+)
+
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
-    python_version = "3.12.0",
+    python_version = "3.14.2",
 )
-use_repo(python, "python_3_12_0")
+use_repo(python, "python_3_14_2")
+
+http_archive(
+    name = "typing_extensions",
+    build_file = "//third_party:typing_extensions.BUILD",
+    integrity = "sha256-v29Ws22LyRVuUY6xzDehRihAgvpTUiAz93Ku++z9Ffw=",
+    strip_prefix = "typing_extensions-4.12.2",
+    url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
+)
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
-    name = "maven_armeria",
+    name = "maven",
     artifacts = [
-        "com.linecorp.armeria:armeria:1.33.4",
-        "com.linecorp.armeria:armeria-grpc:1.33.4",
+        "com.linecorp.armeria:armeria:1.38.0",
+        "com.linecorp.armeria:armeria-grpc:1.38.0",
+    ],
+    known_contributing_modules = [
+        "grpc-java",
+        "protobuf",
+        "victor",
     ],
 )
-use_repo(maven, "maven_armeria")
+use_repo(maven, "maven")
 
-bazel_dep(name = "aspect_rules_ts", version = "3.3.1")
-bazel_dep(name = "aspect_rules_js", version = "2.0.1")
+bazel_dep(name = "aspect_rules_js", version = "3.0.3")
 
 npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
 npm.npm_translate_lock(
     name = "npm",
-    pnpm_lock = "//:pnpm-lock.yaml",
+    pnpm_lock = "//example/greeter/web:pnpm-lock.yaml",
+    run_lifecycle_hooks = False,
     verify_node_modules_ignored = "//:.bazelignore",
 )
 use_repo(npm, "npm")

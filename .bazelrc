@@ -1,8 +1,5 @@
 common --enable_bzlmod
-
-build --incompatible_strict_action_env
-build --color=yes
-build --show_progress_rate_limit=0.2
+common --incompatible_autoload_externally=cc_binary,cc_import,cc_library,cc_test,java_binary,java_library,java_proto_library,proto_library,py_binary,py_library
 
 build --java_runtime_version=remotejdk_21
 run --java_runtime_version=remotejdk_21

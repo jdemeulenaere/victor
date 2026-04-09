@@ -99,11 +99,12 @@ export class GreeterClient {
 
   constructor(options: GreeterClientOptions) {
     this.baseUrl = options.baseUrl;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? ((input, init) => globalThis.fetch(input, init));
   }
 
   async sayHello(request: HelloRequest): Promise<HelloResponse> {
     const requestFrame = createGrpcWebFrame(encodeHelloRequest(request));
+    const requestBody = new Uint8Array(Array.from(requestFrame));
 
     const response = await this.fetchImpl(`${this.baseUrl}${GREETER_SAY_HELLO_PATH}`, {
       method: 'POST',
@@ -113,7 +114,7 @@ export class GreeterClient {
         'X-Grpc-Web': '1',
         'X-User-Agent': 'victor-web',
       },
-      body: requestFrame,
+      body: requestBody,
     });
 
     const responsePayload = new Uint8Array(await response.arrayBuffer());
