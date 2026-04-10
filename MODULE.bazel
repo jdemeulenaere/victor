@@ -61,3 +61,14 @@ npm.npm_translate_lock(
     verify_node_modules_ignored = "//:.bazelignore",
 )
 use_repo(npm, "npm")
+
+toolchains_npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+toolchains_npm.npm_translate_lock(
+    name = "toolchains_npm",
+    pnpm_lock = "//toolchains:pnpm-lock.yaml",
+    run_lifecycle_hooks = False,
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(toolchains_npm, "toolchains_npm")
+
+register_toolchains("//toolchains:gen_es_toolchain")

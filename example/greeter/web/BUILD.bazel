@@ -12,6 +12,7 @@ npm_link_all_packages(name = "node_modules")
 
 WEB_INPUTS = [
     ":node_modules",
+    "//example/greeter/proto:victor_api_js_proto_files",
     "package.json",
 ] + glob([
     "src/**/*",

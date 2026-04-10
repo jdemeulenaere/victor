@@ -1,5 +1,6 @@
 load("@grpc-java//:java_grpc_library.bzl", "java_grpc_library")
 load("@grpc//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+load("@aspect_rules_js//js:defs.bzl", "js_info_files", "js_library")
 load("@com_google_protobuf//bazel:java_proto_library.bzl", "java_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 
@@ -33,5 +34,19 @@ py_grpc_library(
     name = "victor_api_py_pb2_grpc",
     srcs = [":victor_api_proto"],
     deps = [":victor_api_py_pb2"],
+    visibility = ["//visibility:public"],
+)
+
+js_library(
+    name = "victor_api_js_proto",
+    deps = [":victor_api_proto"],
+    visibility = ["//visibility:public"],
+)
+
+js_info_files(
+    name = "victor_api_js_proto_files",
+    srcs = [":victor_api_js_proto"],
+    include_types = True,
+    include_transitive_types = True,
     visibility = ["//visibility:public"],
 )
