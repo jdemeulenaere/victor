@@ -1,53 +1,12 @@
-load("@npm//:defs.bzl", "npm_link_all_packages")
-load(
-    "@npm//example/greeter/web:typescript/package_json.bzl",
-    typescript_bin = "bin",
-)
-load(
-    "@npm//example/greeter/web:vite/package_json.bzl",
-    vite_bin = "bin",
-)
+load("//macros/web:defs.bzl", "web_app")
 
-npm_link_all_packages(name = "node_modules")
-
-WEB_INPUTS = [
-    ":node_modules",
-    "//example/greeter/proto:victor_api_js_proto_files",
-    "package.json",
-] + glob([
-    "src/**/*",
-    "index.html",
-    "tsconfig*.json",
-    "vite.config.ts",
-])
-
-vite_bin.vite_binary(
-    name = "dev",
-    args = ["dev", "--host"],
-    data = WEB_INPUTS,
-    chdir = package_name(),
-    visibility = ["//visibility:public"],
-)
-
-vite_bin.vite(
-    name = "build",
-    args = ["build"],
-    srcs = WEB_INPUTS,
-    out_dirs = ["dist"],
-    chdir = package_name(),
-    visibility = ["//visibility:public"],
-)
-
-typescript_bin.tsc_test(
-    name = "typecheck",
-    args = ["--noEmit", "--project", "tsconfig.json"],
-    data = WEB_INPUTS,
-    chdir = package_name(),
-    visibility = ["//visibility:public"],
-)
-
-alias(
+web_app(
     name = "web",
-    actual = ":build",
+    srcs = [
+        "index.html",
+        "main.tsx",
+        "App.tsx",
+    ],
+    deps = ["//example/greeter/proto:victor_api_js_proto_files"],
     visibility = ["//visibility:public"],
 )

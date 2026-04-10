@@ -1,9 +1,9 @@
 import { FormEvent, useState } from 'react';
 import { createClient } from '@connectrpc/connect';
 import { createGrpcWebTransport } from '@connectrpc/connect-web';
-import { Greeter } from '../../proto/greeter_pb.js';
+import { Greeter } from '../proto/greeter_pb.js';
 
-const grpcBaseUrl = import.meta.env.VITE_BACKEND_GRPC_BASE_URL ?? '/grpc';
+const grpcBaseUrl = '/grpc';
 const transport = createGrpcWebTransport({ baseUrl: grpcBaseUrl });
 const greeterClient = createClient(Greeter, transport) as unknown as {
   sayHello(request: { name: string }): Promise<{ message: string }>;
@@ -19,33 +19,33 @@ const App = () => {
     event.preventDefault();
     setLoading(true);
     setErrorMessage('');
+    setResponseMessage('');
 
     try {
       const response = await greeterClient.sayHello({ name });
       setResponseMessage(response.message);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
-      setResponseMessage('');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="app">
+    <main>
       <h1>gRPC Kotlin + React Demo</h1>
-      <p>This React app calls the Kotlin gRPC service using generated TypeScript client code.</p>
-      <p className="meta">
+      <p>This app calls the Kotlin gRPC service using generated TypeScript client code.</p>
+      <p>
         Service: <code>{Greeter.typeName}</code>
       </p>
-      <p className="meta">
+      <p>
         RPC: <code>{Greeter.method.sayHello.name}</code>
       </p>
-      <p className="meta">
+      <p>
         gRPC base URL: <code>{grpcBaseUrl}</code>
       </p>
 
-      <form onSubmit={onSubmit} className="form">
+      <form onSubmit={onSubmit}>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}

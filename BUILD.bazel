@@ -1,1 +1,4 @@
-# Marks the workspace root as a Bazel package.
+load("@npm//:defs.bzl", "npm_link_all_packages")
+
+# Marks the workspace root as a Bazel package and exposes shared JS deps.
+npm_link_all_packages(name = "node_modules")
