@@ -36,22 +36,7 @@ http_archive(
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
 )
 
-maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
-maven.install(
-    name = "maven",
-    artifacts = [
-        "ch.qos.logback:logback-classic:1.5.32",
-        "com.linecorp.armeria:armeria:1.38.0",
-        "com.linecorp.armeria:armeria-grpc:1.38.0",
-        "org.slf4j:slf4j-api:2.0.17",
-    ],
-    known_contributing_modules = [
-        "grpc-java",
-        "protobuf",
-        "victor",
-    ],
-)
-use_repo(maven, "maven")
+include("//third_party/maven:deps.MODULE.bazel")
 
 npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
 npm.npm_translate_lock(
