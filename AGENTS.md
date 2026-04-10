@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Repository Overview
+
+This repository is a Bazel-first monorepo with starter examples for Kotlin, Python, and TypeScript projects.
+
 ## Repository Expectations
 
 - Use Bazel as the primary interface for build/test/run workflows:
