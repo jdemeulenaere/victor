@@ -1,19 +1,13 @@
-load("@rules_java//java:defs.bzl", "java_binary")
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
 
-kt_jvm_library(
-    name = "backend_lib",
-    srcs = glob(["*.kt"]),
+kt_jvm_binary(
+    name = "backend",
+    srcs = ["Main.kt"],
+    main_class = "victor.backend.MainKt",
     deps = [
         "//example/greeter/proto:victor_api_java_grpc",
         "@maven//:com_linecorp_armeria_armeria",
         "@maven//:com_linecorp_armeria_armeria_grpc",
     ],
-)
-
-java_binary(
-    name = "backend",
-    main_class = "victor.backend.MainKt",
-    runtime_deps = [":backend_lib"],
     visibility = ["//visibility:public"],
 )

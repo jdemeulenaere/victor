@@ -10,24 +10,20 @@ load(
 
 npm_link_all_packages(name = "node_modules")
 
-filegroup(
-    name = "srcs",
-    srcs = glob([
-        "src/**/*",
-        "index.html",
-        "tsconfig*.json",
-        "vite.config.ts",
-    ]),
-)
+WEB_INPUTS = [
+    ":node_modules",
+    "package.json",
+] + glob([
+    "src/**/*",
+    "index.html",
+    "tsconfig*.json",
+    "vite.config.ts",
+])
 
 vite_bin.vite_binary(
     name = "dev",
     args = ["dev", "--host"],
-    data = [
-        ":node_modules",
-        ":srcs",
-        "package.json",
-    ],
+    data = WEB_INPUTS,
     chdir = package_name(),
     visibility = ["//visibility:public"],
 )
@@ -35,11 +31,7 @@ vite_bin.vite_binary(
 vite_bin.vite(
     name = "build",
     args = ["build"],
-    srcs = [
-        ":node_modules",
-        ":srcs",
-        "package.json",
-    ],
+    srcs = WEB_INPUTS,
     out_dirs = ["dist"],
     chdir = package_name(),
     visibility = ["//visibility:public"],
@@ -48,11 +40,7 @@ vite_bin.vite(
 typescript_bin.tsc_test(
     name = "typecheck",
     args = ["--noEmit", "--project", "tsconfig.json"],
-    data = [
-        ":node_modules",
-        ":srcs",
-        "package.json",
-    ],
+    data = WEB_INPUTS,
     chdir = package_name(),
     visibility = ["//visibility:public"],
 )
