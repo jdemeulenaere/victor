@@ -1,27 +1,30 @@
-load("@grpc//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 
 py_binary(
     name = "python_client",
     srcs = ["main.py"],
     main = "main.py",
     deps = [
-        ":victor_api_py_pb2",
-        ":victor_api_py_pb2_grpc",
+        "//example/greeter/proto:victor_api_py_pb2",
+        "//example/greeter/proto:victor_api_py_pb2_grpc",
         "@grpc//src/python/grpcio/grpc:grpcio",
         "@typing_extensions//:typing_extensions",
     ],
     visibility = ["//visibility:public"],
 )
 
-py_proto_library(
-    name = "victor_api_py_pb2",
-    deps = ["//example/greeter/proto:victor_api_proto"],
-    use_protobuf = False,
-)
-
-py_grpc_library(
-    name = "victor_api_py_pb2_grpc",
-    srcs = ["//example/greeter/proto:victor_api_proto"],
-    deps = [":victor_api_py_pb2"],
+py_test(
+    name = "python_client_smoke_test",
+    main = "smoke_test.py",
+    srcs = ["smoke_test.py"],
+    args = [
+        "$(location //example/greeter/kotlin:backend)",
+        "$(location :python_client)",
+    ],
+    data = [
+        "//example/greeter/kotlin:backend",
+        ":python_client",
+    ],
+    local = True,
+    timeout = "moderate",
 )
