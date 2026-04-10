@@ -1,0 +1,10 @@
+[versions]
+armeria = "1.38.0"
+logback = "1.5.32"
+slf4j = "2.0.17"
+
+[libraries]
+armeria = { module = "com.linecorp.armeria:armeria", version.ref = "armeria" }
+armeria-grpc = { module = "com.linecorp.armeria:armeria-grpc", version.ref = "armeria" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
