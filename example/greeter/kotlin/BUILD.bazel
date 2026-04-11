@@ -7,9 +7,9 @@ kt_jvm_binary(
     main_class = "victor.backend.MainKt",
     deps = [
         "//example/greeter/proto:victor_api_java_grpc",
-        "@maven//:ch_qos_logback_logback_classic",
-        "@maven//:com_linecorp_armeria_armeria",
-        "@maven//:com_linecorp_armeria_armeria_grpc",
+        "@third_party//:ch_qos_logback_logback_classic",
+        "@third_party//:com_linecorp_armeria_armeria",
+        "@third_party//:com_linecorp_armeria_armeria_grpc",
     ],
     visibility = ["//visibility:public"],
 )

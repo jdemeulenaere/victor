@@ -5,34 +5,11 @@ androidx-collection = "1.6.0"
 androidx-compose = "1.10.6"
 androidx-compose-material3 = "1.4.0"
 androidx-lifecycle = "2.10.0"
-netty = "4.2.12.Final"
-errorprone = "2.49.0"
-gson = "2.13.2"
-guava = "33.5.0-jre"
-jsr305 = "3.0.2"
 logback = "1.5.32"
-slf4j = "2.0.17"
 
 [libraries]
 armeria = { module = "com.linecorp.armeria:armeria", version.ref = "armeria" }
 armeria-grpc = { module = "com.linecorp.armeria:armeria-grpc", version.ref = "armeria" }
-errorprone = { module = "com.google.errorprone:error_prone_annotations", version.ref = "errorprone" }
-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
-guava = { module = "com.google.guava:guava", version.ref = "guava" }
-jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
-netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
-netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
-netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
-netty-codec-http2 = { module = "io.netty:netty-codec-http2", version.ref = "netty" }
-netty-codec-socks = { module = "io.netty:netty-codec-socks", version.ref = "netty" }
-netty-common = { module = "io.netty:netty-common", version.ref = "netty" }
-netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
-netty-handler-proxy = { module = "io.netty:netty-handler-proxy", version.ref = "netty" }
-netty-resolver = { module = "io.netty:netty-resolver", version.ref = "netty" }
-netty-transport = { module = "io.netty:netty-transport", version.ref = "netty" }
-netty-transport-classes-epoll = { module = "io.netty:netty-transport-classes-epoll", version.ref = "netty" }
-netty-transport-native-epoll = { module = "io.netty:netty-transport-native-epoll", version.ref = "netty" }
-netty-transport-native-unix-common = { module = "io.netty:netty-transport-native-unix-common", version.ref = "netty" }
 androidx-activity = { module = "androidx.activity:activity", version.ref = "androidx-activity" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-collection = { module = "androidx.collection:collection-jvm", version.ref = "androidx-collection" }
@@ -48,4 +25,3 @@ androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime", 
 androidx-lifecycle-runtime-android = { module = "androidx.lifecycle:lifecycle-runtime-android", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
