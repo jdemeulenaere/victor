@@ -11,15 +11,10 @@ import victor.api.v1.HelloResponse
 private const val SERVICE_PATH = "/victor.api.v1.Greeter"
 
 class GreeterService : GreeterGrpc.GreeterImplBase() {
-    override fun sayHello(
-        request: HelloRequest,
-        responseObserver: StreamObserver<HelloResponse>,
-    ) {
+    override fun sayHello(request: HelloRequest, responseObserver: StreamObserver<HelloResponse>) {
         val name = request.name.ifBlank { "world" }
         val response =
-            HelloResponse.newBuilder()
-                .setMessage("Hello, $name! (from Kotlin backend)")
-                .build()
+            HelloResponse.newBuilder().setMessage("Hello, $name! (from Kotlin backend)").build()
 
         responseObserver.onNext(response)
         responseObserver.onCompleted()
@@ -39,11 +34,7 @@ fun main() {
             )
             .build()
 
-    val server =
-        Server.builder()
-            .http(port)
-            .service(grpcService)
-            .build()
+    val server = Server.builder().http(port).service(grpcService).build()
 
     Runtime.getRuntime().addShutdownHook(Thread { server.stop().join() })
 

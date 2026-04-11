@@ -1,31 +1,31 @@
-import { FormEvent, useState } from 'react';
-import { createClient } from '@connectrpc/connect';
-import { createGrpcWebTransport } from '@connectrpc/connect-web';
-import { Greeter } from '../proto/greeter_pb.js';
+import { FormEvent, useState } from "react";
+import { createClient } from "@connectrpc/connect";
+import { createGrpcWebTransport } from "@connectrpc/connect-web";
+import { Greeter } from "../proto/greeter_pb.js";
 
-const grpcBaseUrl = '/grpc';
+const grpcBaseUrl = "/grpc";
 const transport = createGrpcWebTransport({ baseUrl: grpcBaseUrl });
 const greeterClient = createClient(Greeter, transport) as unknown as {
   sayHello(request: { name: string }): Promise<{ message: string }>;
 };
 
 const App = () => {
-  const [name, setName] = useState('world');
-  const [responseMessage, setResponseMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [name, setName] = useState("world");
+  const [responseMessage, setResponseMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-    setErrorMessage('');
-    setResponseMessage('');
+    setErrorMessage("");
+    setResponseMessage("");
 
     try {
       const response = await greeterClient.sayHello({ name });
       setResponseMessage(response.message);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+      setErrorMessage(error instanceof Error ? error.message : "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -34,7 +34,10 @@ const App = () => {
   return (
     <main>
       <h1>gRPC Kotlin + React Demo</h1>
-      <p>This app calls the Kotlin gRPC service using generated TypeScript client code.</p>
+      <p>
+        This app calls the Kotlin gRPC service using generated TypeScript client
+        code.
+      </p>
       <p>
         Service: <code>{Greeter.typeName}</code>
       </p>
@@ -53,7 +56,7 @@ const App = () => {
           aria-label="name"
         />
         <button type="submit" disabled={loading}>
-          {loading ? 'Calling...' : 'Call SayHello'}
+          {loading ? "Calling..." : "Call SayHello"}
         </button>
       </form>
 
