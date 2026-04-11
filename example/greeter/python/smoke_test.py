@@ -21,7 +21,9 @@ from pathlib import Path
 PORT = int(os.environ.get("VICTOR_SMOKE_TEST_PORT", "18080"))
 REQUEST_NAME = "smoke-test"
 EXPECTED_MESSAGE = f"Hello, {REQUEST_NAME}! (from Kotlin backend)"
-START_TIMEOUT_SECONDS = float(os.environ.get("VICTOR_SMOKE_START_TIMEOUT_SECONDS", "180"))
+START_TIMEOUT_SECONDS = float(
+    os.environ.get("VICTOR_SMOKE_START_TIMEOUT_SECONDS", "180")
+)
 STOP_TIMEOUT_SECONDS = float(os.environ.get("VICTOR_SMOKE_STOP_TIMEOUT_SECONDS", "20"))
 LSOF_BIN = shutil.which("lsof") or "/usr/sbin/lsof"
 
@@ -60,7 +62,9 @@ def _wait_until_port_closed(port: int, timeout_seconds: float) -> bool:
     return not _listening_pids(port)
 
 
-def _wait_until_port_open(port: int, timeout_seconds: float, proc: subprocess.Popen[str]) -> bool:
+def _wait_until_port_open(
+    port: int, timeout_seconds: float, proc: subprocess.Popen[str]
+) -> bool:
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         if proc.poll() is not None:
@@ -82,7 +86,9 @@ def _stop_existing_backend(port: int) -> None:
         print(f"No existing backend detected on port {port}.")
         return
 
-    print(f"Stopping existing backend process(es) on port {port}: {', '.join(map(str, pids))}")
+    print(
+        f"Stopping existing backend process(es) on port {port}: {', '.join(map(str, pids))}"
+    )
     for pid in pids:
         try:
             os.kill(pid, signal.SIGTERM)
@@ -108,7 +114,9 @@ def _stop_existing_backend(port: int) -> None:
     print("Existing backend stopped.")
 
 
-def _start_backend(backend_bin: str, port: int, backend_log: Path) -> subprocess.Popen[str]:
+def _start_backend(
+    backend_bin: str, port: int, backend_log: Path
+) -> subprocess.Popen[str]:
     env = os.environ.copy()
     env["VICTOR_BACKEND_PORT"] = str(port)
 
@@ -163,7 +171,9 @@ def _stop_backend_process(proc: subprocess.Popen[str], port: int) -> None:
         proc.wait(timeout=5)
 
     if not _wait_until_port_closed(port, 5):
-        raise RuntimeError(f"Backend process did not release port {port} during cleanup.")
+        raise RuntimeError(
+            f"Backend process did not release port {port} during cleanup."
+        )
 
 
 def _run_python_client(client_bin: str, port: int) -> str:
@@ -208,7 +218,9 @@ def main() -> int:
 
     backend_bin = sys.argv[1]
     python_client_bin = sys.argv[2]
-    backend_log = Path(os.environ.get("TEST_TMPDIR", "/tmp")) / "victor_backend_smoke_test.log"
+    backend_log = (
+        Path(os.environ.get("TEST_TMPDIR", "/tmp")) / "victor_backend_smoke_test.log"
+    )
 
     backend_proc: subprocess.Popen[str] | None = None
     try:

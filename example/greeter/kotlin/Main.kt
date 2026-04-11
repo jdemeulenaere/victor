@@ -12,9 +12,7 @@ private const val SERVICE_PATH = "/victor.api.v1.Greeter"
 class GreeterService : GreeterGrpcKt.GreeterCoroutineImplBase() {
     override suspend fun sayHello(request: HelloRequest): HelloResponse {
         val name = request.name.ifBlank { "world" }
-        return HelloResponse.newBuilder()
-            .setMessage("Hello, $name! (from Kotlin backend)")
-            .build()
+        return HelloResponse.newBuilder().setMessage("Hello, $name! (from Kotlin backend)").build()
     }
 }
 
@@ -31,11 +29,7 @@ fun main() {
             )
             .build()
 
-    val server =
-        Server.builder()
-            .http(port)
-            .service(grpcService)
-            .build()
+    val server = Server.builder().http(port).service(grpcService).build()
 
     Runtime.getRuntime().addShutdownHook(Thread { server.stop().join() })
 

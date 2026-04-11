@@ -942,16 +942,12 @@
     "androidx.annotation:annotation-jvm": [
       "org.jetbrains.kotlin:kotlin-stdlib"
     ],
-    "androidx.arch.core:core-common": [
-      "androidx.annotation:annotation"
-    ],
+    "androidx.arch.core:core-common": ["androidx.annotation:annotation"],
     "androidx.arch.core:core-runtime:aar": [
       "androidx.annotation:annotation",
       "androidx.arch.core:core-common"
     ],
-    "androidx.autofill:autofill:aar": [
-      "androidx.core:core:aar"
-    ],
+    "androidx.autofill:autofill:aar": ["androidx.core:core:aar"],
     "androidx.collection:collection": [
       "androidx.annotation:annotation",
       "androidx.collection:collection-jvm",
@@ -1204,9 +1200,7 @@
       "androidx.core:core:aar",
       "org.jetbrains.kotlin:kotlin-stdlib"
     ],
-    "androidx.core:core-viewtree:aar": [
-      "org.jetbrains.kotlin:kotlin-stdlib"
-    ],
+    "androidx.core:core-viewtree:aar": ["org.jetbrains.kotlin:kotlin-stdlib"],
     "androidx.core:core:aar": [
       "androidx.annotation:annotation",
       "androidx.annotation:annotation-experimental:aar",
@@ -1365,9 +1359,7 @@
       "androidx.annotation:annotation",
       "androidx.tracing:tracing:aar"
     ],
-    "androidx.tracing:tracing:aar": [
-      "androidx.annotation:annotation"
-    ],
+    "androidx.tracing:tracing:aar": ["androidx.annotation:annotation"],
     "androidx.versionedparcelable:versionedparcelable:aar": [
       "androidx.annotation:annotation",
       "androidx.collection:collection"
@@ -1476,9 +1468,7 @@
       "com.google.code.findbugs:jsr305",
       "com.google.guava:guava"
     ],
-    "io.grpc:grpc-context": [
-      "io.grpc:grpc-api"
-    ],
+    "io.grpc:grpc-context": ["io.grpc:grpc-api"],
     "io.grpc:grpc-core": [
       "com.google.android:annotations",
       "com.google.code.gson:gson",
@@ -1522,12 +1512,8 @@
       "io.grpc:grpc-core",
       "org.codehaus.mojo:animal-sniffer-annotations"
     ],
-    "io.micrometer:context-propagation": [
-      "org.jspecify:jspecify"
-    ],
-    "io.micrometer:micrometer-commons": [
-      "org.jspecify:jspecify"
-    ],
+    "io.micrometer:context-propagation": ["org.jspecify:jspecify"],
+    "io.micrometer:micrometer-commons": ["org.jspecify:jspecify"],
     "io.micrometer:micrometer-core": [
       "io.micrometer:micrometer-commons",
       "io.micrometer:micrometer-observation",
@@ -1539,9 +1525,7 @@
       "io.micrometer:micrometer-commons",
       "org.jspecify:jspecify"
     ],
-    "io.netty:netty-buffer": [
-      "io.netty:netty-common"
-    ],
+    "io.netty:netty-buffer": ["io.netty:netty-common"],
     "io.netty:netty-codec-base": [
       "io.netty:netty-buffer",
       "io.netty:netty-common",
@@ -1603,9 +1587,7 @@
       "io.netty:netty-handler",
       "io.netty:netty-transport"
     ],
-    "io.netty:netty-resolver": [
-      "io.netty:netty-common"
-    ],
+    "io.netty:netty-resolver": ["io.netty:netty-common"],
     "io.netty:netty-resolver-dns": [
       "io.netty:netty-buffer",
       "io.netty:netty-codec-base",
@@ -1738,12 +1720,8 @@
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin": [
       "org.jetbrains.kotlin:kotlin-stdlib"
     ],
-    "org.jetbrains.kotlin:kotlin-stdlib": [
-      "org.jetbrains:annotations"
-    ],
-    "org.jetbrains.kotlinx:atomicfu": [
-      "org.jetbrains.kotlinx:atomicfu-jvm"
-    ],
+    "org.jetbrains.kotlin:kotlin-stdlib": ["org.jetbrains:annotations"],
+    "org.jetbrains.kotlinx:atomicfu": ["org.jetbrains.kotlinx:atomicfu-jvm"],
     "org.jetbrains.kotlinx:atomicfu-jvm": [
       "org.jetbrains.kotlin:kotlin-stdlib"
     ],
@@ -1763,9 +1741,7 @@
     ]
   },
   "packages": {
-    "androidx.annotation:annotation-jvm": [
-      "androidx.annotation"
-    ],
+    "androidx.annotation:annotation-jvm": ["androidx.annotation"],
     "androidx.arch.core:core-common": [
       "androidx.arch.core.internal",
       "androidx.arch.core.util"
@@ -1778,12 +1754,8 @@
       "androidx.compose.runtime",
       "androidx.compose.runtime.annotation"
     ],
-    "androidx.concurrent:concurrent-futures": [
-      "androidx.concurrent.futures"
-    ],
-    "androidx.lifecycle:lifecycle-common-jvm": [
-      "androidx.lifecycle"
-    ],
+    "androidx.concurrent:concurrent-futures": ["androidx.concurrent.futures"],
+    "androidx.lifecycle:lifecycle-common-jvm": ["androidx.lifecycle"],
     "ch.qos.logback:logback-classic": [
       "ch.qos.logback.classic",
       "ch.qos.logback.classic.boolex",
@@ -1924,9 +1896,7 @@
       "com.fasterxml.jackson.datatype.jsr310.ser.key",
       "com.fasterxml.jackson.datatype.jsr310.util"
     ],
-    "com.google.android:annotations": [
-      "android.annotation"
-    ],
+    "com.google.android:annotations": ["android.annotation"],
     "com.google.api.grpc:proto-google-common-protos": [
       "com.google.api",
       "com.google.apps.card.v1",
@@ -1984,16 +1954,12 @@
       "com.google.common.xml",
       "com.google.thirdparty.publicsuffix"
     ],
-    "com.google.j2objc:j2objc-annotations": [
-      "com.google.j2objc.annotations"
-    ],
+    "com.google.j2objc:j2objc-annotations": ["com.google.j2objc.annotations"],
     "com.google.protobuf:protobuf-java": [
       "com.google.protobuf",
       "com.google.protobuf.compiler"
     ],
-    "com.google.protobuf:protobuf-java-util": [
-      "com.google.protobuf.util"
-    ],
+    "com.google.protobuf:protobuf-java-util": ["com.google.protobuf.util"],
     "com.linecorp.armeria:armeria": [
       "com.linecorp.armeria.client",
       "com.linecorp.armeria.client.circuitbreaker",
@@ -2261,18 +2227,10 @@
     "com.linecorp.armeria:armeria-protobuf": [
       "com.linecorp.armeria.server.protobuf"
     ],
-    "io.grpc:grpc-api": [
-      "io.grpc"
-    ],
-    "io.grpc:grpc-core": [
-      "io.grpc.internal"
-    ],
-    "io.grpc:grpc-protobuf": [
-      "io.grpc.protobuf"
-    ],
-    "io.grpc:grpc-protobuf-lite": [
-      "io.grpc.protobuf.lite"
-    ],
+    "io.grpc:grpc-api": ["io.grpc"],
+    "io.grpc:grpc-core": ["io.grpc.internal"],
+    "io.grpc:grpc-protobuf": ["io.grpc.protobuf"],
+    "io.grpc:grpc-protobuf-lite": ["io.grpc.protobuf.lite"],
     "io.grpc:grpc-services": [
       "io.grpc.binarylog.v1",
       "io.grpc.channelz.v1",
@@ -2283,13 +2241,8 @@
       "io.grpc.reflection.v1alpha",
       "io.grpc.services"
     ],
-    "io.grpc:grpc-stub": [
-      "io.grpc.stub",
-      "io.grpc.stub.annotations"
-    ],
-    "io.grpc:grpc-util": [
-      "io.grpc.util"
-    ],
+    "io.grpc:grpc-stub": ["io.grpc.stub", "io.grpc.stub.annotations"],
+    "io.grpc:grpc-util": ["io.grpc.util"],
     "io.micrometer:context-propagation": [
       "io.micrometer.context",
       "io.micrometer.context.integration"
@@ -2359,10 +2312,7 @@
       "io.micrometer.observation.docs",
       "io.micrometer.observation.transport"
     ],
-    "io.netty:netty-buffer": [
-      "io.netty.buffer",
-      "io.netty.buffer.search"
-    ],
+    "io.netty:netty-buffer": ["io.netty.buffer", "io.netty.buffer.search"],
     "io.netty:netty-codec-base": [
       "io.netty.handler.codec",
       "io.netty.handler.codec.base64",
@@ -2371,15 +2321,9 @@
       "io.netty.handler.codec.serialization",
       "io.netty.handler.codec.string"
     ],
-    "io.netty:netty-codec-compression": [
-      "io.netty.handler.codec.compression"
-    ],
-    "io.netty:netty-codec-dns": [
-      "io.netty.handler.codec.dns"
-    ],
-    "io.netty:netty-codec-haproxy": [
-      "io.netty.handler.codec.haproxy"
-    ],
+    "io.netty:netty-codec-compression": ["io.netty.handler.codec.compression"],
+    "io.netty:netty-codec-dns": ["io.netty.handler.codec.dns"],
+    "io.netty:netty-codec-haproxy": ["io.netty.handler.codec.haproxy"],
     "io.netty:netty-codec-http": [
       "io.netty.handler.codec.http",
       "io.netty.handler.codec.http.cookie",
@@ -2391,9 +2335,7 @@
       "io.netty.handler.codec.rtsp",
       "io.netty.handler.codec.spdy"
     ],
-    "io.netty:netty-codec-http2": [
-      "io.netty.handler.codec.http2"
-    ],
+    "io.netty:netty-codec-http2": ["io.netty.handler.codec.http2"],
     "io.netty:netty-codec-socks": [
       "io.netty.handler.codec.socks",
       "io.netty.handler.codec.socksx",
@@ -2428,21 +2370,13 @@
       "io.netty.handler.timeout",
       "io.netty.handler.traffic"
     ],
-    "io.netty:netty-handler-proxy": [
-      "io.netty.handler.proxy"
-    ],
-    "io.netty:netty-resolver": [
-      "io.netty.resolver"
-    ],
-    "io.netty:netty-resolver-dns": [
-      "io.netty.resolver.dns"
-    ],
+    "io.netty:netty-handler-proxy": ["io.netty.handler.proxy"],
+    "io.netty:netty-resolver": ["io.netty.resolver"],
+    "io.netty:netty-resolver-dns": ["io.netty.resolver.dns"],
     "io.netty:netty-resolver-dns-classes-macos": [
       "io.netty.resolver.dns.macos"
     ],
-    "io.netty:netty-tcnative-classes": [
-      "io.netty.internal.tcnative"
-    ],
+    "io.netty:netty-tcnative-classes": ["io.netty.internal.tcnative"],
     "io.netty:netty-transport": [
       "io.netty.bootstrap",
       "io.netty.channel",
@@ -2457,15 +2391,9 @@
       "io.netty.channel.socket.nio",
       "io.netty.channel.socket.oio"
     ],
-    "io.netty:netty-transport-classes-epoll": [
-      "io.netty.channel.epoll"
-    ],
-    "io.netty:netty-transport-classes-kqueue": [
-      "io.netty.channel.kqueue"
-    ],
-    "io.netty:netty-transport-native-unix-common": [
-      "io.netty.channel.unix"
-    ],
+    "io.netty:netty-transport-classes-epoll": ["io.netty.channel.epoll"],
+    "io.netty:netty-transport-classes-kqueue": ["io.netty.channel.kqueue"],
+    "io.netty:netty-transport-native-unix-common": ["io.netty.channel.unix"],
     "io.netty:netty-transport-native-unix-common:jar:linux-aarch_64": [
       "io.netty.channel.unix"
     ],
@@ -2478,9 +2406,7 @@
     "io.netty:netty-transport-native-unix-common:jar:osx-x86_64": [
       "io.netty.channel.unix"
     ],
-    "io.perfmark:perfmark-api": [
-      "io.perfmark"
-    ],
+    "io.perfmark:perfmark-api": ["io.perfmark"],
     "net.bytebuddy:byte-buddy": [
       "net.bytebuddy",
       "net.bytebuddy.agent.builder",
@@ -2626,15 +2552,9 @@
       "org.intellij.lang.annotations",
       "org.jetbrains.annotations"
     ],
-    "org.jspecify:jspecify": [
-      "org.jspecify.annotations"
-    ],
-    "org.latencyutils:LatencyUtils": [
-      "org.LatencyUtils"
-    ],
-    "org.reactivestreams:reactive-streams": [
-      "org.reactivestreams"
-    ],
+    "org.jspecify:jspecify": ["org.jspecify.annotations"],
+    "org.latencyutils:LatencyUtils": ["org.LatencyUtils"],
+    "org.reactivestreams:reactive-streams": ["org.reactivestreams"],
     "org.slf4j:slf4j-api": [
       "org.slf4j",
       "org.slf4j.event",

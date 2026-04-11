@@ -3,25 +3,6 @@
 load("@npm//:typescript/package_json.bzl", typescript_bin = "bin")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
 
-_VITE_CONFIG_CMD = """cat > $@ <<'EOF'
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: {
-      '/grpc': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\\/grpc/, ''),
-      },
-    },
-  },
-});
-EOF
-"""
-
 _TSC_COMMON_ARGS = [
     "--noEmit",
     "--target",
@@ -41,9 +22,17 @@ _TSC_COMMON_ARGS = [
     "react-jsx",
 ]
 
+def _vite_config_path(vite_config):
+    if vite_config.startswith("//"):
+        fail("web_app vite_config must be a file in the same package")
+    if vite_config.startswith(":"):
+        return vite_config[1:]
+    return vite_config
+
 def web_app(
         name,
         srcs,
+        vite_config = "vite.config.mjs",
         deps = None,
         visibility = None):
     """Creates dev/build/typecheck targets for a minimal Vite web app.
@@ -52,6 +41,9 @@ def web_app(
     - :dev (vite dev server)
     - :<name> (vite production build)
     - :typecheck (tsc with no emit)
+
+    Args:
+    - vite_config: Vite config file in this package (e.g. "vite.config.mjs" or ":vite.config.mjs")
     """
     if deps == None:
         deps = []
@@ -59,20 +51,15 @@ def web_app(
         fail("web_app requires srcs to be set explicitly")
     if name in ["dev", "typecheck"]:
         fail("web_app target name '{}' conflicts with generated targets".format(name))
+    if not vite_config:
+        fail("web_app requires vite_config to be a non-empty file path")
 
     ts_srcs = [src for src in srcs if src.endswith(".ts") or src.endswith(".tsx")]
     if not ts_srcs:
         fail("web_app requires at least one .ts or .tsx source in srcs")
 
-    vite_config_file = "{}.vite.config.mjs".format(name)
-    native.genrule(
-        name = "{}_vite_config".format(name),
-        outs = [vite_config_file],
-        cmd = _VITE_CONFIG_CMD,
-    )
-
-    vite_config_label = ":{}".format(vite_config_file)
-    common_inputs = ["//:node_modules", vite_config_label] + deps + srcs
+    vite_config_path = _vite_config_path(vite_config)
+    common_inputs = ["//:node_modules", vite_config] + deps + srcs
 
     vite_bin.vite_binary(
         name = "dev",
@@ -80,7 +67,7 @@ def web_app(
             "dev",
             "--host",
             "--config",
-            vite_config_file,
+            vite_config_path,
         ],
         data = common_inputs,
         chdir = native.package_name(),
@@ -92,7 +79,7 @@ def web_app(
         args = [
             "build",
             "--config",
-            vite_config_file,
+            vite_config_path,
         ],
         srcs = common_inputs,
         out_dirs = ["dist"],

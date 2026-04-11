@@ -3,6 +3,7 @@ node_modules/
 dist/
 __pycache__/
 .pnpm-store/
+.tools/
 .idea/
 .vscode/
 .DS_Store
