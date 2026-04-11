@@ -1,0 +1,13 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+exports_files(["keep_sorted.MODULE.bazel"])
+
+sh_binary(
+    name = "keep_sorted",
+    srcs = ["keep_sorted.sh"],
+    data = [
+        "@keep_sorted_darwin//file",
+        "@keep_sorted_linux//file",
+    ],
+    visibility = ["//visibility:public"],
+)
