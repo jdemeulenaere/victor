@@ -21,6 +21,13 @@ single_version_override(
     version = "3.1.2",
 )
 
+single_version_override(
+    module_name = "grpc",
+    version = "1.80.0",
+    patch_strip = 1,
+    patches = ["//third_party/grpc:typing_extensions_import_path.patch"],
+)
+
 # Root-level Go SDK pin: rules_android's Gazelle deps currently resolve a module
 # that requires Go >= 1.23.
 go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
