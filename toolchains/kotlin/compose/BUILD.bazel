@@ -3,6 +3,6 @@ load("@rules_kotlin//kotlin:core.bzl", "kt_compiler_plugin")
 kt_compiler_plugin(
     name = "compose_compiler_plugin",
     id = "androidx.compose.compiler.plugins.kotlin",
-    deps = ["@third_party_maven//:org_jetbrains_kotlin_kotlin_compose_compiler_plugin"],
     visibility = ["//visibility:public"],
+    deps = ["@third_party_maven//:org_jetbrains_kotlin_kotlin_compose_compiler_plugin"],
 )

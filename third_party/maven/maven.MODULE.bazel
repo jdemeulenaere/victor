@@ -3,17 +3,16 @@ maven.from_toml(
     name = "third_party",
     libs_versions_toml = "//third_party/maven:libs.versions.toml",
 )
-
 maven.install(
     name = "third_party",
     aar_import_bzl_label = "@rules_android//rules:rules.bzl",
     lock_file = "//third_party/maven:maven_install.json",
-    version_conflict_policy = "pinned",
     repositories = [
         "https://maven.google.com",
         "https://repo1.maven.org/maven2",
     ],
     use_starlark_android_rules = True,
+    version_conflict_policy = "pinned",
 )
 
 # Keep a separate shared @maven repo for transitive modules (grpc-java/protobuf).
@@ -26,15 +25,19 @@ MAVEN_FORCE_ARTIFACTS = [
 ]
 
 _ = [maven.artifact(
-        name = "maven",
-        group = group,
-        artifact = artifact,
-        version = version,
-        force_version = True,
-    ) for (group, artifact, version) in MAVEN_FORCE_ARTIFACTS]
+    name = "maven",
+    artifact = artifact,
+    force_version = True,
+    group = group,
+    version = version,
+) for (group, artifact, version) in MAVEN_FORCE_ARTIFACTS]
 
 maven.install(
     name = "maven",
-    known_contributing_modules = ["grpc-java", "protobuf", "victor"],
+    known_contributing_modules = [
+        "grpc-java",
+        "protobuf",
+        "victor",
+    ],
 )
 use_repo(maven, third_party_maven = "third_party")

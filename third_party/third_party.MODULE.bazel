@@ -1,0 +1,2 @@
+include("//third_party/maven:maven.MODULE.bazel")
+include("//third_party/npm:npm.MODULE.bazel")

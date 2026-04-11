@@ -17,6 +17,6 @@ kt_android_library(
 android_binary(
     name = "app",
     manifest = "AndroidManifest.xml",
-    deps = [":app_lib"],
     visibility = ["//visibility:public"],
+    deps = [":app_lib"],
 )

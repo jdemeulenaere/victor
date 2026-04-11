@@ -1,12 +1,12 @@
-load("//macros/web:defs.bzl", "web_app")
+load("//rules/web:defs.bzl", "web_app")
 
 web_app(
     name = "web",
     srcs = [
+        "App.tsx",
         "index.html",
         "main.tsx",
-        "App.tsx",
     ],
-    deps = ["//example/greeter/proto:victor_api_js_proto_files"],
     visibility = ["//visibility:public"],
+    deps = ["//example/greeter/proto:victor_api_js_proto_files"],
 )

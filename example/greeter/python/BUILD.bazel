@@ -4,26 +4,26 @@ py_binary(
     name = "python_client",
     srcs = ["main.py"],
     main = "main.py",
+    visibility = ["//visibility:public"],
     deps = [
         "//example/greeter/proto:victor_api_py_pb2",
         "//example/greeter/proto:victor_api_py_pb2_grpc",
         "@grpc//src/python/grpcio/grpc:grpcio",
     ],
-    visibility = ["//visibility:public"],
 )
 
 py_test(
     name = "python_client_smoke_test",
-    main = "smoke_test.py",
+    timeout = "moderate",
     srcs = ["smoke_test.py"],
     args = [
         "$(location //example/greeter/kotlin:backend)",
         "$(location :python_client)",
     ],
     data = [
-        "//example/greeter/kotlin:backend",
         ":python_client",
+        "//example/greeter/kotlin:backend",
     ],
     local = True,
-    timeout = "moderate",
+    main = "smoke_test.py",
 )
