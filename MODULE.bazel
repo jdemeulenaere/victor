@@ -50,4 +50,4 @@ register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 
 include("//third_party:deps.MODULE.bazel")
 
-register_toolchains("//toolchains:gen_es_toolchain")
+register_toolchains("//toolchains/web/proto:gen_es_toolchain")
