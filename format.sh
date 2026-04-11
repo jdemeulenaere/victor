@@ -10,16 +10,8 @@
 
 set -euo pipefail
 
-ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="${BUILD_WORKSPACE_DIRECTORY:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)}"
 cd "${ROOT}"
-
-# Pinned latest versions verified on 2026-04-11:
-# - ktfmt:       0.62
-# - ruff:        0.15.10
-# - prettier:    3.8.2
-KTFMT_VERSION="0.62"
-RUFF_VERSION="0.15.10"
-PRETTIER_VERSION="3.8.2"
 
 MODE="fix"
 SELECTOR="all"
@@ -150,57 +142,28 @@ fi
 
 if [[ ${#kotlin_files[@]} -gt 0 ]]; then
   echo "Kotlin files: ${#kotlin_files[@]}"
-  ktfmt_dir="${ROOT}/.tools/ktfmt"
-  ktfmt_jar="${ktfmt_dir}/ktfmt-${KTFMT_VERSION}-with-dependencies.jar"
-  mkdir -p "${ktfmt_dir}"
-  if [[ ! -f "${ktfmt_jar}" ]]; then
-    curl -sSfL \
-      "https://github.com/facebook/ktfmt/releases/download/v${KTFMT_VERSION}/ktfmt-${KTFMT_VERSION}-with-dependencies.jar" \
-      -o "${ktfmt_jar}"
-  fi
-
   if [[ "${MODE}" == "check" ]]; then
-    java -jar "${ktfmt_jar}" --kotlinlang-style --dry-run --set-exit-if-changed "${kotlin_files[@]}"
+    bazel run //tools/format/ktfmt:ktfmt -- --kotlinlang-style --dry-run --set-exit-if-changed "${kotlin_files[@]}"
   else
-    java -jar "${ktfmt_jar}" --kotlinlang-style "${kotlin_files[@]}"
+    bazel run //tools/format/ktfmt:ktfmt -- --kotlinlang-style "${kotlin_files[@]}"
   fi
 fi
 
 if [[ ${#python_files[@]} -gt 0 ]]; then
   echo "Python files: ${#python_files[@]}"
-  ruff_dir="${ROOT}/.tools/ruff-venv"
-  ruff_bin="${ruff_dir}/bin/ruff"
-  install_ruff="false"
-  if [[ ! -x "${ruff_bin}" ]]; then
-    install_ruff="true"
-  else
-    current_ruff="$("${ruff_bin}" --version | awk '{print $2}')"
-    if [[ "${current_ruff}" != "${RUFF_VERSION}" ]]; then
-      install_ruff="true"
-    fi
-  fi
-
-  if [[ "${install_ruff}" == "true" ]]; then
-    python3 -m venv "${ruff_dir}"
-    "${ruff_dir}/bin/python" -m pip install --upgrade pip >/dev/null
-    "${ruff_dir}/bin/pip" install "ruff==${RUFF_VERSION}" >/dev/null
-  fi
-
   if [[ "${MODE}" == "check" ]]; then
-    "${ruff_bin}" format --check "${python_files[@]}"
+    bazel run //tools/format/ruff:ruff -- format --check "${python_files[@]}"
   else
-    "${ruff_bin}" format "${python_files[@]}"
+    bazel run //tools/format/ruff:ruff -- format "${python_files[@]}"
   fi
 fi
 
 if [[ ${#typescript_files[@]} -gt 0 ]]; then
   echo "TypeScript/Web files: ${#typescript_files[@]}"
-  export NPM_CONFIG_CACHE="${ROOT}/.tools/npm-cache"
-  mkdir -p "${NPM_CONFIG_CACHE}"
   if [[ "${MODE}" == "check" ]]; then
-    npm exec --yes "prettier@${PRETTIER_VERSION}" -- --check "${typescript_files[@]}"
+    bazel run //tools/format/prettier:prettier -- --check "${typescript_files[@]}"
   else
-    npm exec --yes "prettier@${PRETTIER_VERSION}" -- --write "${typescript_files[@]}"
+    bazel run //tools/format/prettier:prettier -- --write "${typescript_files[@]}"
   fi
 fi
 

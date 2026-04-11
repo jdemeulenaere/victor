@@ -1,0 +1,5 @@
+alias(
+    name = "ruff",
+    actual = "@ruff_prebuilt//:ruff",
+    visibility = ["//visibility:public"],
+)

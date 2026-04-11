@@ -258,6 +258,8 @@
     "https://bcr.bazel.build/modules/re2/2024-07-02.bcr.1/MODULE.bazel": "b4963dda9b31080be1905ef085ecd7dd6cd47c05c79b9cdf83ade83ab2ab271a",
     "https://bcr.bazel.build/modules/re2/2024-07-02.bcr.1/source.json": "2ff292be6ef3340325ce8a045ecc326e92cbfab47c7cbab4bd85d28971b97ac4",
     "https://bcr.bazel.build/modules/re2/2024-07-02/MODULE.bazel": "0eadc4395959969297cbcf31a249ff457f2f1d456228c67719480205aa306daa",
+    "https://bcr.bazel.build/modules/ruff_prebuilt/0.15.0.1/MODULE.bazel": "ad18d0688009cde80c3e5191880140c5b30d749531bdb2adec23b6acfc4808aa",
+    "https://bcr.bazel.build/modules/ruff_prebuilt/0.15.0.1/source.json": "a245e2859cc47e1109119b86ba0943f0a0c719246058b351d8f95a0fd429e935",
     "https://bcr.bazel.build/modules/rules_android/0.1.1/MODULE.bazel": "48809ab0091b07ad0182defb787c4c5328bd3a278938415c00a7b69b50c4d3a8",
     "https://bcr.bazel.build/modules/rules_android/0.6.4/MODULE.bazel": "b4cde12d506dd65d82b2be39761f49f5797303343a3d5b4ee191c0cdf9ef387c",
     "https://bcr.bazel.build/modules/rules_android/0.6.6/MODULE.bazel": "b0fb569752aab65ab1a9db0a8f6cfaf5aa1754965e17e95dcf0e4d88e192a68d",
