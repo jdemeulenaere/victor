@@ -48,24 +48,6 @@ android_sdk_repository_extension = use_extension(
 use_repo(android_sdk_repository_extension, "androidsdk")
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 
-# Expose the Kotlin compiler repo to access the Compose compiler plugin jar.
-rules_kotlin_extensions = use_extension(
-    "@rules_kotlin//src/main/starlark/core/repositories:bzlmod_setup.bzl",
-    "rules_kotlin_extensions",
-)
-use_repo(
-    rules_kotlin_extensions,
-    "com_github_google_ksp",
-    "com_github_jetbrains_kotlin",
-    "com_github_jetbrains_kotlin_git",
-    "com_github_pinterest_ktlint",
-    "kotlin_build_tools_impl",
-    "kotlinx_coroutines_core_jvm",
-    "kotlinx_serialization_core_jvm",
-    "kotlinx_serialization_json",
-    "kotlinx_serialization_json_jvm",
-)
-
 include("//third_party:deps.MODULE.bazel")
 
 register_toolchains("//toolchains:gen_es_toolchain")
