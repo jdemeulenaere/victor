@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "${ROOT}"
+
+ZERO_SHA="0000000000000000000000000000000000000000"
+REMOTE_NAME="${1:-origin}"
+changed_file_list="$(mktemp "${TMPDIR:-/tmp}/victor-pre-push-files.XXXXXX")"
+trap 'rm -f "${changed_file_list}"' EXIT
+
+append_range_files() {
+  local from_sha="$1"
+  local to_sha="$2"
+  git diff --name-only --diff-filter=ACMR "${from_sha}" "${to_sha}" >>"${changed_file_list}"
+}
+
+append_single_commit_files() {
+  local sha="$1"
+  git diff-tree --no-commit-id --name-only -r --diff-filter=ACMR "${sha}" >>"${changed_file_list}"
+}
+
+had_updates="false"
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [[ -z "${local_ref}" ]] && continue
+  had_updates="true"
+
+  # Branch/tag deletion push. Nothing to check.
+  if [[ "${local_sha}" == "${ZERO_SHA}" ]]; then
+    continue
+  fi
+
+  if [[ "${remote_sha}" == "${ZERO_SHA}" ]]; then
+    remote_head_ref="$(git symbolic-ref --quiet "refs/remotes/${REMOTE_NAME}/HEAD" 2>/dev/null || true)"
+    if [[ -n "${remote_head_ref}" ]]; then
+      base_sha="$(git merge-base "${local_sha}" "${remote_head_ref}" 2>/dev/null || true)"
+      if [[ -n "${base_sha}" ]]; then
+        append_range_files "${base_sha}" "${local_sha}"
+        continue
+      fi
+    fi
+
+    # Fallback for new remote refs when no merge-base can be resolved.
+    append_single_commit_files "${local_sha}"
+    continue
+  fi
+
+  append_range_files "${remote_sha}" "${local_sha}"
+done
+
+# Manual invocation convenience.
+if [[ "${had_updates}" == "false" ]]; then
+  ./format.sh --check --last-commit
+  exit 0
+fi
+
+sort -u "${changed_file_list}" -o "${changed_file_list}"
+
+files=()
+while IFS= read -r file; do
+  [[ -n "${file}" ]] && files+=("${file}")
+done <"${changed_file_list}"
+
+if [[ ${#files[@]} -eq 0 ]]; then
+  echo "No push-related files to format-check."
+  exit 0
+fi
+
+if ! ./format.sh --check -- "${files[@]}"; then
+  echo
+  echo "Pre-push formatting check failed for files in your push range."
+  echo "To fix exactly this push, run:"
+  printf '  ./format.sh --'
+  for file in "${files[@]}"; do
+    printf ' %q' "${file}"
+  done
+  printf '\n'
+  echo
+  echo "If your top commit is a merge commit, this convenience fallback also works:"
+  echo "  ./format.sh --last-commit"
+  exit 1
+fi
