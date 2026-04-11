@@ -1,4 +1,0 @@
-exports_files([
-    "deps.MODULE.bazel",
-    "typing_extensions.BUILD",
-])
