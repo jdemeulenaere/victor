@@ -1,0 +1,15 @@
+load("@rules_kotlin//kotlin:core.bzl", "kt_compiler_plugin")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_import")
+
+kt_jvm_import(
+    name = "compose_compiler_plugin_jar",
+    jars = ["@com_github_jetbrains_kotlin_git//:lib/compose-compiler-plugin_jar"],
+    neverlink = True,
+)
+
+kt_compiler_plugin(
+    name = "compose_compiler_plugin",
+    id = "androidx.compose.compiler.plugins.kotlin",
+    deps = [":compose_compiler_plugin_jar"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,22 @@
+load("@rules_android//rules:rules.bzl", "android_binary")
+load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
+
+kt_android_library(
+    name = "app_lib",
+    srcs = ["MainActivity.kt"],
+    manifest = "AndroidManifest.xml",
+    plugins = ["//toolchains/kotlin/compose:compose_compiler_plugin"],
+    resource_files = glob(["res/**"]),
+    deps = [
+        "@maven//:androidx_activity_activity",
+        "@maven//:androidx_activity_activity_compose",
+        "@maven//:androidx_compose_material3_material3_android",
+    ],
+)
+
+android_binary(
+    name = "app",
+    manifest = "AndroidManifest.xml",
+    deps = [":app_lib"],
+    visibility = ["//visibility:public"],
+)
