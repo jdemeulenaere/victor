@@ -83,11 +83,16 @@ else
       ;;
     last_commit)
       if git rev-parse --verify HEAD >/dev/null 2>&1; then
-        git diff-tree --no-commit-id --name-only -r --diff-filter=ACMR HEAD >"${candidate_file}"
+        # Include file changes for regular and merge commits. `-m` asks Git to
+        # diff merge commits against each parent so files introduced via merge
+        # are included as well.
+        git show -m --name-only --pretty='' --diff-filter=ACMR HEAD >"${candidate_file}"
       fi
       ;;
   esac
 fi
+
+sort -u "${candidate_file}" -o "${candidate_file}"
 
 bazel_files=()
 kotlin_files=()

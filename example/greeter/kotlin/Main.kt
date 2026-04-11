@@ -3,21 +3,16 @@ package victor.backend
 import com.linecorp.armeria.common.grpc.GrpcSerializationFormats
 import com.linecorp.armeria.server.Server
 import com.linecorp.armeria.server.grpc.GrpcService
-import io.grpc.stub.StreamObserver
-import victor.api.v1.GreeterGrpc
+import victor.api.v1.GreeterGrpcKt
 import victor.api.v1.HelloRequest
 import victor.api.v1.HelloResponse
 
 private const val SERVICE_PATH = "/victor.api.v1.Greeter"
 
-class GreeterService : GreeterGrpc.GreeterImplBase() {
-    override fun sayHello(request: HelloRequest, responseObserver: StreamObserver<HelloResponse>) {
+class GreeterService : GreeterGrpcKt.GreeterCoroutineImplBase() {
+    override suspend fun sayHello(request: HelloRequest): HelloResponse {
         val name = request.name.ifBlank { "world" }
-        val response =
-            HelloResponse.newBuilder().setMessage("Hello, $name! (from Kotlin backend)").build()
-
-        responseObserver.onNext(response)
-        responseObserver.onCompleted()
+        return HelloResponse.newBuilder().setMessage("Hello, $name! (from Kotlin backend)").build()
     }
 }
 

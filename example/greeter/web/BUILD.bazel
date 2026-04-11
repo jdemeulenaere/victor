@@ -7,7 +7,7 @@ web_app(
         "index.html",
         "main.tsx",
     ],
-    vite_config = "vite.config.mjs",
     visibility = ["//visibility:public"],
+    vite_config = "vite.config.mjs",
     deps = ["//example/greeter/proto:victor_api_js_proto_files"],
 )
