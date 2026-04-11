@@ -4,3 +4,4 @@ bazel-testlogs
 bazel-victor
 
 node_modules
+third_party/npm/node_modules
