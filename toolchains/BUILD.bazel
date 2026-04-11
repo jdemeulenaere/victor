@@ -1,11 +1,8 @@
 load("@aspect_rules_js//js:proto.bzl", "js_proto_toolchain")
-load("@toolchains_npm//:defs.bzl", "npm_link_all_packages")
 load(
-    "@toolchains_npm//toolchains:@bufbuild/protoc-gen-es/package_json.bzl",
+    "@npm//:@bufbuild/protoc-gen-es/package_json.bzl",
     protoc_gen_es_bin = "bin",
 )
-
-npm_link_all_packages(name = "node_modules")
 
 protoc_gen_es_bin.protoc_gen_es_binary(name = "protoc_gen_es")
 
@@ -18,6 +15,6 @@ js_proto_toolchain(
         "target=js+dts",
         "import_extension=js",
     ],
-    runtime = ":node_modules/@bufbuild/protobuf",
+    runtime = "//:node_modules/@bufbuild/protobuf",
     visibility = ["//visibility:public"],
 )
