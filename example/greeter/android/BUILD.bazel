@@ -8,9 +8,9 @@ kt_android_library(
     plugins = ["//toolchains/kotlin/compose:compose_compiler_plugin"],
     resource_files = glob(["res/**"]),
     deps = [
-        "@third_party//:androidx_activity_activity",
-        "@third_party//:androidx_activity_activity_compose",
-        "@third_party//:androidx_compose_material3_material3_android",
+        "@third_party_maven//:androidx_activity_activity",
+        "@third_party_maven//:androidx_activity_activity_compose",
+        "@third_party_maven//:androidx_compose_material3_material3_android",
     ],
 )
 
