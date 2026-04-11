@@ -37,4 +37,4 @@ maven.install(
     name = "maven",
     known_contributing_modules = ["grpc-java", "protobuf", "victor"],
 )
-use_repo(maven, "third_party")
+use_repo(maven, third_party_maven = "third_party")
