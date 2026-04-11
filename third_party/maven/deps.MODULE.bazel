@@ -1,34 +1,11 @@
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.from_toml(
+    name = "third_party",
     libs_versions_toml = "//third_party/maven:libs.versions.toml",
 )
 
-FORCE_COORDINATES = [
-    "com.google.code.findbugs:jsr305",
-    "com.google.code.gson:gson",
-    "com.google.errorprone:error_prone_annotations",
-    "com.google.guava:guava",
-    "io.netty:netty-buffer",
-    "io.netty:netty-codec",
-    "io.netty:netty-codec-http",
-    "io.netty:netty-codec-http2",
-    "io.netty:netty-codec-socks",
-    "io.netty:netty-common",
-    "io.netty:netty-handler",
-    "io.netty:netty-handler-proxy",
-    "io.netty:netty-resolver",
-    "io.netty:netty-transport",
-    "io.netty:netty-transport-native-unix-common",
-]
-
-_ = [maven.amend_artifact(
-        name = "maven",
-        coordinates = coordinates,
-        force_version = True,
-    ) for coordinates in FORCE_COORDINATES]
-
 maven.install(
-    name = "maven",
+    name = "third_party",
     aar_import_bzl_label = "@rules_android//rules:rules.bzl",
     lock_file = "//third_party/maven:maven_install.json",
     version_conflict_policy = "pinned",
@@ -38,4 +15,26 @@ maven.install(
     ],
     use_starlark_android_rules = True,
 )
-use_repo(maven, "maven")
+
+# Keep a separate shared @maven repo for transitive modules (grpc-java/protobuf).
+# This avoids mixing first-party TOML dependencies into their graph.
+MAVEN_FORCE_ARTIFACTS = [
+    ("com.google.code.findbugs", "jsr305", "3.0.2"),
+    ("com.google.code.gson", "gson", "2.12.1"),
+    ("com.google.errorprone", "error_prone_annotations", "2.44.0"),
+    ("com.google.guava", "guava", "32.0.1-jre"),
+]
+
+_ = [maven.artifact(
+        name = "maven",
+        group = group,
+        artifact = artifact,
+        version = version,
+        force_version = True,
+    ) for (group, artifact, version) in MAVEN_FORCE_ARTIFACTS]
+
+maven.install(
+    name = "maven",
+    known_contributing_modules = ["grpc-java", "protobuf", "victor"],
+)
+use_repo(maven, "third_party")
