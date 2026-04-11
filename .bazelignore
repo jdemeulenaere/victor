@@ -4,5 +4,3 @@ bazel-testlogs
 bazel-victor
 
 node_modules
-toolchains/node_modules
-example/greeter/web/node_modules
