@@ -6,7 +6,7 @@ settings:
 
 importers:
 
-  .:
+  ../..:
     dependencies:
       '@bufbuild/protobuf':
         specifier: 2.11.0

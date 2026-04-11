@@ -1,0 +1,8 @@
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//third_party/npm:pnpm-lock.yaml",
+    run_lifecycle_hooks = False,
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(npm, "npm")

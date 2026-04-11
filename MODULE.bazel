@@ -70,14 +70,6 @@ http_archive(
 )
 
 include("//third_party/maven:deps.MODULE.bazel")
-
-npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
-npm.npm_translate_lock(
-    name = "npm",
-    pnpm_lock = "//:pnpm-lock.yaml",
-    run_lifecycle_hooks = False,
-    verify_node_modules_ignored = "//:.bazelignore",
-)
-use_repo(npm, "npm")
+include("//third_party/npm:deps.MODULE.bazel")
 
 register_toolchains("//toolchains:gen_es_toolchain")
