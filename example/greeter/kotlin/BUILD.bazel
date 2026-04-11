@@ -3,13 +3,13 @@ load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
 kt_jvm_binary(
     name = "backend",
     srcs = ["Main.kt"],
-    resources = ["logback.xml"],
     main_class = "victor.backend.MainKt",
+    resources = ["logback.xml"],
+    visibility = ["//visibility:public"],
     deps = [
         "//example/greeter/proto:victor_api_java_grpc",
         "@third_party_maven//:ch_qos_logback_logback_classic",
         "@third_party_maven//:com_linecorp_armeria_armeria",
         "@third_party_maven//:com_linecorp_armeria_armeria_grpc",
     ],
-    visibility = ["//visibility:public"],
 )

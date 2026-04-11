@@ -3,51 +3,7 @@ module(
     version = "0.1.0",
 )
 
-# Core rules used in this repository.
-bazel_dep(name = "rules_java", version = "9.6.1")
-bazel_dep(name = "rules_kotlin", version = "2.3.20")
-bazel_dep(name = "rules_android", version = "0.7.1")
-bazel_dep(name = "rules_jvm_external", version = "6.9")
-bazel_dep(name = "rules_proto", version = "7.1.0")
-bazel_dep(name = "protobuf", version = "33.4", repo_name = "com_google_protobuf")
-bazel_dep(name = "grpc", version = "1.80.0")
-bazel_dep(name = "grpc-java", version = "1.78.0.bcr.1")
-bazel_dep(name = "rules_python", version = "1.9.0")
-bazel_dep(name = "rules_go", version = "0.59.0", repo_name = "io_bazel_rules_go")
-bazel_dep(name = "aspect_rules_js", version = "3.0.3")
-
-single_version_override(
-    module_name = "rules_swift",
-    version = "3.1.2",
-)
-
-single_version_override(
-    module_name = "grpc",
-    version = "1.80.0",
-    patch_strip = 1,
-    patches = ["//third_party/grpc:typing_extensions_import_path.patch"],
-)
-
-# Root-level Go SDK pin: rules_android's Gazelle deps currently resolve a module
-# that requires Go >= 1.23.
-go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
-go_sdk.download(version = "1.23.10")
-
-# Pin the Python toolchain for Python targets.
-python = use_extension("@rules_python//python/extensions:python.bzl", "python")
-python.toolchain(
-    python_version = "3.14.2",
-)
-use_repo(python, "python_3_14_2")
-
-# Expose Android SDK/toolchains for first-party android_* targets.
-android_sdk_repository_extension = use_extension(
-    "@rules_android//rules/android_sdk_repository:rule.bzl",
-    "android_sdk_repository_extension",
-)
-use_repo(android_sdk_repository_extension, "androidsdk")
-register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
-
-include("//third_party:deps.MODULE.bazel")
-
-register_toolchains("//toolchains/web/proto:gen_es_toolchain")
+# Rules, third-party dependencies, and toolchain configuration.
+include("//rules:rules.MODULE.bazel")
+include("//third_party:third_party.MODULE.bazel")
+include("//toolchains:toolchains.MODULE.bazel")

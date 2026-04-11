@@ -1,5 +1,5 @@
 exports_files([
-    "deps.MODULE.bazel",
+    "maven.MODULE.bazel",
     "libs.versions.toml",
     "maven_install.json",
 ])
