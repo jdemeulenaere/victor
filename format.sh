@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic formatter/checker for Bazel, Kotlin, Python, and TypeScript.
+# Deterministic formatter/checker for Bazel, Kotlin, Python, TypeScript, and keep-sorted blocks.
 #
 # Default mode is "fix" (rewrite files) over all tracked files.
 # Use --check to verify formatting without rewriting.
@@ -89,6 +89,7 @@ sort -u "${candidate_file}" -o "${candidate_file}"
 bazel_files=()
 kotlin_files=()
 python_files=()
+keep_sorted_files=()
 typescript_files=()
 
 while IFS= read -r path; do
@@ -103,6 +104,8 @@ while IFS= read -r path; do
 
   abs="${ROOT}/${rel}"
   [[ -f "${abs}" ]] || continue
+
+  keep_sorted_files+=("${abs}")
 
   case "${rel}" in
     BUILD | BUILD.bazel | WORKSPACE | WORKSPACE.bazel | MODULE.bazel | *.MODULE.bazel | *.bzl | */BUILD | */BUILD.bazel | */WORKSPACE | */WORKSPACE.bazel | */MODULE.bazel)
@@ -130,6 +133,15 @@ while IFS= read -r path; do
 done <"${candidate_file}"
 
 echo "Formatting mode: ${MODE} (${SELECTOR})"
+
+if [[ ${#keep_sorted_files[@]} -gt 0 ]]; then
+  echo "keep-sorted files: ${#keep_sorted_files[@]}"
+  if [[ "${MODE}" == "check" ]]; then
+    bazel run //tools/format/keep_sorted:keep_sorted -- --mode=lint "${keep_sorted_files[@]}"
+  else
+    bazel run //tools/format/keep_sorted:keep_sorted -- --mode=fix "${keep_sorted_files[@]}"
+  fi
+fi
 
 if [[ ${#bazel_files[@]} -gt 0 ]]; then
   echo "Bazel/Starlark files: ${#bazel_files[@]}"

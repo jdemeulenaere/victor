@@ -1,0 +1,16 @@
+# keep-sorted prebuilt binaries managed via Bazel repositories.
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "keep_sorted_darwin",
+    executable = True,
+    sha256 = "69c08efec90d6ba626b5c1296d0edcd84e1f79dce7ffeb5404d338dd0ff45807",
+    urls = ["https://github.com/google/keep-sorted/releases/download/v0.8.0/keep-sorted_darwin"],
+)
+
+http_file(
+    name = "keep_sorted_linux",
+    executable = True,
+    sha256 = "0d9801785ac354232ea754bbfd8cc204a5e255905e14bcbff5fe8733e4dbd85c",
+    urls = ["https://github.com/google/keep-sorted/releases/download/v0.8.0/keep-sorted_linux"],
+)
