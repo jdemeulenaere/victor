@@ -59,17 +59,6 @@ use_repo(
     "kotlinx_serialization_json_jvm",
 )
 
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_archive(
-    name = "typing_extensions",
-    build_file = "//third_party:typing_extensions.BUILD",
-    integrity = "sha256-v29Ws22LyRVuUY6xzDehRihAgvpTUiAz93Ku++z9Ffw=",
-    strip_prefix = "typing_extensions-4.12.2",
-    url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
-)
-
-include("//third_party/maven:deps.MODULE.bazel")
-include("//third_party/npm:deps.MODULE.bazel")
+include("//third_party:deps.MODULE.bazel")
 
 register_toolchains("//toolchains:gen_es_toolchain")
