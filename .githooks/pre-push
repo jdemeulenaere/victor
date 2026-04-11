@@ -50,7 +50,7 @@ done
 
 # Manual invocation convenience.
 if [[ "${had_updates}" == "false" ]]; then
-  ./format.sh --check --last-commit
+  bazel run //:format_check -- --last-commit
   exit 0
 fi
 
@@ -66,17 +66,14 @@ if [[ ${#files[@]} -eq 0 ]]; then
   exit 0
 fi
 
-if ! ./format.sh --check -- "${files[@]}"; then
+if ! bazel run //:format_check -- -- "${files[@]}"; then
   echo
   echo "Pre-push formatting check failed for files in your push range."
   echo "To fix exactly this push, run:"
-  printf '  ./format.sh --'
+  printf '  bazel run //:format -- --'
   for file in "${files[@]}"; do
     printf ' %q' "${file}"
   done
   printf '\n'
-  echo
-  echo "If your top commit is a merge commit, this convenience fallback also works:"
-  echo "  ./format.sh --last-commit"
   exit 1
 fi

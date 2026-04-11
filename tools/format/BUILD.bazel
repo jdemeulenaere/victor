@@ -1,0 +1,14 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+sh_binary(
+    name = "format",
+    srcs = ["//:format.sh"],
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "format_check",
+    srcs = ["//:format.sh"],
+    args = ["--check"],
+    visibility = ["//visibility:public"],
+)

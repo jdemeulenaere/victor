@@ -8,4 +8,4 @@ cd "${ROOT}"
 
 git config core.hooksPath .githooks
 echo "Configured git hooks path: .githooks"
-echo "Pre-push hook will run ./format.sh --check on files in the push range"
+echo "Pre-push hook will run bazel run //:format_check on files in the push range"
