@@ -1,0 +1,26 @@
+--- a/mobile_install/adapters_base.bzl
++++ b/mobile_install/adapters_base.bzl
+@@ -20,7 +20,9 @@
+ load("//mobile_install/adapters:default.bzl", "default_adapter")
+ load("//mobile_install/adapters:java_import.bzl", "java_import")
+ load("//mobile_install/adapters:java_library.bzl", "java_library")
++load("//mobile_install/adapters:java_lite_grpc_library.bzl", "java_lite_grpc_library")
+ load("//mobile_install/adapters:java_lite_proto_library.bzl", "java_lite_proto_library")
++load("//mobile_install/adapters:java_rpc_toolchain.bzl", "java_rpc_toolchain")
+ load("//mobile_install/adapters:proto_lang_toolchain.bzl", "proto_lang_toolchain")
+ load("//mobile_install/adapters:proto_library.bzl", "proto_library")
+ load("//rules:visibility.bzl", "PROJECT_VISIBILITY")
+@@ -32,9 +34,13 @@ ADAPTERS = dict(
+     aar_import = aar_import,
+     android_binary = android_binary,
+     android_library = android_library,
++    _java_grpc_library = java_lite_grpc_library,
++    _java_lite_grpc_library = java_lite_grpc_library,
++    _kt_jvm_grpc_library = java_lite_grpc_library,
+     apk_import = apk_import,
+     java_import = java_import,
+     java_library = java_library,
++    java_rpc_toolchain = java_rpc_toolchain,
+     java_lite_proto_library = java_lite_proto_library,
+     proto_lang_toolchain = proto_lang_toolchain,
+     proto_library = proto_library,

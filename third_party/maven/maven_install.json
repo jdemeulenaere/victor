@@ -23,8 +23,11 @@
     "androidx.test:monitor": -253672002,
     "ch.qos.logback:logback-classic": -1175440342,
     "com.facebook:ktfmt": 1647471833,
+    "com.google.protobuf:protobuf-java": 1906581597,
+    "com.google.protobuf:protobuf-java-util": -1626074784,
     "com.linecorp.armeria:armeria": -1975223659,
     "com.linecorp.armeria:armeria-grpc": 1113170100,
+    "io.grpc:grpc-okhttp": 2120822482,
     "junit:junit": -744267592,
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin": -601922000,
     "org.robolectric:robolectric": -1784339344,
@@ -140,7 +143,7 @@
     "com.fasterxml.jackson.datatype:jackson-datatype-jdk8": 1414302893,
     "com.fasterxml.jackson.datatype:jackson-datatype-jsr310": 1771227479,
     "com.google.android:annotations": 2096496032,
-    "com.google.api.grpc:proto-google-common-protos": -797154521,
+    "com.google.api.grpc:proto-google-common-protos": 1503110824,
     "com.google.auto.value:auto-value-annotations": 641018093,
     "com.google.code.findbugs:jsr305": 870839855,
     "com.google.code.gson:gson": 326277452,
@@ -151,23 +154,26 @@
     "com.google.guava:guava": -1892148242,
     "com.google.guava:listenablefuture": 1079558157,
     "com.google.j2objc:j2objc-annotations": -1008747351,
-    "com.google.protobuf:protobuf-java": -1052340688,
-    "com.google.protobuf:protobuf-java-util": 628328830,
+    "com.google.protobuf:protobuf-java": 1957269082,
+    "com.google.protobuf:protobuf-java-util": 1401016053,
     "com.google.testparameterinjector:test-parameter-injector": 1926198670,
     "com.ibm.icu:icu4j": -738875849,
     "com.linecorp.armeria:armeria": 1850415820,
-    "com.linecorp.armeria:armeria-grpc": -493348760,
+    "com.linecorp.armeria:armeria-grpc": 1106710916,
     "com.linecorp.armeria:armeria-grpc-protocol": 118456469,
-    "com.linecorp.armeria:armeria-protobuf": -1908131920,
+    "com.linecorp.armeria:armeria-protobuf": -2051462924,
+    "com.squareup.okio:okio": 70313910,
+    "com.squareup.okio:okio-jvm": -1695658535,
     "com.squareup:javawriter": -119987150,
-    "io.grpc:grpc-api": -1181567338,
-    "io.grpc:grpc-context": 1431700659,
-    "io.grpc:grpc-core": -1169100303,
-    "io.grpc:grpc-protobuf": -1838626082,
-    "io.grpc:grpc-protobuf-lite": -1920837679,
-    "io.grpc:grpc-services": 941009174,
-    "io.grpc:grpc-stub": -1723400380,
-    "io.grpc:grpc-util": 1167684626,
+    "io.grpc:grpc-api": 1379830792,
+    "io.grpc:grpc-context": 1879841908,
+    "io.grpc:grpc-core": 1929606833,
+    "io.grpc:grpc-okhttp": -1458144145,
+    "io.grpc:grpc-protobuf": 1076023284,
+    "io.grpc:grpc-protobuf-lite": 1771695510,
+    "io.grpc:grpc-services": -1792784360,
+    "io.grpc:grpc-stub": -1476587509,
+    "io.grpc:grpc-util": -337694197,
     "io.micrometer:context-propagation": -616873396,
     "io.micrometer:micrometer-commons": -1200386259,
     "io.micrometer:micrometer-core": 1697644627,
@@ -227,6 +233,9 @@
     "org.jetbrains.kotlin:kotlin-reflect": 1459798757,
     "org.jetbrains.kotlin:kotlin-script-runtime": -803233219,
     "org.jetbrains.kotlin:kotlin-stdlib": -544128162,
+    "org.jetbrains.kotlin:kotlin-stdlib-common": 330909839,
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7": -356671392,
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8": -1616501333,
     "org.jetbrains.kotlinx:atomicfu": -951604291,
     "org.jetbrains.kotlinx:atomicfu-jvm": -590004520,
     "org.jetbrains.kotlinx:kotlinx-coroutines-android": -1806559038,
@@ -980,15 +989,15 @@
     },
     "com.google.protobuf:protobuf-java": {
       "shasums": {
-        "jar": "72bdb32eb38cafb7dcd288262c29a34d57cba2e19101af9685155ba8c0a56008"
+        "jar": "3ca892fd6ea8b37d01bb6917dbc0bf2637548b756753f65a28d4f1d4d982347f"
       },
-      "version": "3.25.8"
+      "version": "4.33.4"
     },
     "com.google.protobuf:protobuf-java-util": {
       "shasums": {
-        "jar": "e7196eaefc3f81afa1571821635c7aefe2933f4be4a9df9e601fb59214b50269"
+        "jar": "6f02f04c5ca088e74b68dbbaf118f1ffa9d587958e637f893e0f8a1899a61342"
       },
-      "version": "3.25.8"
+      "version": "4.33.4"
     },
     "com.google.testparameterinjector:test-parameter-injector": {
       "shasums": {
@@ -1026,6 +1035,18 @@
       },
       "version": "1.38.0"
     },
+    "com.squareup.okio:okio": {
+      "shasums": {
+        "jar": "18780c5d229bd00895cf28b913c5a1e585dbf0aab8f410fc48392e1783abb442"
+      },
+      "version": "3.4.0"
+    },
+    "com.squareup.okio:okio-jvm": {
+      "shasums": {
+        "jar": "0139ec7a506dbbd54cad62291b019cb850534be097c8c66c1000d5fbe8edef3e"
+      },
+      "version": "3.4.0"
+    },
     "com.squareup:javawriter": {
       "shasums": {
         "jar": "f699823d0081f69cbb676c1845ea222e0ada79bc88a53e5d22d8bd02d328f57e"
@@ -1047,6 +1068,12 @@
     "io.grpc:grpc-core": {
       "shasums": {
         "jar": "b617121f33ea79b0cfc26e2e19475e64e0c4161d28c78cf56f7db7bbb9a81fbe"
+      },
+      "version": "1.80.0"
+    },
+    "io.grpc:grpc-okhttp": {
+      "shasums": {
+        "jar": "109cb0b02b6c7f1ec6fb5c74bc37cddb3c38b16abcf8c4be9b6efa24821795ae"
       },
       "version": "1.80.0"
     },
@@ -1378,6 +1405,24 @@
         "jar": "0ae12504a5040ebaf37703908483420d1a5624dd1d93f357665f8c77c848a01e"
       },
       "version": "2.3.20"
+    },
+    "org.jetbrains.kotlin:kotlin-stdlib-common": {
+      "shasums": {
+        "jar": "78ef93b59e603cc0fe51def9bd4c037b07cbace3b3b7806d1a490a42bc1f4cb2"
+      },
+      "version": "1.8.0"
+    },
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7": {
+      "shasums": {
+        "jar": "4c889d1d9803f5f2eb6c1592a6b7e62369ac7660c9eee15aba16fec059163666"
+      },
+      "version": "1.8.0"
+    },
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8": {
+      "shasums": {
+        "jar": "05b62804441b0c9a1920b6b7d5cf7329a4e24b6258478e32b1f046ca01900946"
+      },
+      "version": "1.8.0"
     },
     "org.jetbrains.kotlinx:atomicfu": {
       "shasums": {
@@ -2245,8 +2290,7 @@
     "com.google.protobuf:protobuf-java-util": [
       "com.google.code.findbugs:jsr305",
       "com.google.code.gson:gson",
-      "com.google.guava:guava",
-      "com.google.j2objc:j2objc-annotations",
+      "com.google.errorprone:error_prone_annotations",
       "com.google.protobuf:protobuf-java"
     ],
     "com.linecorp.armeria:armeria": [
@@ -2309,8 +2353,14 @@
       "com.linecorp.armeria:armeria",
       "org.slf4j:slf4j-api"
     ],
+    "com.squareup.okio:okio": ["com.squareup.okio:okio-jvm"],
+    "com.squareup.okio:okio-jvm": [
+      "org.jetbrains.kotlin:kotlin-stdlib-common",
+      "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    ],
     "io.grpc:grpc-api": [
       "com.google.code.findbugs:jsr305",
+      "com.google.errorprone:error_prone_annotations",
       "com.google.guava:guava"
     ],
     "io.grpc:grpc-context": ["io.grpc:grpc-api"],
@@ -2320,6 +2370,14 @@
       "com.google.guava:guava",
       "io.grpc:grpc-api",
       "io.grpc:grpc-context",
+      "io.perfmark:perfmark-api"
+    ],
+    "io.grpc:grpc-okhttp": [
+      "com.google.guava:guava",
+      "com.squareup.okio:okio",
+      "io.grpc:grpc-api",
+      "io.grpc:grpc-core",
+      "io.grpc:grpc-util",
       "io.perfmark:perfmark-api"
     ],
     "io.grpc:grpc-protobuf": [
@@ -2576,6 +2634,13 @@
       "org.jetbrains.kotlin:kotlin-stdlib"
     ],
     "org.jetbrains.kotlin:kotlin-stdlib": ["org.jetbrains:annotations"],
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7": [
+      "org.jetbrains.kotlin:kotlin-stdlib"
+    ],
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8": [
+      "org.jetbrains.kotlin:kotlin-stdlib",
+      "org.jetbrains.kotlin:kotlin-stdlib-jdk7"
+    ],
     "org.jetbrains.kotlinx:atomicfu": ["org.jetbrains.kotlinx:atomicfu-jvm"],
     "org.jetbrains.kotlinx:atomicfu-jvm": [
       "org.jetbrains.kotlin:kotlin-stdlib"
@@ -3231,9 +3296,16 @@
     "com.linecorp.armeria:armeria-protobuf": [
       "com.linecorp.armeria.server.protobuf"
     ],
+    "com.squareup.okio:okio-jvm": ["okio", "okio.internal"],
     "com.squareup:javawriter": ["com.squareup.javawriter"],
     "io.grpc:grpc-api": ["io.grpc"],
     "io.grpc:grpc-core": ["io.grpc.internal"],
+    "io.grpc:grpc-okhttp": [
+      "io.grpc.okhttp",
+      "io.grpc.okhttp.internal",
+      "io.grpc.okhttp.internal.framed",
+      "io.grpc.okhttp.internal.proxy"
+    ],
     "io.grpc:grpc-protobuf": ["io.grpc.protobuf"],
     "io.grpc:grpc-protobuf-lite": ["io.grpc.protobuf.lite"],
     "io.grpc:grpc-services": [
@@ -5040,10 +5112,13 @@
       "com.linecorp.armeria:armeria-grpc",
       "com.linecorp.armeria:armeria-grpc-protocol",
       "com.linecorp.armeria:armeria-protobuf",
+      "com.squareup.okio:okio",
+      "com.squareup.okio:okio-jvm",
       "com.squareup:javawriter",
       "io.grpc:grpc-api",
       "io.grpc:grpc-context",
       "io.grpc:grpc-core",
+      "io.grpc:grpc-okhttp",
       "io.grpc:grpc-protobuf",
       "io.grpc:grpc-protobuf-lite",
       "io.grpc:grpc-services",
@@ -5108,6 +5183,9 @@
       "org.jetbrains.kotlin:kotlin-reflect",
       "org.jetbrains.kotlin:kotlin-script-runtime",
       "org.jetbrains.kotlin:kotlin-stdlib",
+      "org.jetbrains.kotlin:kotlin-stdlib-common",
+      "org.jetbrains.kotlin:kotlin-stdlib-jdk7",
+      "org.jetbrains.kotlin:kotlin-stdlib-jdk8",
       "org.jetbrains.kotlinx:atomicfu",
       "org.jetbrains.kotlinx:atomicfu-jvm",
       "org.jetbrains.kotlinx:kotlinx-coroutines-android",
@@ -5267,10 +5345,13 @@
       "com.linecorp.armeria:armeria-grpc",
       "com.linecorp.armeria:armeria-grpc-protocol",
       "com.linecorp.armeria:armeria-protobuf",
+      "com.squareup.okio:okio",
+      "com.squareup.okio:okio-jvm",
       "com.squareup:javawriter",
       "io.grpc:grpc-api",
       "io.grpc:grpc-context",
       "io.grpc:grpc-core",
+      "io.grpc:grpc-okhttp",
       "io.grpc:grpc-protobuf",
       "io.grpc:grpc-protobuf-lite",
       "io.grpc:grpc-services",
@@ -5335,6 +5416,9 @@
       "org.jetbrains.kotlin:kotlin-reflect",
       "org.jetbrains.kotlin:kotlin-script-runtime",
       "org.jetbrains.kotlin:kotlin-stdlib",
+      "org.jetbrains.kotlin:kotlin-stdlib-common",
+      "org.jetbrains.kotlin:kotlin-stdlib-jdk7",
+      "org.jetbrains.kotlin:kotlin-stdlib-jdk8",
       "org.jetbrains.kotlinx:atomicfu",
       "org.jetbrains.kotlinx:atomicfu-jvm",
       "org.jetbrains.kotlinx:kotlinx-coroutines-android",
@@ -5466,6 +5550,12 @@
       "io.grpc.NameResolverProvider": [
         "io.grpc.internal.DnsNameResolverProvider"
       ]
+    },
+    "io.grpc:grpc-okhttp": {
+      "io.grpc.ManagedChannelProvider": [
+        "io.grpc.okhttp.OkHttpChannelProvider"
+      ],
+      "io.grpc.ServerProvider": ["io.grpc.okhttp.OkHttpServerProvider"]
     },
     "io.grpc:grpc-services": {
       "io.grpc.LoadBalancerProvider": [
