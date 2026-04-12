@@ -11,6 +11,7 @@ kt_android_library(
     deps = [
         "@third_party_maven//:androidx_activity_activity",
         "@third_party_maven//:androidx_activity_activity_compose",
+        "@third_party_maven//:androidx_activity_activity_ktx",
         "@third_party_maven//:androidx_compose_material3_material3_android",
     ],
 )

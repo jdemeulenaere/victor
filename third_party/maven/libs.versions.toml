@@ -1,6 +1,6 @@
 [versions]
 # keep-sorted start
-androidx-activity = "1.7.0"
+androidx-activity = "1.8.2"
 androidx-collection = "1.6.0"
 androidx-compose = "1.10.6"
 androidx-compose-material3 = "1.4.0"
