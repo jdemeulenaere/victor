@@ -22,7 +22,10 @@ kt_multiplatform_library(
     android_custom_package = "victor.example.multiplatform",
     visibility = ["//visibility:public"],
     deps = {
-        "common": [":library"],
+        "common": [
+            ":library",
+            "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_coroutines_core",
+        ],
     },
 )
 

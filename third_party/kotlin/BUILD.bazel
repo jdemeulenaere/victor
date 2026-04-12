@@ -1,1 +1,3 @@
-exports_files(["rules_kotlin_multiplatform_flags.patch"])
+exports_files([
+    "rules_kotlin_multiplatform_flags.patch",
+])
