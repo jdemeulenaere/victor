@@ -1,5 +1,9 @@
 common --enable_bzlmod
 common --incompatible_autoload_externally=cc_binary,cc_import,cc_library,cc_test,java_binary,java_library,java_proto_library,proto_library,py_binary,py_library
+# Required so proto language toolchains are selected via toolchain resolution.
+common --incompatible_enable_proto_toolchain_resolution
+# Use protobuf's prebuilt protoc (v33.4+) to avoid rebuilding C++ protobuf tools on clean builds.
+common --@com_google_protobuf//bazel/toolchains:prefer_prebuilt_protoc
 
 common --java_runtime_version=remotejdk_21
 common --tool_java_runtime_version=remotejdk_21

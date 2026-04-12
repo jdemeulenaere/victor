@@ -43,8 +43,36 @@ single_version_override(
 )
 
 single_version_override(
+    module_name = "grpc-java",
+    patch_strip = 1,
+    patches = [
+        "//third_party/grpc-java:prebuilt_grpc_java_plugin_build.patch",
+        "//third_party/grpc-java:prebuilt_grpc_java_plugin_module.patch",
+        "//third_party/grpc-java:protobuf_java_runtime_compiler.patch",
+        "//third_party/grpc-java:protobuf_java_runtime_protobuf.patch",
+        "//third_party/grpc-java:protobuf_java_runtime_protobuf_lite.patch",
+    ],
+    version = "1.78.0.bcr.1",
+)
+
+single_version_override(
+    module_name = "protobuf",
+    patch_strip = 1,
+    patches = [
+        "//third_party/protobuf:java_core_toolchain_runtime_from_maven.patch",
+        "//third_party/protobuf:java_lite_toolchain_runtime_from_maven.patch",
+        "//third_party/protobuf:protobuf_java_aliases_from_maven.patch",
+        "//third_party/protobuf:prebuilt_protoc_for_direct_label.patch",
+    ],
+    version = "33.4",
+)
+
+single_version_override(
     module_name = "grpc",
     patch_strip = 1,
-    patches = ["//third_party/grpc:typing_extensions_import_path.patch"],
+    patches = [
+        "//third_party/grpc:py_grpc_library_plugin_override.patch",
+        "//third_party/grpc:typing_extensions_import_path.patch",
+    ],
     version = "1.80.0",
 )

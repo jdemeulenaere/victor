@@ -1,0 +1,6 @@
+exports_files([
+    # keep-sorted start
+    "pip.MODULE.bazel",
+    "requirements_lock.txt",
+    # keep-sorted end
+])

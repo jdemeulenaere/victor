@@ -1,0 +1,11 @@
+--- a/compiler/BUILD.bazel
++++ b/compiler/BUILD.bazel
+@@ -48,7 +48,7 @@
+         "//stub",
+         artifact("com.google.code.findbugs:jsr305"),
+         artifact("com.google.guava:guava"),
+-        "@com_google_protobuf//:protobuf_java",
++        artifact("com.google.protobuf:protobuf-java"),
+     ],
+ )
+ 

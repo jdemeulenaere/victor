@@ -1,0 +1,25 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -618,19 +618,19 @@
+ 
+ alias(
+     name = "protobuf_java",
+-    actual = "//java/core",
++    actual = "@@rules_jvm_external++maven+third_party//:com_google_protobuf_protobuf_java",
+     visibility = ["//visibility:public"],
+ )
+ 
+ alias(
+     name = "protobuf_javalite",
+-    actual = "//java/lite",
++    actual = "@@rules_jvm_external++maven+third_party//:com_google_protobuf_protobuf_java",
+     visibility = ["//visibility:public"],
+ )
+ 
+ alias(
+     name = "protobuf_java_util",
+-    actual = "//java/util",
++    actual = "@@rules_jvm_external++maven+third_party//:com_google_protobuf_protobuf_java_util",
+     visibility = ["//visibility:public"],
+ )
+ 

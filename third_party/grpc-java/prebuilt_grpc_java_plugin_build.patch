@@ -1,0 +1,54 @@
+--- a/compiler/BUILD.bazel
++++ b/compiler/BUILD.bazel
+@@ -1,5 +1,4 @@
+ load("@rules_java//java:defs.bzl", "java_library")
+-load("@rules_cc//cc:defs.bzl", "cc_binary")
+ load("@rules_jvm_external//:defs.bzl", "artifact")
+ load("//:java_grpc_library.bzl", "java_rpc_toolchain")
+ 
+@@ -7,15 +6,38 @@ load("//:java_grpc_library.bzl", "java_rpc_toolchain")
+ # This should not generally be referenced. Users should use java_grpc_library
+-cc_binary(
++genrule(
+     name = "grpc_java_plugin",
+     srcs = [
+-        "src/java_plugin/cpp/java_generator.cpp",
+-        "src/java_plugin/cpp/java_generator.h",
+-        "src/java_plugin/cpp/java_plugin.cpp",
++        "@grpc_java_plugin_linux_aarch_64//file",
++        "@grpc_java_plugin_linux_x86_64//file",
++        "@grpc_java_plugin_osx_aarch_64//file",
++        "@grpc_java_plugin_osx_x86_64//file",
+     ],
++    executable = True,
++    outs = ["grpc_java_plugin_bin"],
++    cmd = """
++set -euo pipefail
++case "$$(uname -s):$$(uname -m)" in
++  Darwin:arm64|Darwin:aarch64)
++    src="$(location @grpc_java_plugin_osx_aarch_64//file)"
++    ;;
++  Darwin:x86_64|Darwin:amd64)
++    src="$(location @grpc_java_plugin_osx_x86_64//file)"
++    ;;
++  Linux:arm64|Linux:aarch64)
++    src="$(location @grpc_java_plugin_linux_aarch_64//file)"
++    ;;
++  Linux:x86_64|Linux:amd64)
++    src="$(location @grpc_java_plugin_linux_x86_64//file)"
++    ;;
++  *)
++    echo "Unsupported host platform for grpc_java_plugin: $$(uname -s):$$(uname -m)" >&2
++    exit 2
++    ;;
++esac
++cp "$$src" "$@"
++chmod +x "$@"
++""",
+     visibility = ["//visibility:public"],
+-    deps = [
+-        "@com_google_protobuf//:protoc_lib",
+-    ],
+ )
+ 
+ java_library(

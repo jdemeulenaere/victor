@@ -1,0 +1,53 @@
+--- a/bazel/python_rules.bzl	2026-04-12 18:43:38
++++ b/bazel/python_rules.bzl	2026-04-12 18:43:38
+@@ -207,7 +207,7 @@
+     plugin_flags = ["grpc_2_0"] + context.attr.strip_prefixes
+ 
+     arguments = []
+-    tools = [context.executable._protoc, context.executable._grpc_plugin]
++    tools = [context.executable._protoc, context.executable.grpc_plugin]
+     out_dir = get_out_dir(protos, context)
+     if out_dir.import_path:
+         # is virtual imports
+@@ -215,7 +215,7 @@
+     else:
+         out_path = out_dir.path
+     arguments += get_plugin_args(
+-        context.executable._grpc_plugin,
++        context.executable.grpc_plugin,
+         plugin_flags,
+         out_path,
+         False,
+@@ -283,7 +283,7 @@
+             providers = [PyInfo],
+         ),
+         "strip_prefixes": attr.string_list(),
+-        "_grpc_plugin": attr.label(
++        "grpc_plugin": attr.label(
+             executable = True,
+             cfg = "exec",
+             default = Label("//src/compiler:grpc_python_plugin"),
+@@ -307,6 +307,7 @@
+         deps,
+         strip_prefixes = [],
+         grpc_library = Label("//src/python/grpcio/grpc:grpcio"),
++        grpc_plugin = Label("//src/compiler:grpc_python_plugin"),
+         **kwargs):
+     """Generate python code for gRPC services defined in a protobuf.
+ 
+@@ -323,6 +324,8 @@
+       grpc_library: (`label`) a single `py_library` target representing the
+         python gRPC library target to be depended upon. This can be used to
+         generate code that depends on `grpcio` from the Python Package Index.
++      grpc_plugin: (`label`) protoc plugin executable used to generate
++        `*_pb2_grpc.py` files.
+       **kwargs: Additional arguments to be supplied to the invocation of
+         py_library.
+     """
+@@ -338,5 +341,6 @@
+         py_deps = deps,
+         strip_prefixes = strip_prefixes,
+         grpc_library = grpc_library,
++        grpc_plugin = grpc_plugin,
+         **kwargs
+     )

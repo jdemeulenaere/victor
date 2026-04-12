@@ -1,0 +1,6 @@
+exports_files([
+    "java_core_toolchain_runtime_from_maven.patch",
+    "java_lite_toolchain_runtime_from_maven.patch",
+    "protobuf_java_aliases_from_maven.patch",
+    "prebuilt_protoc_for_direct_label.patch",
+])

@@ -1,0 +1,10 @@
+--- a/java/core/BUILD.bazel
++++ b/java/core/BUILD.bazel
+@@ -341,6 +341,6 @@ proto_lang_toolchain(
+         "//:wrappers_proto",
+     ],
+     command_line = "--java_out=$(OUT)",
+-    runtime = ":core",
++    runtime = "@@rules_jvm_external++maven+third_party//:com_google_protobuf_protobuf_java",
+     visibility = ["//visibility:public"],
+ )
