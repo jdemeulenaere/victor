@@ -24,7 +24,7 @@ maven.install(
     aar_import_bzl_label = "@rules_android//rules:rules.bzl",
     lock_file = "//third_party/maven:maven_install.json",
     repositories = [
-        "https://repo1.maven.org/maven2",
+        "https://repo.maven.apache.org/maven2",
         "https://maven.google.com",
     ],
     use_starlark_android_rules = True,
@@ -63,6 +63,10 @@ maven.install(
         "protobuf",
         "victor",
         # keep-sorted end
+    ],
+    repositories = [
+        "https://repo.maven.apache.org/maven2",
+        "https://maven.google.com",
     ],
 )
 use_repo(maven, third_party_maven = "third_party")
