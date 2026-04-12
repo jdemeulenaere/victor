@@ -11,26 +11,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
+const val MAIN_ACTIVITY_GREETING_TEXT = "Hello from Bazel + Kotlin + Compose!"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
-            MaterialTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Box(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .padding(innerPadding)
-                                .consumeWindowInsets(innerPadding),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(text = "Hello from Bazel + Kotlin + Compose!")
-                    }
-                }
+        setContent { MainActivityContent() }
+    }
+}
+
+@Composable
+fun MainActivityContent() {
+    MaterialTheme {
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            Box(
+                modifier =
+                    Modifier.fillMaxSize().padding(innerPadding).consumeWindowInsets(innerPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = MAIN_ACTIVITY_GREETING_TEXT)
             }
         }
     }
