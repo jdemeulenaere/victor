@@ -126,8 +126,11 @@ def kt_multiplatform_library(
         x_multi_platform = True,
     )
 
-    jvm_all_deps = [_resolve_common_dep(dep, "jvm") for dep in common_deps] + jvm_deps
-    android_all_deps = [_resolve_common_dep(dep, "android") for dep in common_deps] + android_deps
+    common_jvm_deps = [_resolve_common_dep(dep, "jvm") for dep in common_deps]
+    common_android_deps = [_resolve_common_dep(dep, "android") for dep in common_deps]
+
+    jvm_all_deps = common_jvm_deps + jvm_deps
+    android_all_deps = common_android_deps + android_deps
 
     if jvm:
         kt_jvm_library(
@@ -146,13 +149,15 @@ def kt_multiplatform_library(
     if android:
         manifest = android_manifest
         if not manifest:
-            if not android_custom_package:
-                fail("android_custom_package is required when android_manifest is omitted")
+            manifest_package = android_custom_package
+            if not manifest_package:
+                package_name = native.package_name().replace("/", ".").replace("-", "_")
+                manifest_package = "generated.{}.{}".format(package_name, name.replace("-", "_"))
             generated_manifest = "{}_android_manifest.xml".format(name)
             native.genrule(
                 name = "{}_android_manifest".format(name),
                 outs = [generated_manifest],
-                cmd = "echo '<manifest package=\"{}\" />' > \"$@\"".format(android_custom_package),
+                cmd = "echo '<manifest package=\"{}\" />' > \"$@\"".format(manifest_package),
             )
             manifest = ":{}".format(generated_manifest)
 

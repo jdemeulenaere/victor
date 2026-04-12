@@ -33,7 +33,9 @@ single_version_override(
 single_version_override(
     module_name = "rules_kotlin",
     patch_strip = 1,
-    patches = ["//third_party/kotlin:rules_kotlin_multiplatform_flags.patch"],
+    patches = [
+        "//third_party/kotlin:rules_kotlin_multiplatform_flags.patch",
+    ],
     version = "2.3.20",
 )
 
