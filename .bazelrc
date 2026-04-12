@@ -5,3 +5,11 @@ common --java_runtime_version=remotejdk_21
 common --tool_java_runtime_version=remotejdk_21
 common --java_language_version=21
 common --tool_java_language_version=21
+
+# Keep local disk cache bounded and self-cleaning.
+common --experimental_disk_cache_gc_max_size=30G
+common --experimental_disk_cache_gc_max_age=14d
+common --experimental_disk_cache_gc_idle_delay=60m
+
+# Share action outputs across branches/worktrees in a user-specific location.
+build --disk_cache=~/.cache/bazel/disk
