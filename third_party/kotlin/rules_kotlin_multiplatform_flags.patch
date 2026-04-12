@@ -1,0 +1,63 @@
+diff --git a/src/main/starlark/core/options/opts.kotlinc.bzl b/src/main/starlark/core/options/opts.kotlinc.bzl
+index cecdb92..8d9f1aa 100644
+--- a/src/main/starlark/core/options/opts.kotlinc.bzl
++++ b/src/main/starlark/core/options/opts.kotlinc.bzl
+@@ -35,6 +35,11 @@ def _map_warning_level(values):
+ def _map_optin_class_to_flag(values):
+     return ["-opt-in=%s" % v for v in values]
+ 
++def _map_prefixed_flag_list_to_flags(prefix, values):
++    if not values:
++        return None
++    return ["{}{}".format(prefix, value) for value in values]
++
+ def _map_backend_threads_to_flag(n):
+     if n == 1:
+         return None
+@@ -327,6 +332,28 @@ _KOPTS_ALL = {
+             "class": ["-Xlambdas=class"],
+             "indy": ["-Xlambdas=indy"],
+         },
++    ),
++    "x_common_sources": struct(
++        flag = "-Xcommon-sources",
++        args = dict(
++            default = [],
++            doc = """Sources of the common module that should compile together with this platform module in multiplatform mode.
++Each value must match a source path passed to this compilation.""",
++        ),
++        type = attr.string_list,
++        value_to_flag = None,
++        map_value_to_flag = lambda values: _map_prefixed_flag_list_to_flags("-Xcommon-sources=", values),
++    ),
++    "x_expect_actual_classes": struct(
++        flag = "-Xexpect-actual-classes",
++        args = dict(
++            default = False,
++            doc = "Enable beta support for expect/actual classes without compiler warning.",
++        ),
++        type = attr.bool,
++        value_to_flag = {
++            True: ["-Xexpect-actual-classes"],
++        },
+     ),
+     "x_multi_platform": struct(
+         flag = "-Xmulti-platform",
+@@ -339,6 +366,17 @@ _KOPTS_ALL = {
+         value_to_flag = {
+             True: ["-Xmulti-platform"],
+         },
++    ),
++    "x_no_check_actual": struct(
++        flag = "-Xno-check-actual",
++        args = dict(
++            default = False,
++            doc = "Do not check for presence of actual declarations in this compilation.",
++        ),
++        type = attr.bool,
++        value_to_flag = {
++            True: ["-Xno-check-actual"],
++        },
+     ),
+     "x_no_call_assertions": struct(
+         flag = "-Xno-call-assertions",

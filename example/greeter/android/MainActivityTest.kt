@@ -10,9 +10,15 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import victor.example.multiplatform.Greeting
 
 @RunWith(RobolectricTestRunner::class)
 class MainActivityTest {
+    @Test
+    fun libraryGreetingIsExpectedForAndroid() {
+        assertEquals("Hello, Compose from Android!", Greeting().message("Compose"))
+    }
+
     @Test
     fun mainActivityStarts() {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
@@ -25,7 +31,7 @@ class MainActivityTest {
     @Test
     fun mainActivityContentDisplaysGreeting() {
         runAndroidComposeUiTest<MainActivity> {
-            onNodeWithText(MAIN_ACTIVITY_GREETING_TEXT).assertIsDisplayed()
+            onNodeWithText("Hello, Compose from Android!").assertIsDisplayed()
         }
     }
 }

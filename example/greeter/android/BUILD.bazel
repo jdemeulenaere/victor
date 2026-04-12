@@ -11,6 +11,7 @@ kt_android_library(
     resource_files = glob(["res/**"]),
     deps = [
         "//example/greeter/proto:victor_api_kt_grpc",
+        "//example/kotlin/multiplatform:library_android",
         "@third_party_maven//:androidx_activity_activity",
         "@third_party_maven//:androidx_activity_activity_compose",
         "@third_party_maven//:androidx_activity_activity_ktx",

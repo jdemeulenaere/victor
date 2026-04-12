@@ -7,6 +7,7 @@ kt_jvm_library(
     runtime_deps = ["//toolchains/kotlin/compose:skiko_runtime"],
     deps = [
         "//example/greeter/proto:victor_api_kt_grpc",
+        "//example/kotlin/multiplatform:library_jvm",
         "@third_party_maven//:io_grpc_grpc_okhttp",
         "@third_party_maven//:org_jetbrains_compose_desktop_desktop_jvm",
     ],

@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import victor.api.v1.GreeterGrpcKt
 import victor.api.v1.HelloRequest
+import victor.example.multiplatform.Greeting
 
 private const val APP_TITLE = "Victor Greeter Desktop"
 private const val BACKEND_HOST = "127.0.0.1"
@@ -63,7 +64,7 @@ fun DesktopGreeterApp(client: GreeterClient) {
             modifier = Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(text = "Hello from Bazel + Kotlin + Compose Desktop!")
+            Text(text = Greeting().message("Compose Desktop"))
             Text(text = "Target: $BACKEND_HOST:$BACKEND_PORT")
 
             OutlinedTextField(
