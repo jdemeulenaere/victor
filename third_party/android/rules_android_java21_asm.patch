@@ -1,0 +1,15 @@
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -80,6 +80,12 @@
+         # protobuf runtimes.
+         "com.google.protobuf:protobuf-java:4.33.4",
+         "com.google.protobuf:protobuf-java-util:4.33.4",
++        # Force ASM onto a version that can parse Java 21 bytecode for
++        # mobile-install desugar classpath scanning.
++        "org.ow2.asm:asm:9.6",
++        "org.ow2.asm:asm-commons:9.6",
++        "org.ow2.asm:asm-tree:9.6",
++        "org.ow2.asm:asm-util:9.6",
+     ],
+     repositories = [
+         "https://maven.google.com",

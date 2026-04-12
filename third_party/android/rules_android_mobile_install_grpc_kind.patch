@@ -1,0 +1,14 @@
+--- a/mobile_install/adapters/java_lite_grpc_library.bzl
++++ b/mobile_install/adapters/java_lite_grpc_library.bzl
+@@ -42,7 +42,10 @@ def _adapt(target, ctx):
+     # TODO: This is needed as the adapter is shared between kt and java grpc library.
+     # Consider splitting this out into two separater adapters. Although this will need
+     # refactoring of the adapter test, which handles both.
+-    is_java = (ctx.rule.kind == "_java_lite_grpc_library")
++    is_java = ctx.rule.kind in (
++        "_java_grpc_library",
++        "_java_lite_grpc_library",
++    )
+ 
+     return [
+         providers.make_mi_android_dex_info(
