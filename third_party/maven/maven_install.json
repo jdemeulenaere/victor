@@ -41,7 +41,7 @@
     "org.jetbrains.skiko:skiko-awt-runtime-windows-arm64": -864567670,
     "org.jetbrains.skiko:skiko-awt-runtime-windows-x64": -1295969746,
     "org.robolectric:robolectric": -1784339344,
-    "repositories": 1670674627
+    "repositories": 1935045106
   },
   "__RESOLVED_ARTIFACTS_HASH": {
     "androidx.activity:activity-compose:aar": -333356413,
@@ -5810,7 +5810,7 @@
     ]
   },
   "repositories": {
-    "https://repo1.maven.org/maven2/": [
+    "https://repo.maven.apache.org/maven2/": [
       "androidx.activity:activity-compose:aar",
       "androidx.activity:activity-ktx:aar",
       "androidx.activity:activity:aar",
