@@ -1,0 +1,13 @@
+load("@pip//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "grpc_python_plugin",
+    srcs = ["grpc_python_plugin.py"],
+    main = "grpc_python_plugin.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        requirement("grpcio-tools"),
+        requirement("protobuf"),
+    ],
+)

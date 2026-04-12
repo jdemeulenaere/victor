@@ -8,7 +8,6 @@ py_binary(
     deps = [
         "//example/greeter/proto:victor_api_py_pb2",
         "//example/greeter/proto:victor_api_py_pb2_grpc",
-        "@grpc//src/python/grpcio/grpc:grpcio",
     ],
 )
 

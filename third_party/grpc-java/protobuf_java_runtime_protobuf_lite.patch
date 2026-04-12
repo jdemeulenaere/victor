@@ -1,0 +1,9 @@
+--- a/protobuf-lite/BUILD.bazel
++++ b/protobuf-lite/BUILD.bazel
+@@ -14,4 +14,4 @@
+     ] + select({
+-        ":android": ["@com_google_protobuf//:protobuf_javalite"],
+-        "//conditions:default": ["@com_google_protobuf//:protobuf_java"],
++        ":android": [artifact("com.google.protobuf:protobuf-java")],
++        "//conditions:default": [artifact("com.google.protobuf:protobuf-java")],
+     }),

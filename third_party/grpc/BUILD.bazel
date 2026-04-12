@@ -1,1 +1,4 @@
-exports_files(["typing_extensions_import_path.patch"])
+exports_files([
+    "py_grpc_library_plugin_override.patch",
+    "typing_extensions_import_path.patch",
+])

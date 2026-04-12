@@ -3,6 +3,22 @@ maven.from_toml(
     name = "third_party",
     libs_versions_toml = "//third_party/maven:libs.versions.toml",
 )
+
+THIRD_PARTY_FORCE_ARTIFACTS = [
+    # keep-sorted start
+    ("com.google.protobuf", "protobuf-java", "4.33.4"),
+    ("com.google.protobuf", "protobuf-java-util", "4.33.4"),
+    # keep-sorted end
+]
+
+_third_party_force = [maven.artifact(
+    name = "third_party",
+    artifact = artifact,
+    force_version = True,
+    group = group,
+    version = version,
+) for (group, artifact, version) in THIRD_PARTY_FORCE_ARTIFACTS]
+
 maven.install(
     name = "third_party",
     aar_import_bzl_label = "@rules_android//rules:rules.bzl",

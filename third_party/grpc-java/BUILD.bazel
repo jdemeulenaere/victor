@@ -1,0 +1,7 @@
+exports_files([
+    "prebuilt_grpc_java_plugin_build.patch",
+    "prebuilt_grpc_java_plugin_module.patch",
+    "protobuf_java_runtime_compiler.patch",
+    "protobuf_java_runtime_protobuf.patch",
+    "protobuf_java_runtime_protobuf_lite.patch",
+])

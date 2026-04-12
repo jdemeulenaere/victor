@@ -1,0 +1,11 @@
+--- a/protobuf/BUILD.bazel
++++ b/protobuf/BUILD.bazel
+@@ -10,7 +10,7 @@
+     deps = [
+         "//api",
+         "//protobuf-lite",
+-        "@com_google_protobuf//:protobuf_java",
++        artifact("com.google.protobuf:protobuf-java"),
+         artifact("com.google.api.grpc:proto-google-common-protos"),
+         artifact("com.google.code.findbugs:jsr305"),
+         artifact("com.google.errorprone:error_prone_annotations"),

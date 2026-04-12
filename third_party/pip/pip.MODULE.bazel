@@ -1,0 +1,9 @@
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    download_only = True,
+    experimental_target_platforms = ["host"],
+    hub_name = "pip",
+    python_version = "3.14.2",
+    requirements_lock = "//third_party/pip:requirements_lock.txt",
+)
+use_repo(pip, "pip")
