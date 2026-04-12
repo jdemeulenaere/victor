@@ -1,0 +1,21 @@
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_test")
+load("//rules/kotlin/multiplatform:defs.bzl", "kt_multiplatform_library")
+
+kt_multiplatform_library(
+    name = "library",
+    android_custom_package = "victor.example.multiplatform",
+    android_srcs = ["Platform.android.kt"],
+    common_srcs = ["Greeting.kt"],
+    jvm_srcs = ["Platform.jvm.kt"],
+    visibility = ["//visibility:public"],
+)
+
+kt_jvm_test(
+    name = "library_jvm_test",
+    srcs = ["GreetingTest.kt"],
+    test_class = "victor.example.multiplatform.GreetingTest",
+    deps = [
+        ":library_jvm",
+        "@third_party_maven//:junit_junit",
+    ],
+)
