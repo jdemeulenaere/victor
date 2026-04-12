@@ -18,10 +18,12 @@ maven.install(
 # Keep a separate shared @maven repo for transitive modules (grpc-java/protobuf).
 # This avoids mixing first-party TOML dependencies into their graph.
 MAVEN_FORCE_ARTIFACTS = [
+    # keep-sorted start
     ("com.google.code.findbugs", "jsr305", "3.0.2"),
     ("com.google.code.gson", "gson", "2.12.1"),
     ("com.google.errorprone", "error_prone_annotations", "2.44.0"),
     ("com.google.guava", "guava", "32.0.1-jre"),
+    # keep-sorted end
 ]
 
 _ = [maven.artifact(
@@ -35,9 +37,11 @@ _ = [maven.artifact(
 maven.install(
     name = "maven",
     known_contributing_modules = [
+        # keep-sorted start
         "grpc-java",
         "protobuf",
         "victor",
+        # keep-sorted end
     ],
 )
 use_repo(maven, third_party_maven = "third_party")
