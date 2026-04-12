@@ -1,6 +1,6 @@
-load("@rules_android//rules:rules.bzl", "android_binary", "android_local_test")
 load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("//tools:android/defs.bzl", "android_binary", "android_local_test")
 
 kt_android_library(
     name = "app_lib",
