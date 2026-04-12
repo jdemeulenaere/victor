@@ -1,3 +1,6 @@
 exports_files([
+    "rules_android_java21_asm.patch",
+    "rules_android_mobile_install_grpc_adapters_base.patch",
+    "rules_android_mobile_install_grpc_kind.patch",
     "rules_android_skip_host_platform_split.patch",
 ])

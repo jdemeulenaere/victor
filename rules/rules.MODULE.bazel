@@ -21,7 +21,12 @@ bazel_dep(name = "rules_shell", version = "0.6.1")
 single_version_override(
     module_name = "rules_android",
     patch_strip = 1,
-    patches = ["//third_party/android:rules_android_skip_host_platform_split.patch"],
+    patches = [
+        "//third_party/android:rules_android_java21_asm.patch",
+        "//third_party/android:rules_android_mobile_install_grpc_adapters_base.patch",
+        "//third_party/android:rules_android_mobile_install_grpc_kind.patch",
+        "//third_party/android:rules_android_skip_host_platform_split.patch",
+    ],
     version = "0.7.1",
 )
 

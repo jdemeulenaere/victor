@@ -9,10 +9,12 @@ androidx-savedstate = "1.2.1"
 androidx-test-core = "1.7.0"
 androidx-test-monitor = "1.8.0"
 armeria = "1.38.0"
+grpc = "1.80.0"
 junit = "4.13.2"
 kotlin = "2.3.20"
 ktfmt = "0.62"
 logback = "1.5.32"
+protobuf = "4.33.4"
 robolectric = "4.16.1"
 # keep-sorted end
 
@@ -40,9 +42,12 @@ androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-te
 androidx-test-monitor = { module = "androidx.test:monitor", version.ref = "androidx-test-monitor" }
 armeria = { module = "com.linecorp.armeria:armeria", version.ref = "armeria" }
 armeria-grpc = { module = "com.linecorp.armeria:armeria-grpc", version.ref = "armeria" }
+grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-compose-compiler-plugin = { module = "org.jetbrains.kotlin:kotlin-compose-compiler-plugin", version.ref = "kotlin" }
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 # keep-sorted end

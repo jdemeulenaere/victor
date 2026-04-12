@@ -9,6 +9,15 @@ REMOTE_NAME="${1:-origin}"
 changed_file_list="$(mktemp "${TMPDIR:-/tmp}/victor-pre-push-files.XXXXXX")"
 trap 'rm -f "${changed_file_list}"' EXIT
 
+print_fix_command_for_files() {
+  local -a files=("$@")
+  printf '  bazel run //:format -- --'
+  for file in "${files[@]}"; do
+    printf ' %q' "${file}"
+  done
+  printf '\n'
+}
+
 append_range_files() {
   local from_sha="$1"
   local to_sha="$2"
@@ -50,7 +59,13 @@ done
 
 # Manual invocation convenience.
 if [[ "${had_updates}" == "false" ]]; then
-  bazel run //:format_check -- --last-commit
+  if ! bazel run //:format_check -- --last-commit; then
+    echo
+    echo "Pre-push formatting check failed for files in HEAD."
+    echo "To fix them, run:"
+    echo "  bazel run //:format -- --last-commit"
+    exit 1
+  fi
   exit 0
 fi
 
@@ -70,10 +85,8 @@ if ! bazel run //:format_check -- -- "${files[@]}"; then
   echo
   echo "Pre-push formatting check failed for files in your push range."
   echo "To fix exactly this push, run:"
-  printf '  bazel run //:format -- --'
-  for file in "${files[@]}"; do
-    printf ' %q' "${file}"
-  done
-  printf '\n'
+  print_fix_command_for_files "${files[@]}"
+  echo "If you only want to fix your latest commit, run:"
+  echo "  bazel run //:format -- --last-commit"
   exit 1
 fi
