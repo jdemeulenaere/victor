@@ -31,12 +31,11 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import victor.api.v1.GreeterGrpcKt
 import victor.api.v1.HelloRequest
+import victor.example.multiplatform.Greeting
 
 private const val BACKEND_HOST = "127.0.0.1"
 private const val BACKEND_PORT = 8080
 private const val LOG_TAG = "GreeterAndroid"
-
-const val MAIN_ACTIVITY_GREETING_TEXT = "Hello from Bazel + Kotlin + Compose!"
 
 class MainActivity : ComponentActivity() {
     private val channel: ManagedChannel by lazy {
@@ -80,7 +79,7 @@ fun MainActivityContent(client: GreeterGrpcKt.GreeterCoroutineStub) {
                         .consumeWindowInsets(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(text = MAIN_ACTIVITY_GREETING_TEXT)
+                Text(text = Greeting().message("Compose"))
                 Text(
                     text = "gRPC Kotlin + Android Demo",
                     style = MaterialTheme.typography.headlineSmall,

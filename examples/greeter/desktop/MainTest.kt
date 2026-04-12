@@ -6,9 +6,16 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import org.junit.Assert.assertEquals
 import org.junit.Test
+import victor.example.multiplatform.Greeting
 
 class MainTest {
+    @Test
+    fun libraryGreetingIsExpectedForDesktop() {
+        assertEquals("Hello, Compose Desktop from JVM!", Greeting().message("Compose Desktop"))
+    }
+
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun callSayHelloShowsResponse() = runComposeUiTest {
@@ -24,6 +31,7 @@ class MainTest {
             )
         }
 
+        onNodeWithText("Hello, Compose Desktop from JVM!").assertIsDisplayed()
         onNodeWithText("Call SayHello").performClick()
         waitUntil(timeoutMillis = 5_000) {
             onAllNodesWithText(expectedResponse).fetchSemanticsNodes().isNotEmpty()
