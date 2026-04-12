@@ -11,6 +11,9 @@ class GreetingTest {
 
     @Test
     fun decoratedLibraryCanDependOnBaseLibrary() {
-        assertEquals("Hello, world from JVM! [from JVM library 2]", DecoratedGreeting().message(""))
+        assertEquals(
+            "Hello, world from JVM! [kmp-3p] [from JVM library 2]",
+            DecoratedGreeting().message(""),
+        )
     }
 }
