@@ -1,5 +1,6 @@
-load("@rules_android//rules:rules.bzl", "android_binary")
+load("@rules_android//rules:rules.bzl", "android_binary", "android_local_test")
 load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 
 kt_android_library(
     name = "app_lib",
@@ -22,4 +23,30 @@ android_binary(
     manifest = "AndroidManifest.xml",
     visibility = ["//visibility:public"],
     deps = [":app_lib"],
+)
+
+kt_jvm_library(
+    name = "app_test_lib",
+    testonly = True,
+    srcs = ["MainActivityTest.kt"],
+    deps = [
+        ":app_lib",
+        "@third_party_maven//:androidx_compose_ui_ui_test_junit4_android",
+        "@third_party_maven//:junit_junit",
+        "@third_party_maven//:org_robolectric_junit",
+        "@third_party_maven//:org_robolectric_robolectric",
+    ],
+)
+
+android_local_test(
+    name = "app_test",
+    custom_package = "victor.greeter.android",
+    manifest = "AndroidManifest.xml",
+    test_class = "victor.greeter.android.MainActivityTest",
+    deps = [
+        ":app_lib",
+        ":app_test_lib",
+        "@rules_robolectric//bazel:android-all",
+        "@third_party_maven//:androidx_compose_ui_ui_test_manifest",
+    ],
 )
