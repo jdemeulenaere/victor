@@ -1,5 +1,7 @@
 common --enable_bzlmod
 common --incompatible_autoload_externally=cc_binary,cc_import,cc_library,cc_test,java_binary,java_library,java_proto_library,proto_library,py_binary,py_library
 
-build --java_runtime_version=remotejdk_21
-run --java_runtime_version=remotejdk_21
+common --java_runtime_version=remotejdk_21
+common --tool_java_runtime_version=remotejdk_21
+common --java_language_version=21
+common --tool_java_language_version=21

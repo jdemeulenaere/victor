@@ -1,0 +1,32 @@
+--- a/src/tools/mi/deployment/deploy.go
++++ b/src/tools/mi/deployment/deploy.go
+@@ -21,6 +21,7 @@
+ 	"os"
+ 	"os/exec"
+ 	"strconv"
++	"strings"
+ 
+ 	"src/common/golang/pprint"
+ )
+@@ -47,8 +48,20 @@
+ 	if userID != 0 {
+ 		args = append(args, fmt.Sprintf("--user=%s", strconv.Itoa(userID)))
+ 	}
++
++	filteredSplits := make([]string, 0, len(splits))
++	for _, split := range splits {
++		if strings.Contains(split, "native_libs_host_platform") {
++			continue
++		}
++		filteredSplits = append(filteredSplits, split)
++	}
++	if len(filteredSplits) != len(splits) {
++		pprint.Warning("Skipping host-platform native libs split for device install")
++	}
++
+ 	args = append(args, "--install-flags=-g -d") // Grant runtime permission + allow downgrade
+-	args = append(args, splits...)
++	args = append(args, filteredSplits...)
+ 	cmd := exec.Command(jdk, args...)
+ 	cmd.Stdout = os.Stdout
+ 	cmd.Stderr = os.Stderr

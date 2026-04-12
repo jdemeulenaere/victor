@@ -1,0 +1,7 @@
+load("@rules_java//java:defs.bzl", "java_import")
+
+java_import(
+    name = "listenablefuture_from_guava",
+    jars = ["@third_party_maven//:com_google_guava_guava_33_5_0_jre_extension"],
+    visibility = ["//visibility:public"],
+)

@@ -4,6 +4,7 @@ load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
 kt_android_library(
     name = "app_lib",
     srcs = ["MainActivity.kt"],
+    custom_package = "victor.greeter.android",
     manifest = "AndroidManifest.xml",
     plugins = ["//toolchains/kotlin/compose:compose_compiler_plugin"],
     resource_files = glob(["res/**"]),
@@ -16,6 +17,7 @@ kt_android_library(
 
 android_binary(
     name = "app",
+    custom_package = "victor.greeter.android",
     manifest = "AndroidManifest.xml",
     visibility = ["//visibility:public"],
     deps = [":app_lib"],
