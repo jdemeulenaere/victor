@@ -3,11 +3,27 @@ load("//rules/kotlin/multiplatform:defs.bzl", "kt_multiplatform_library")
 
 kt_multiplatform_library(
     name = "library",
+    srcs = {
+        "android": ["Platform.android.kt"],
+        "common": ["Greeting.kt"],
+        "jvm": ["Platform.jvm.kt"],
+    },
     android_custom_package = "victor.example.multiplatform",
-    android_srcs = ["Platform.android.kt"],
-    common_srcs = ["Greeting.kt"],
-    jvm_srcs = ["Platform.jvm.kt"],
     visibility = ["//visibility:public"],
+)
+
+kt_multiplatform_library(
+    name = "library_decorated",
+    srcs = {
+        "android": ["GreetingDecorator.android.kt"],
+        "common": ["DecoratedGreeting.kt"],
+        "jvm": ["GreetingDecorator.jvm.kt"],
+    },
+    android_custom_package = "victor.example.multiplatform",
+    visibility = ["//visibility:public"],
+    deps = {
+        "common": [":library"],
+    },
 )
 
 kt_jvm_test(
@@ -15,6 +31,7 @@ kt_jvm_test(
     srcs = ["GreetingTest.kt"],
     test_class = "victor.example.multiplatform.GreetingTest",
     deps = [
+        ":library_decorated_jvm",
         ":library_jvm",
         "@third_party_maven//:junit_junit",
     ],
