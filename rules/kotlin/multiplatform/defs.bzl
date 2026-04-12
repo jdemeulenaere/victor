@@ -20,14 +20,50 @@ def _common_sources_flags(common_srcs):
         return common_srcs
     return ["{}/{}".format(package_name, src) for src in common_srcs]
 
+def _platform_target(dep, suffix):
+    if not type(dep) == "string":
+        fail("deps values must be strings, got {}".format(type(dep)))
+    if ":" in dep:
+        head, tail = dep.rsplit(":", 1)
+        return "{}:{}_{}".format(head, tail, suffix)
+    if dep.startswith("//") or dep.startswith("@"):
+        fail("deps entries must include an explicit target name: {}".format(dep))
+    return "{}_{}".format(dep, suffix)
+
+def _target_name(dep):
+    if ":" in dep:
+        return dep.rsplit(":", 1)[1]
+    if dep.startswith("//") or dep.startswith("@"):
+        return ""
+    return dep
+
+def _resolve_common_dep(dep, suffix):
+    # External repositories are generally regular platform-neutral deps and should not be remapped.
+    if dep.startswith("@"):
+        return dep
+
+    target = _target_name(dep)
+    if target.endswith("_jvm") or target.endswith("_android"):
+        return dep
+
+    return _platform_target(dep, suffix)
+
+def _normalize_dep_list(values, attr_name):
+    if values == None:
+        return []
+    if not type(values) == "list":
+        fail("{} must be a list of label strings".format(attr_name))
+    normalized = []
+    for value in values:
+        if not type(value) == "string":
+            fail("{} values must be strings, got {}".format(attr_name, type(value)))
+        normalized.append(value)
+    return normalized
+
 def kt_multiplatform_library(
         name,
-        common_srcs,
-        jvm_srcs = None,
-        android_srcs = None,
+        srcs,
         deps = None,
-        jvm_deps = None,
-        android_deps = None,
         android_manifest = None,
         android_custom_package = None,
         visibility = None):
@@ -40,20 +76,38 @@ def kt_multiplatform_library(
     - expect/actual class beta flag enabled
 
     Generated targets:
-    - :<name>_jvm (when jvm_srcs is set)
-    - :<name>_android (when android_srcs is set)
+    - :<name>_jvm (when `srcs["jvm"]` is non-empty)
+    - :<name>_android (when `srcs["android"]` is non-empty)
     - :<name> alias to :<name>_jvm when JVM sources exist
+
+    Args:
+    - srcs: required dictionary with keys `common`, `jvm`, `android`.
+    - deps: optional dictionary with keys:
+      - `common`: deps added to both platform targets. External labels are used as-is;
+        first-party labels are remapped to platform variants (for example `:core` -> `:core_jvm`/`:core_android`).
+      - `jvm`: regular deps for the JVM target only.
+      - `android`: regular deps for the Android target only.
     """
     if deps == None:
-        deps = []
-    if jvm_deps == None:
-        jvm_deps = []
-    if android_deps == None:
-        android_deps = []
-    if jvm_srcs == None:
-        jvm_srcs = []
-    if android_srcs == None:
-        android_srcs = []
+        deps = {}
+    if not type(deps) == "dict":
+        fail("deps must be a dict with keys common/jvm/android")
+    for key in deps.keys():
+        if key not in ["common", "jvm", "android"]:
+            fail("Unsupported deps key '{}'. Expected one of: common, jvm, android".format(key))
+
+    common_deps = _normalize_dep_list(deps.get("common"), "deps[\"common\"]")
+    jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
+    android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
+    if not type(srcs) == "dict":
+        fail("srcs must be a dict with keys common/jvm/android")
+    for key in srcs.keys():
+        if key not in ["common", "jvm", "android"]:
+            fail("Unsupported srcs key '{}'. Expected one of: common, jvm, android".format(key))
+
+    common_srcs = srcs.get("common", [])
+    jvm_srcs = srcs.get("jvm", [])
+    android_srcs = srcs.get("android", [])
 
     common = _normalize_same_package_srcs(common_srcs, "common_srcs")
     jvm = _normalize_same_package_srcs(jvm_srcs, "jvm_srcs")
@@ -72,13 +126,16 @@ def kt_multiplatform_library(
         x_multi_platform = True,
     )
 
+    jvm_all_deps = [_resolve_common_dep(dep, "jvm") for dep in common_deps] + jvm_deps
+    android_all_deps = [_resolve_common_dep(dep, "android") for dep in common_deps] + android_deps
+
     if jvm:
         kt_jvm_library(
             name = "{}_jvm".format(name),
             srcs = common + jvm,
             kotlinc_opts = ":{}".format(opts_name),
             visibility = visibility,
-            deps = deps + jvm_deps,
+            deps = jvm_all_deps,
         )
         native.alias(
             name = name,
@@ -105,7 +162,7 @@ def kt_multiplatform_library(
             manifest = manifest,
             kotlinc_opts = ":{}".format(opts_name),
             visibility = visibility,
-            deps = deps + android_deps,
+            deps = android_all_deps,
         )
         if android_custom_package:
             android_kwargs["custom_package"] = android_custom_package
