@@ -15,6 +15,11 @@ android_sdk_repository_extension = use_extension(
     "@rules_android//rules/android_sdk_repository:rule.bzl",
     "android_sdk_repository_extension",
 )
+android_sdk_repository_extension.configure(
+    api_level = 36,
+    build_tools_version = "36.0.0",
+    path = "$WORKSPACE_ROOT/.cache/android-sdk",
+)
 use_repo(android_sdk_repository_extension, "androidsdk")
 
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
