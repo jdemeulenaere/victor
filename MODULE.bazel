@@ -3,7 +3,9 @@ module(
     version = "0.1.0",
 )
 
-# Rules, third-party dependencies, and toolchain configuration.
+# keep-sorted start
 include("//rules:rules.MODULE.bazel")
 include("//third_party:third_party.MODULE.bazel")
 include("//toolchains:toolchains.MODULE.bazel")
+include("//tools:tools.MODULE.bazel")
+# keep-sorted end

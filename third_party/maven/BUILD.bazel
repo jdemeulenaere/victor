@@ -1,5 +1,7 @@
 exports_files([
-    "maven.MODULE.bazel",
+    # keep-sorted start
     "libs.versions.toml",
+    "maven.MODULE.bazel",
     "maven_install.json",
+    # keep-sorted end
 ])
