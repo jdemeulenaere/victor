@@ -8,8 +8,8 @@ maven.install(
     aar_import_bzl_label = "@rules_android//rules:rules.bzl",
     lock_file = "//third_party/maven:maven_install.json",
     repositories = [
-        "https://maven.google.com",
         "https://repo1.maven.org/maven2",
+        "https://maven.google.com",
     ],
     use_starlark_android_rules = True,
     version_conflict_policy = "pinned",
