@@ -1,0 +1,4 @@
+interface:
+  display_name: "Third-Party Maven Conflicts"
+  short_description: "Resolve Bazel third-party Maven pin/version conflicts"
+  default_prompt: "Resolve third_party/maven dependency additions, pin failures, and conflict errors in this repository."
