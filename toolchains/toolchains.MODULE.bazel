@@ -20,4 +20,6 @@ use_repo(android_sdk_repository_extension, "androidsdk")
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 
 # Register repository-specific toolchains.
+register_toolchains("//toolchains/kotlin:jvm21_toolchain")
+
 register_toolchains("//toolchains/web/proto:gen_es_toolchain")

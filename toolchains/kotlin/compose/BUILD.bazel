@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library")
 load("@rules_kotlin//kotlin:core.bzl", "kt_compiler_plugin")
 
 kt_compiler_plugin(
@@ -5,4 +6,30 @@ kt_compiler_plugin(
     id = "androidx.compose.compiler.plugins.kotlin",
     visibility = ["//visibility:public"],
     deps = ["@third_party_maven//:org_jetbrains_kotlin_kotlin_compose_compiler_plugin"],
+)
+
+java_library(
+    name = "skiko_runtime",
+    visibility = ["//visibility:public"],
+    runtime_deps = select({
+        "@bazel_tools//src/conditions:darwin_arm64": [
+            "@third_party_maven//:org_jetbrains_skiko_skiko_awt_runtime_macos_arm64",
+        ],
+        "@bazel_tools//src/conditions:darwin_x86_64": [
+            "@third_party_maven//:org_jetbrains_skiko_skiko_awt_runtime_macos_x64",
+        ],
+        "@bazel_tools//src/conditions:linux_aarch64": [
+            "@third_party_maven//:org_jetbrains_skiko_skiko_awt_runtime_linux_arm64",
+        ],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "@third_party_maven//:org_jetbrains_skiko_skiko_awt_runtime_linux_x64",
+        ],
+        "@bazel_tools//src/conditions:windows_arm64": [
+            "@third_party_maven//:org_jetbrains_skiko_skiko_awt_runtime_windows_arm64",
+        ],
+        "@bazel_tools//src/conditions:windows_x64": [
+            "@third_party_maven//:org_jetbrains_skiko_skiko_awt_runtime_windows_x64",
+        ],
+        "//conditions:default": [],
+    }),
 )
