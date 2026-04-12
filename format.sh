@@ -105,7 +105,13 @@ while IFS= read -r path; do
   abs="${ROOT}/${rel}"
   [[ -f "${abs}" ]] || continue
 
-  keep_sorted_files+=("${abs}")
+  case "${rel}" in
+    *.md)
+      ;;
+    *)
+      keep_sorted_files+=("${abs}")
+      ;;
+  esac
 
   case "${rel}" in
     BUILD | BUILD.bazel | WORKSPACE | WORKSPACE.bazel | MODULE.bazel | *.MODULE.bazel | *.bzl | */BUILD | */BUILD.bazel | */WORKSPACE | */WORKSPACE.bazel | */MODULE.bazel)
@@ -126,7 +132,7 @@ while IFS= read -r path; do
   esac
 
   case "${rel}" in
-    *.ts | *.tsx | *.js | *.jsx | *.mjs | *.cjs | *.json | *.css | *.scss | *.md | *.yaml | *.yml)
+    *.ts | *.tsx | *.js | *.jsx | *.mjs | *.cjs | *.json | *.css | *.scss | *.yaml | *.yml)
       typescript_files+=("${abs}")
       ;;
   esac
