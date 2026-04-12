@@ -4,18 +4,22 @@ androidx-activity = "1.8.2"
 androidx-collection = "1.6.0"
 androidx-compose = "1.10.6"
 androidx-compose-material3 = "1.4.0"
+androidx-compose-runtime-annotation-jvm = "1.11.0-rc01"
 androidx-lifecycle = "2.10.0"
+androidx-lifecycle-common-jvm = "2.11.0-alpha03"
 androidx-savedstate = "1.2.1"
 androidx-test-core = "1.7.0"
 androidx-test-monitor = "1.8.0"
 armeria = "1.38.0"
 grpc = "1.80.0"
+jetbrains-compose = "1.10.3"
 junit = "4.13.2"
 kotlin = "2.3.20"
 ktfmt = "0.62"
 logback = "1.5.32"
 protobuf = "4.33.4"
 robolectric = "4.16.1"
+skiko = "0.9.37.4"
 # keep-sorted end
 
 [libraries]
@@ -25,6 +29,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-collection = { module = "androidx.collection:collection-jvm", version.ref = "androidx-collection" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3-android", version.ref = "androidx-compose-material3" }
 androidx-compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "androidx-compose" }
+androidx-compose-runtime-annotation-jvm = { module = "androidx.compose.runtime:runtime-annotation-jvm", version.ref = "androidx-compose-runtime-annotation-jvm" }
 androidx-compose-ui-geometry = { module = "androidx.compose.ui:ui-geometry", version.ref = "androidx-compose" }
 androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "androidx-compose" }
 androidx-compose-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidx-compose" }
@@ -33,6 +38,7 @@ androidx-compose-ui-text = { module = "androidx.compose.ui:ui-text", version.ref
 androidx-compose-ui-unit = { module = "androidx.compose.ui:ui-unit", version.ref = "androidx-compose" }
 androidx-compose-ui-util = { module = "androidx.compose.ui:ui-util", version.ref = "androidx-compose" }
 androidx-lifecycle-common = { module = "androidx.lifecycle:lifecycle-common", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-common-jvm = { module = "androidx.lifecycle:lifecycle-common-jvm", version.ref = "androidx-lifecycle-common-jvm" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-android = { module = "androidx.lifecycle:lifecycle-runtime-android", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
@@ -43,6 +49,14 @@ androidx-test-monitor = { module = "androidx.test:monitor", version.ref = "andro
 armeria = { module = "com.linecorp.armeria:armeria", version.ref = "armeria" }
 armeria-grpc = { module = "com.linecorp.armeria:armeria-grpc", version.ref = "armeria" }
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
+jetbrains-compose-desktop = { module = "org.jetbrains.compose.desktop:desktop-jvm", version.ref = "jetbrains-compose" }
+jetbrains-compose-ui-test-junit4-desktop = { module = "org.jetbrains.compose.ui:ui-test-junit4-desktop", version.ref = "jetbrains-compose" }
+jetbrains-skiko-awt-runtime-linux-arm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
+jetbrains-skiko-awt-runtime-linux-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version.ref = "skiko" }
+jetbrains-skiko-awt-runtime-macos-arm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version.ref = "skiko" }
+jetbrains-skiko-awt-runtime-macos-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-x64", version.ref = "skiko" }
+jetbrains-skiko-awt-runtime-windows-arm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-arm64", version.ref = "skiko" }
+jetbrains-skiko-awt-runtime-windows-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-x64", version.ref = "skiko" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-compose-compiler-plugin = { module = "org.jetbrains.kotlin:kotlin-compose-compiler-plugin", version.ref = "kotlin" }
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
