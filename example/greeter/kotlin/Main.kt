@@ -9,10 +9,14 @@ import victor.api.v1.HelloResponse
 
 private const val SERVICE_PATH = "/victor.api.v1.Greeter"
 
+fun formatGreeting(name: String): String {
+    val safeName = name.ifBlank { "world" }
+    return "Hello, $safeName! (from Kotlin backend)"
+}
+
 class GreeterService : GreeterGrpcKt.GreeterCoroutineImplBase() {
     override suspend fun sayHello(request: HelloRequest): HelloResponse {
-        val name = request.name.ifBlank { "world" }
-        return HelloResponse.newBuilder().setMessage("Hello, $name! (from Kotlin backend)").build()
+        return HelloResponse.newBuilder().setMessage(formatGreeting(request.name)).build()
     }
 }
 

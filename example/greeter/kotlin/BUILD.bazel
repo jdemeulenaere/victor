@@ -1,15 +1,30 @@
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary", "kt_jvm_library", "kt_jvm_test")
 
-kt_jvm_binary(
-    name = "backend",
+kt_jvm_library(
+    name = "backend_lib",
     srcs = ["Main.kt"],
-    main_class = "victor.backend.MainKt",
-    resources = ["logback.xml"],
-    visibility = ["//visibility:public"],
     deps = [
         "//example/greeter/proto:victor_api_kt_grpc",
         "@third_party_maven//:ch_qos_logback_logback_classic",
         "@third_party_maven//:com_linecorp_armeria_armeria",
         "@third_party_maven//:com_linecorp_armeria_armeria_grpc",
     ],
+)
+
+kt_jvm_test(
+    name = "backend_test",
+    srcs = ["MainTest.kt"],
+    test_class = "victor.backend.MainTest",
+    deps = [
+        ":backend_lib",
+        "@third_party_maven//:junit_junit",
+    ],
+)
+
+kt_jvm_binary(
+    name = "backend",
+    main_class = "victor.backend.MainKt",
+    resources = ["logback.xml"],
+    visibility = ["//visibility:public"],
+    runtime_deps = [":backend_lib"],
 )
