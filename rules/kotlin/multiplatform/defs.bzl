@@ -64,6 +64,7 @@ def kt_multiplatform_library(
         name,
         srcs,
         deps = None,
+        plugins = None,
         android_manifest = None,
         android_custom_package = None,
         visibility = None):
@@ -87,6 +88,7 @@ def kt_multiplatform_library(
         first-party labels are remapped to platform variants (for example `:core` -> `:core_jvm`/`:core_android`).
       - `jvm`: regular deps for the JVM target only.
       - `android`: regular deps for the Android target only.
+    - plugins: optional list of compiler plugins applied to both platform targets.
     """
     if deps == None:
         deps = {}
@@ -99,6 +101,7 @@ def kt_multiplatform_library(
     common_deps = _normalize_dep_list(deps.get("common"), "deps[\"common\"]")
     jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
     android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
+    normalized_plugins = _normalize_dep_list(plugins, "plugins")
     if not type(srcs) == "dict":
         fail("srcs must be a dict with keys common/jvm/android")
     for key in srcs.keys():
@@ -137,6 +140,7 @@ def kt_multiplatform_library(
             name = "{}_jvm".format(name),
             srcs = common + jvm,
             kotlinc_opts = ":{}".format(opts_name),
+            plugins = normalized_plugins,
             visibility = visibility,
             deps = jvm_all_deps,
         )
@@ -166,6 +170,7 @@ def kt_multiplatform_library(
             srcs = common + android,
             manifest = manifest,
             kotlinc_opts = ":{}".format(opts_name),
+            plugins = normalized_plugins,
             visibility = visibility,
             deps = android_all_deps,
         )
