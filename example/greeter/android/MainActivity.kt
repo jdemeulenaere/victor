@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import victor.api.v1.GreeterGrpcKt
 import victor.api.v1.HelloRequest
-import victor.example.multiplatform.Greeting
+import victor.example.multiplatform.rememberGreetingMessage
 
 private const val BACKEND_HOST = "127.0.0.1"
 private const val BACKEND_PORT = 8080
@@ -79,7 +79,7 @@ fun MainActivityContent(client: GreeterGrpcKt.GreeterCoroutineStub) {
                         .consumeWindowInsets(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(text = Greeting().message("Compose"))
+                Text(text = rememberGreetingMessage("Compose"))
                 Text(
                     text = "gRPC Kotlin + Android Demo",
                     style = MaterialTheme.typography.headlineSmall,
