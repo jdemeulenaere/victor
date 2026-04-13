@@ -4,12 +4,20 @@ load("//rules/kotlin/multiplatform:defs.bzl", "kt_multiplatform_library")
 kt_multiplatform_library(
     name = "library",
     srcs = {
+        "common": [
+            "ComposeGreeting.kt",
+            "Greeting.kt",
+        ],
         "android": ["Platform.android.kt"],
-        "common": ["Greeting.kt"],
         "jvm": ["Platform.jvm.kt"],
     },
     android_custom_package = "victor.example.multiplatform",
+    plugins = ["//toolchains/kotlin/compose:compose_compiler_plugin"],
     visibility = ["//visibility:public"],
+    deps = {
+        "android": ["@third_party_maven//:androidx_compose_runtime_runtime_android"],
+        "jvm": ["@third_party_maven//:androidx_compose_runtime_runtime_desktop"],
+    },
 )
 
 kt_multiplatform_library(
