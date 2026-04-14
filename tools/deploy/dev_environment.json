@@ -1,0 +1,15 @@
+{
+  "gcp": {
+    "project_id": "victor-dev-493319",
+    "region": "europe-west1",
+    "artifact_registry_repository": "victor-dev"
+  },
+  "firebase": {
+    "project_id": "victor-dev-493319",
+    "default_tester_groups": ["android-dev-testers"]
+  },
+  "github_actions": {
+    "workload_identity_provider": "projects/617611994239/locations/global/workloadIdentityPools/github/providers/victor",
+    "service_account": "victor-deployer@victor-dev-493319.iam.gserviceaccount.com"
+  }
+}

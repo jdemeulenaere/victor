@@ -21,7 +21,7 @@ class GreeterService : GreeterGrpcKt.GreeterCoroutineImplBase() {
 }
 
 fun main() {
-    val port = System.getenv("VICTOR_BACKEND_PORT")?.toIntOrNull() ?: 8080
+    val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
 
     val grpcService =
         GrpcService.builder()
@@ -33,7 +33,8 @@ fun main() {
             )
             .build()
 
-    val server = Server.builder().http(port).service(grpcService).build()
+    val server =
+        Server.builder().http(port).service(grpcService).serviceUnder("/grpc", grpcService).build()
 
     Runtime.getRuntime().addShutdownHook(Thread { server.stop().join() })
 
