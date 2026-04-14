@@ -14,11 +14,11 @@ def _normalize_same_package_srcs(srcs, attr_name):
         normalized.append(src[1:] if src.startswith(":") else src)
     return normalized
 
-def _common_sources_flags(common_srcs):
+def _fragment_sources_flags(fragment_name, srcs):
     package_name = native.package_name()
-    if not package_name:
-        return common_srcs
-    return ["{}/{}".format(package_name, src) for src in common_srcs]
+    if package_name:
+        return ["{}:{}/{}".format(fragment_name, package_name, src) for src in srcs]
+    return ["{}:{}".format(fragment_name, src) for src in srcs]
 
 def _platform_target(dep, suffix):
     if not type(dep) == "string":
@@ -37,7 +37,7 @@ def _target_name(dep):
         return ""
     return dep
 
-def _resolve_common_dep(dep, suffix):
+def _resolve_dep_for_variant(dep, suffix):
     # External repositories are generally regular platform-neutral deps and should not be remapped.
     if dep.startswith("@"):
         return dep
@@ -60,6 +60,31 @@ def _normalize_dep_list(values, attr_name):
         normalized.append(value)
     return normalized
 
+def _normalize_tag_list(values):
+    if values == None:
+        return []
+    if not type(values) == "list":
+        fail("tags must be a list of strings")
+    normalized = []
+    for value in values:
+        if not type(value) == "string":
+            fail("tags values must be strings, got {}".format(type(value)))
+        normalized.append(value)
+    return normalized
+
+def _platform_opts_name(name, platform_suffix):
+    return "{}_{}_kmp_opts".format(name, platform_suffix)
+
+def _define_platform_opts(name, platform_suffix, platform_fragment, common_srcs, platform_srcs):
+    kt_kotlinc_options(
+        name = _platform_opts_name(name, platform_suffix),
+        x_expect_actual_classes = True,
+        x_fragment_refines = ["{}:commonMain".format(platform_fragment)],
+        x_fragment_sources = _fragment_sources_flags(platform_fragment, platform_srcs) + _fragment_sources_flags("commonMain", common_srcs),
+        x_fragments = [platform_fragment, "commonMain"],
+        x_multi_platform = True,
+    )
+
 def kt_multiplatform_library(
         name,
         srcs,
@@ -67,14 +92,14 @@ def kt_multiplatform_library(
         plugins = None,
         android_manifest = None,
         android_custom_package = None,
+        tags = None,
         visibility = None):
-    """Creates platform libraries from shared Kotlin expect/actual sources.
+    """Creates Kotlin Multiplatform-style JVM/Android libraries.
 
-    This macro compiles each platform target with:
-    - all commonMain sources + platform sources
-    - -Xmulti-platform enabled
-    - -Xcommon-sources set to commonMain source paths
-    - expect/actual class beta flag enabled
+    This macro follows the Kotlin Gradle plugin model for platform compilations:
+    - each platform target compiles common + platform sources together
+    - Kotlin fragment flags model source-set relations (`commonMain` refined by `jvmMain`/`androidMain`)
+    - first-party common deps are remapped to platform variants
 
     Generated targets:
     - :<name>_jvm (when `srcs["jvm"]` is non-empty)
@@ -89,6 +114,7 @@ def kt_multiplatform_library(
       - `jvm`: regular deps for the JVM target only.
       - `android`: regular deps for the Android target only.
     - plugins: optional list of compiler plugins applied to both platform targets.
+    - tags: optional list of tags applied to both platform targets.
     """
     if deps == None:
         deps = {}
@@ -98,51 +124,47 @@ def kt_multiplatform_library(
         if key not in ["common", "jvm", "android"]:
             fail("Unsupported deps key '{}'. Expected one of: common, jvm, android".format(key))
 
-    common_deps = _normalize_dep_list(deps.get("common"), "deps[\"common\"]")
-    jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
-    android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
     normalized_plugins = _normalize_dep_list(plugins, "plugins")
+
     if not type(srcs) == "dict":
         fail("srcs must be a dict with keys common/jvm/android")
     for key in srcs.keys():
         if key not in ["common", "jvm", "android"]:
             fail("Unsupported srcs key '{}'. Expected one of: common, jvm, android".format(key))
 
-    common_srcs = srcs.get("common", [])
-    jvm_srcs = srcs.get("jvm", [])
-    android_srcs = srcs.get("android", [])
-
-    common = _normalize_same_package_srcs(common_srcs, "common_srcs")
-    jvm = _normalize_same_package_srcs(jvm_srcs, "jvm_srcs")
-    android = _normalize_same_package_srcs(android_srcs, "android_srcs")
+    common = _normalize_same_package_srcs(srcs.get("common", []), "common_srcs")
+    jvm = _normalize_same_package_srcs(srcs.get("jvm", []), "jvm_srcs")
+    android = _normalize_same_package_srcs(srcs.get("android", []), "android_srcs")
 
     if not common:
         fail("kt_multiplatform_library requires non-empty common_srcs")
     if not jvm and not android:
         fail("kt_multiplatform_library requires at least one platform source set")
 
-    opts_name = "{}_kmp_opts".format(name)
-    kt_kotlinc_options(
-        name = opts_name,
-        x_common_sources = _common_sources_flags(common),
-        x_expect_actual_classes = True,
-        x_multi_platform = True,
-    )
+    common_deps = _normalize_dep_list(deps.get("common"), "deps[\"common\"]")
+    jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
+    android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
+    user_tags = _normalize_tag_list(tags)
 
-    common_jvm_deps = [_resolve_common_dep(dep, "jvm") for dep in common_deps]
-    common_android_deps = [_resolve_common_dep(dep, "android") for dep in common_deps]
-
-    jvm_all_deps = common_jvm_deps + jvm_deps
-    android_all_deps = common_android_deps + android_deps
+    common_jvm_deps = [_resolve_dep_for_variant(dep, "jvm") for dep in common_deps]
+    common_android_deps = [_resolve_dep_for_variant(dep, "android") for dep in common_deps]
 
     if jvm:
+        _define_platform_opts(
+            name = name,
+            platform_suffix = "jvm",
+            platform_fragment = "jvmMain",
+            common_srcs = common,
+            platform_srcs = jvm,
+        )
         kt_jvm_library(
             name = "{}_jvm".format(name),
             srcs = common + jvm,
-            kotlinc_opts = ":{}".format(opts_name),
+            kotlinc_opts = ":{}".format(_platform_opts_name(name, "jvm")),
             plugins = normalized_plugins,
+            tags = user_tags,
             visibility = visibility,
-            deps = jvm_all_deps,
+            deps = common_jvm_deps + jvm_deps,
         )
         native.alias(
             name = name,
@@ -151,6 +173,14 @@ def kt_multiplatform_library(
         )
 
     if android:
+        _define_platform_opts(
+            name = name,
+            platform_suffix = "android",
+            platform_fragment = "androidMain",
+            common_srcs = common,
+            platform_srcs = android,
+        )
+
         manifest = android_manifest
         if not manifest:
             manifest_package = android_custom_package
@@ -169,10 +199,11 @@ def kt_multiplatform_library(
             name = "{}_android".format(name),
             srcs = common + android,
             manifest = manifest,
-            kotlinc_opts = ":{}".format(opts_name),
+            kotlinc_opts = ":{}".format(_platform_opts_name(name, "android")),
             plugins = normalized_plugins,
+            tags = user_tags,
             visibility = visibility,
-            deps = android_all_deps,
+            deps = common_android_deps + android_deps,
         )
         if android_custom_package:
             android_kwargs["custom_package"] = android_custom_package
