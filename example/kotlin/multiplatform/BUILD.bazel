@@ -20,29 +20,11 @@ kt_multiplatform_library(
     },
 )
 
-kt_multiplatform_library(
-    name = "library_decorated",
-    srcs = {
-        "android": ["GreetingDecorator.android.kt"],
-        "common": ["DecoratedGreeting.kt"],
-        "jvm": ["GreetingDecorator.jvm.kt"],
-    },
-    android_custom_package = "victor.example.multiplatform",
-    visibility = ["//visibility:public"],
-    deps = {
-        "common": [
-            ":library",
-            "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_coroutines_core",
-        ],
-    },
-)
-
 kt_jvm_test(
     name = "library_jvm_test",
     srcs = ["GreetingTest.kt"],
     test_class = "victor.example.multiplatform.GreetingTest",
     deps = [
-        ":library_decorated_jvm",
         ":library_jvm",
         "@third_party_maven//:junit_junit",
     ],
