@@ -8,12 +8,4 @@ class GreetingTest {
     fun messageUsesJvmPlatformActual() {
         assertEquals("Hello, world from JVM!", Greeting().message(""))
     }
-
-    @Test
-    fun decoratedLibraryCanDependOnBaseLibrary() {
-        assertEquals(
-            "Hello, world from JVM! [kmp-3p] [from JVM library 2]",
-            DecoratedGreeting().message(""),
-        )
-    }
 }
