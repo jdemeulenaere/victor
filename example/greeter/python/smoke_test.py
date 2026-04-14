@@ -118,7 +118,7 @@ def _start_backend(
     backend_bin: str, port: int, backend_log: Path
 ) -> subprocess.Popen[str]:
     env = os.environ.copy()
-    env["VICTOR_BACKEND_PORT"] = str(port)
+    env["PORT"] = str(port)
 
     backend_log.write_text("")
     log_handle = backend_log.open("a", encoding="utf-8")

@@ -1,3 +1,4 @@
+load("//rules/deploy:defs.bzl", "deploy_web_app")
 load("//rules/web:defs.bzl", "web_app")
 
 web_app(
@@ -10,4 +11,12 @@ web_app(
     visibility = ["//visibility:public"],
     vite_config = "vite.config.mjs",
     deps = ["//example/greeter/proto:victor_api_js_proto_files"],
+)
+
+deploy_web_app(
+    name = "deploy",
+    app = ":web",
+    backend = "//example/greeter/kotlin:deploy",
+    site = "greeter-web-dev",
+    visibility = ["//visibility:public"],
 )

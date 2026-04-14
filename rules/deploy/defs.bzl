@@ -1,0 +1,186 @@
+"""High-level deploy macros for repo-supported dev environments."""
+
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+_DEPLOY_CONFIG = "//tools/deploy:dev_environment.json"
+_DEPLOY_RUNNER = "//tools/deploy:deploy_runner"
+_DEPLOY_WRAPPER = "//tools/deploy:run_deploy.sh"
+
+def _append_target_suffix(label, suffix):
+    if label.startswith("@"):
+        fail("external deploy labels are not supported: {}".format(label))
+    if label.startswith("//"):
+        if ":" in label:
+            package, name = label.split(":", 1)
+            return "{}:{}{}".format(package, name, suffix)
+        package = label[2:]
+        name = package.rsplit("/", 1)[-1]
+        return "//{}:{}{}".format(package, name, suffix)
+    if label.startswith(":"):
+        return "{}{}".format(label, suffix)
+    return ":{}{}".format(label, suffix)
+
+def _maybe_list(value):
+    if value == None:
+        return []
+    return value
+
+def _matching_paths(files, predicate):
+    return [file.path for file in files if predicate(file)]
+
+def _find_single_path(files, predicate, description):
+    matches = _matching_paths(files, predicate)
+    if len(matches) != 1:
+        fail("expected exactly one {} output, found {}: {}".format(description, len(matches), matches))
+    return matches[0]
+
+def _deploy_manifest_common(ctx, deploy_kind, app_label, extra):
+    out = ctx.actions.declare_file("{}.json".format(ctx.label.name))
+    payload = {
+        "deploy_kind": deploy_kind,
+        "target_label": str(ctx.label),
+        "app_label": str(app_label),
+    }
+    payload.update(extra)
+    ctx.actions.write(out, json.encode(payload) + "\n")
+    return DefaultInfo(files = depset([out]))
+
+def _grpc_server_manifest_impl(ctx):
+    executable = ctx.executable.app
+    extra = {
+        "service": ctx.attr.service,
+        "app_executable_path": executable.path,
+        "app_runfiles_path": executable.path + ".runfiles",
+        "app_repo_mapping_path": executable.path + ".repo_mapping",
+        "app_runfiles_manifest_path": executable.path + ".runfiles_manifest",
+    }
+    return _deploy_manifest_common(ctx, "grpc_server", ctx.attr.app.label, extra)
+
+_grpc_server_manifest = rule(
+    implementation = _grpc_server_manifest_impl,
+    attrs = {
+        "app": attr.label(executable = True, cfg = "target"),
+        "service": attr.string(mandatory = True),
+    },
+)
+
+def _web_app_manifest_impl(ctx):
+    files = ctx.attr.app[DefaultInfo].files.to_list()
+    backend_manifest_path = None
+    if ctx.file.backend_manifest != None:
+        backend_manifest_path = ctx.file.backend_manifest.path
+    extra = {
+        "site": ctx.attr.site,
+        "app_dist_path": _find_single_path(files, lambda file: file.is_directory, "web dist directory"),
+        "backend_manifest_path": backend_manifest_path,
+    }
+    return _deploy_manifest_common(ctx, "web_app", ctx.attr.app.label, extra)
+
+_web_app_manifest = rule(
+    implementation = _web_app_manifest_impl,
+    attrs = {
+        "app": attr.label(mandatory = True),
+        "backend_manifest": attr.label(allow_single_file = True),
+        "site": attr.string(mandatory = True),
+    },
+)
+
+def _android_app_manifest_impl(ctx):
+    files = ctx.attr.app[DefaultInfo].files.to_list()
+    extra = {
+        "apk_path": _find_single_path(
+            files,
+            lambda file: file.path.endswith(".apk") and not file.path.endswith("_unsigned.apk"),
+            "signed APK",
+        ),
+        "firebase_app_id": ctx.attr.firebase_app_id,
+        "tester_groups": _maybe_list(ctx.attr.tester_groups),
+    }
+    return _deploy_manifest_common(ctx, "android_app", ctx.attr.app.label, extra)
+
+_android_app_manifest = rule(
+    implementation = _android_app_manifest_impl,
+    attrs = {
+        "app": attr.label(mandatory = True),
+        "firebase_app_id": attr.string(mandatory = True),
+        "tester_groups": attr.string_list(),
+    },
+)
+
+def _deploy_target(name, manifest, data, deploy_kind, visibility):
+    sh_binary(
+        name = name,
+        srcs = [_DEPLOY_WRAPPER],
+        args = [
+            "$(location {})".format(_DEPLOY_RUNNER),
+            "--manifest",
+            "$(location {})".format(manifest),
+            "--config",
+            "$(location {})".format(_DEPLOY_CONFIG),
+        ],
+        data = [
+            _DEPLOY_CONFIG,
+            _DEPLOY_RUNNER,
+            manifest,
+        ] + data,
+        tags = [
+            "deploy_on_main",
+            "deploy_kind={}".format(deploy_kind),
+        ],
+        visibility = visibility,
+    )
+
+def deploy_grpc_server(name, app, service, visibility = None):
+    manifest_name = "{}__manifest".format(name)
+    _grpc_server_manifest(
+        name = manifest_name,
+        app = app,
+        service = service,
+        visibility = visibility,
+    )
+    _deploy_target(
+        name = name,
+        manifest = ":{}".format(manifest_name),
+        data = [app],
+        deploy_kind = "grpc_server",
+        visibility = visibility,
+    )
+
+def deploy_web_app(name, app, site, backend = None, visibility = None):
+    manifest_name = "{}__manifest".format(name)
+    backend_manifest = None
+    data = [app]
+    if backend != None:
+        backend_manifest = _append_target_suffix(backend, "__manifest")
+        data.append(backend_manifest)
+    _web_app_manifest(
+        name = manifest_name,
+        app = app,
+        backend_manifest = backend_manifest,
+        site = site,
+        visibility = visibility,
+    )
+    _deploy_target(
+        name = name,
+        manifest = ":{}".format(manifest_name),
+        data = data,
+        deploy_kind = "web_app",
+        visibility = visibility,
+    )
+
+def deploy_android_app(name, app, firebase_app_id, tester_groups = None, visibility = None):
+    manifest_name = "{}__manifest".format(name)
+    _android_app_manifest(
+        name = manifest_name,
+        app = app,
+        firebase_app_id = firebase_app_id,
+        tester_groups = _maybe_list(tester_groups),
+        visibility = visibility,
+    )
+    _deploy_target(
+        name = name,
+        manifest = ":{}".format(manifest_name),
+        data = [app],
+        deploy_kind = "android_app",
+        visibility = visibility,
+    )

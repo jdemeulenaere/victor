@@ -1,5 +1,6 @@
 load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("//rules/deploy:defs.bzl", "deploy_android_app")
 load("//tools:android/defs.bzl", "android_binary", "android_local_test")
 
 kt_android_library(
@@ -53,4 +54,11 @@ android_local_test(
         "@rules_robolectric//bazel:android-all",
         "@third_party_maven//:androidx_compose_ui_ui_test_manifest",
     ],
+)
+
+deploy_android_app(
+    name = "deploy",
+    app = ":app",
+    firebase_app_id = "1:617611994239:android:7506bbb54eb2decb430b4a",
+    visibility = ["//visibility:public"],
 )
