@@ -34,6 +34,9 @@ def _find_single_path(files, predicate, description):
         fail("expected exactly one {} output, found {}: {}".format(description, len(matches), matches))
     return matches[0]
 
+def _workspace_runfiles_path(file):
+    return "_main/{}".format(file.short_path)
+
 def _deploy_manifest_common(ctx, deploy_kind, app_label, extra):
     out = ctx.actions.declare_file("{}.json".format(ctx.label.name))
     payload = {
@@ -50,6 +53,7 @@ def _grpc_server_manifest_impl(ctx):
     extra = {
         "service": ctx.attr.service,
         "app_executable_path": executable.path,
+        "app_executable_runfiles_path": _workspace_runfiles_path(executable),
         "app_runfiles_path": executable.path + ".runfiles",
         "app_repo_mapping_path": executable.path + ".repo_mapping",
         "app_runfiles_manifest_path": executable.path + ".runfiles_manifest",
@@ -66,13 +70,20 @@ _grpc_server_manifest = rule(
 
 def _web_app_manifest_impl(ctx):
     files = ctx.attr.app[DefaultInfo].files.to_list()
+    dist_dir = [file for file in files if file.is_directory]
+    if len(dist_dir) != 1:
+        fail("expected exactly one web dist directory output, found {}: {}".format(len(dist_dir), [file.path for file in dist_dir]))
     backend_manifest_path = None
+    backend_manifest_runfiles_path = None
     if ctx.file.backend_manifest != None:
         backend_manifest_path = ctx.file.backend_manifest.path
+        backend_manifest_runfiles_path = _workspace_runfiles_path(ctx.file.backend_manifest)
     extra = {
         "site": ctx.attr.site,
-        "app_dist_path": _find_single_path(files, lambda file: file.is_directory, "web dist directory"),
+        "app_dist_path": dist_dir[0].path,
+        "app_dist_runfiles_path": _workspace_runfiles_path(dist_dir[0]),
         "backend_manifest_path": backend_manifest_path,
+        "backend_manifest_runfiles_path": backend_manifest_runfiles_path,
     }
     return _deploy_manifest_common(ctx, "web_app", ctx.attr.app.label, extra)
 
@@ -87,12 +98,12 @@ _web_app_manifest = rule(
 
 def _android_app_manifest_impl(ctx):
     files = ctx.attr.app[DefaultInfo].files.to_list()
+    apk = [file for file in files if file.path.endswith(".apk") and not file.path.endswith("_unsigned.apk")]
+    if len(apk) != 1:
+        fail("expected exactly one signed APK output, found {}: {}".format(len(apk), [file.path for file in apk]))
     extra = {
-        "apk_path": _find_single_path(
-            files,
-            lambda file: file.path.endswith(".apk") and not file.path.endswith("_unsigned.apk"),
-            "signed APK",
-        ),
+        "apk_path": apk[0].path,
+        "apk_runfiles_path": _workspace_runfiles_path(apk[0]),
         "firebase_app_id": ctx.attr.firebase_app_id,
         "tester_groups": _maybe_list(ctx.attr.tester_groups),
     }
