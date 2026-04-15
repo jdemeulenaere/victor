@@ -10,15 +10,14 @@ python.toolchain(
 )
 use_repo(python, "python_3_14_2")
 
-# Expose Android SDK/toolchains for first-party android_* targets.
+# Expose Bazel-managed Android SDK/toolchains for first-party android_* targets.
 android_sdk_repository_extension = use_extension(
-    "@rules_android//rules/android_sdk_repository:rule.bzl",
+    "//tools:android/android_sdk_repository.bzl",
     "android_sdk_repository_extension",
 )
 android_sdk_repository_extension.configure(
     api_level = 36,
     build_tools_version = "36.0.0",
-    path = "$WORKSPACE_ROOT/.cache/android-sdk",
 )
 use_repo(android_sdk_repository_extension, "androidsdk")
 
