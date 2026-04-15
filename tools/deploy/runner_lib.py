@@ -40,6 +40,86 @@ def _resolve_artifact_path(
     return (workspace_root / path).resolve()
 
 
+def _deploy_runfiles_root(manifest_path: Path) -> Path | None:
+    manifest_name = manifest_path.name
+    if not manifest_name.endswith("__manifest.json"):
+        return None
+    candidate = manifest_path.with_name(
+        f"{manifest_name.removesuffix('__manifest.json')}.runfiles"
+    )
+    if candidate.exists():
+        return candidate.resolve()
+    return None
+
+
+def _runfiles_root(environment: dict[str, str]) -> Path | None:
+    for key in ("RUNFILES_DIR", "JAVA_RUNFILES"):
+        candidate = environment.get(key)
+        if candidate:
+            path = Path(candidate)
+            if path.exists():
+                return path.resolve()
+    manifest_file = environment.get("RUNFILES_MANIFEST_FILE")
+    if manifest_file:
+        candidate = Path(manifest_file).resolve().parent
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _manifest_rlocation(
+    environment: dict[str, str], runfiles_logical_path: str
+) -> Path | None:
+    manifest_file = environment.get("RUNFILES_MANIFEST_FILE")
+    if not manifest_file:
+        root = _runfiles_root(environment)
+        if root is None:
+            return None
+        manifest_candidate = root / "MANIFEST"
+        if not manifest_candidate.exists():
+            return None
+        manifest_file = str(manifest_candidate)
+    for line in Path(manifest_file).read_text(encoding="utf-8").splitlines():
+        logical_path, _, real_path = line.partition(" ")
+        if logical_path == runfiles_logical_path and real_path:
+            return Path(real_path).resolve()
+    return None
+
+
+def _resolve_runfiles_path(
+    environment: dict[str, str],
+    runfiles_logical_path: str | None,
+    *,
+    runfiles_root: Path | None = None,
+) -> Path | None:
+    if not runfiles_logical_path:
+        return None
+    root = runfiles_root or _runfiles_root(environment)
+    if root is not None:
+        candidate = (root / runfiles_logical_path).resolve()
+        if candidate.exists():
+            return candidate
+    return _manifest_rlocation(environment, runfiles_logical_path)
+
+
+def _resolve_runtime_path(
+    workspace_root: Path,
+    environment: dict[str, str],
+    *,
+    artifact_path: str | None,
+    runfiles_logical_path: str | None = None,
+    runfiles_root: Path | None = None,
+) -> Path | None:
+    runfiles_path = _resolve_runfiles_path(
+        environment,
+        runfiles_logical_path,
+        runfiles_root=runfiles_root,
+    )
+    if runfiles_path is not None:
+        return runfiles_path
+    return _resolve_artifact_path(workspace_root, artifact_path)
+
+
 def _command_display(command: list[str]) -> str:
     return " ".join(shlex.quote(part) for part in command)
 
@@ -132,13 +212,40 @@ def _plan_grpc_server(
     config: dict[str, Any],
     workspace_root: Path,
     environment: dict[str, str],
+    deploy_runfiles_root: Path | None,
 ) -> dict[str, Any]:
     revision = _release_revision(environment, workspace_root)
     image_uri = _build_backend_image_uri(config, manifest["service"], revision)
-    executable_path = _resolve_artifact_path(
-        workspace_root, manifest["app_executable_path"]
+    executable_path = _resolve_runtime_path(
+        workspace_root,
+        environment,
+        artifact_path=manifest["app_executable_path"],
+        runfiles_logical_path=manifest.get("app_executable_runfiles_path"),
+        runfiles_root=deploy_runfiles_root,
     )
     assert executable_path is not None
+    runfiles_root = deploy_runfiles_root or _runfiles_root(environment)
+    runtime_runfiles_path = _resolve_artifact_path(
+        workspace_root, manifest["app_runfiles_path"]
+    )
+    runtime_repo_mapping_path = _resolve_artifact_path(
+        workspace_root, manifest["app_repo_mapping_path"]
+    )
+    runtime_runfiles_manifest_path = _resolve_artifact_path(
+        workspace_root, manifest["app_runfiles_manifest_path"]
+    )
+    if (
+        runfiles_root is not None
+        and _resolve_runfiles_path(
+            environment,
+            manifest.get("app_executable_runfiles_path"),
+            runfiles_root=runfiles_root,
+        )
+        is not None
+    ):
+        runtime_runfiles_path = runfiles_root
+        runtime_repo_mapping_path = (runfiles_root / "_repo_mapping").resolve()
+        runtime_runfiles_manifest_path = (runfiles_root / "MANIFEST").resolve()
     commands = [
         [
             "gcloud",
@@ -174,19 +281,9 @@ def _plan_grpc_server(
         "revision": revision,
         "inputs": {
             "app_executable": str(executable_path),
-            "app_repo_mapping": str(
-                _resolve_artifact_path(
-                    workspace_root, manifest["app_repo_mapping_path"]
-                )
-            ),
-            "app_runfiles": str(
-                _resolve_artifact_path(workspace_root, manifest["app_runfiles_path"])
-            ),
-            "app_runfiles_manifest": str(
-                _resolve_artifact_path(
-                    workspace_root, manifest["app_runfiles_manifest_path"]
-                )
-            ),
+            "app_repo_mapping": str(runtime_repo_mapping_path),
+            "app_runfiles": str(runtime_runfiles_path),
+            "app_runfiles_manifest": str(runtime_runfiles_manifest_path),
         },
         "dockerfile": _grpc_dockerfile(executable_path.name),
         "commands": commands,
@@ -198,10 +295,14 @@ def _plan_web_app(
     config: dict[str, Any],
     workspace_root: Path,
     environment: dict[str, str],
+    deploy_runfiles_root: Path | None,
 ) -> dict[str, Any]:
-    del environment
-    public_source_dir = _resolve_artifact_path(
-        workspace_root, manifest["app_dist_path"]
+    public_source_dir = _resolve_runtime_path(
+        workspace_root,
+        environment,
+        artifact_path=manifest["app_dist_path"],
+        runfiles_logical_path=manifest.get("app_dist_runfiles_path"),
+        runfiles_root=deploy_runfiles_root,
     )
     assert public_source_dir is not None
     firebase_config: dict[str, Any] = {
@@ -214,7 +315,13 @@ def _plan_web_app(
     backend_manifest_path = manifest.get("backend_manifest_path")
     if backend_manifest_path:
         backend_manifest = _load_json(
-            _resolve_artifact_path(workspace_root, backend_manifest_path)
+            _resolve_runtime_path(
+                workspace_root,
+                environment,
+                artifact_path=backend_manifest_path,
+                runfiles_logical_path=manifest.get("backend_manifest_runfiles_path"),
+                runfiles_root=deploy_runfiles_root,
+            )
         )
         if backend_manifest.get("deploy_kind") != "grpc_server":
             raise RuntimeError(
@@ -261,8 +368,15 @@ def _plan_android_app(
     config: dict[str, Any],
     workspace_root: Path,
     environment: dict[str, str],
+    deploy_runfiles_root: Path | None,
 ) -> dict[str, Any]:
-    apk_path = _resolve_artifact_path(workspace_root, manifest["apk_path"])
+    apk_path = _resolve_runtime_path(
+        workspace_root,
+        environment,
+        artifact_path=manifest["apk_path"],
+        runfiles_logical_path=manifest.get("apk_runfiles_path"),
+        runfiles_root=deploy_runfiles_root,
+    )
     assert apk_path is not None
     tester_groups = manifest.get("tester_groups") or config["firebase"].get(
         "default_tester_groups", []
@@ -306,14 +420,34 @@ def build_plan(
     config = _load_json(config_path)
     env = dict(os.environ if environment is None else environment)
     resolved_workspace_root = _workspace_root(workspace_root)
+    resolved_manifest_path = manifest_path.resolve()
+    deploy_runfiles_root = _deploy_runfiles_root(resolved_manifest_path)
 
     kind = manifest["deploy_kind"]
     if kind == "grpc_server":
-        return _plan_grpc_server(manifest, config, resolved_workspace_root, env)
+        return _plan_grpc_server(
+            manifest,
+            config,
+            resolved_workspace_root,
+            env,
+            deploy_runfiles_root,
+        )
     if kind == "web_app":
-        return _plan_web_app(manifest, config, resolved_workspace_root, env)
+        return _plan_web_app(
+            manifest,
+            config,
+            resolved_workspace_root,
+            env,
+            deploy_runfiles_root,
+        )
     if kind == "android_app":
-        return _plan_android_app(manifest, config, resolved_workspace_root, env)
+        return _plan_android_app(
+            manifest,
+            config,
+            resolved_workspace_root,
+            env,
+            deploy_runfiles_root,
+        )
     raise RuntimeError(f"Unsupported deploy kind: {kind}")
 
 
@@ -389,7 +523,9 @@ def execute_plan(plan: dict[str, Any]) -> None:
     raise RuntimeError(f"Unsupported deploy kind: {kind}")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None, *, environment: dict[str, str] | None = None
+) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--config", required=True)
@@ -402,6 +538,7 @@ def main(argv: list[str] | None = None) -> int:
             Path(args.manifest),
             Path(args.config),
             workspace_root=args.workspace_root,
+            environment=environment,
         )
         if args.dry_run:
             json.dump(plan, sys.stdout, indent=2, sort_keys=True)
