@@ -3,6 +3,12 @@ name: CI
 on:
   pull_request:
   push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build_test:
@@ -16,6 +22,7 @@ jobs:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-${{ runner.os }}
           repository-cache: true
+          cache-save: ${{ github.event_name != 'pull_request' }}
       - run: ./build.sh
       - run: ./test.sh
 
@@ -28,11 +35,20 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6
+      - name: Ensure Android SDK
+        run: |
+          set -euo pipefail
+          ANDROID_SDK_ROOT="$(./tools/android/ensure_sdk.sh)"
+          echo "ANDROID_HOME=${ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          echo "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "${ANDROID_SDK_ROOT}/platform-tools" >> "$GITHUB_PATH"
       - uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-${{ runner.os }}
           repository-cache: true
+          cache-save: ${{ github.event_name != 'pull_request' }}
       - id: deploy_config
         name: Load deploy config
         run: bazel run //tools/deploy:emit_github_actions_outputs -- --config tools/deploy/dev_environment.json --github-output "$GITHUB_OUTPUT"
