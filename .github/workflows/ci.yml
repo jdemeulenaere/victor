@@ -23,8 +23,10 @@ jobs:
           disk-cache: ${{ github.workflow }}-${{ runner.os }}
           repository-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
-      - run: ./build.sh
-      - run: ./test.sh
+      - name: Build
+        run: bazel build --config=ci //...
+      - name: Test
+        run: bazel test --config=ci //...
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -43,7 +45,7 @@ jobs:
           cache-save: ${{ github.event_name != 'pull_request' }}
       - id: deploy_config
         name: Load deploy config
-        run: bazel run //tools/deploy:emit_github_actions_outputs -- --config tools/deploy/dev_environment.json --github-output "$GITHUB_OUTPUT"
+        run: bazel run --config=ci //tools/deploy:emit_github_actions_outputs -- --config tools/deploy/dev_environment.json --github-output "$GITHUB_OUTPUT"
       - uses: google-github-actions/auth@v3
         with:
           project_id: ${{ steps.deploy_config.outputs.gcp_project_id }}
@@ -68,6 +70,6 @@ jobs:
                 continue
               fi
               echo "Deploying $target"
-              bazel run "$target"
-            done < <(bazel run //tools/deploy:list_deploy_targets -- --kind "$kind")
+              bazel run --config=ci "$target"
+            done < <(bazel run --config=ci //tools/deploy:list_deploy_targets -- --kind "$kind")
           done
