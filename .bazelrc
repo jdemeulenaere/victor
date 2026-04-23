@@ -10,6 +10,9 @@ common --tool_java_runtime_version=remotejdk_21
 common --java_language_version=21
 common --tool_java_language_version=21
 
+# Always package Android binaries for arm64-v8a, independent of the host CPU.
+build --android_platforms=@rules_android//:arm64-v8a
+
 # Keep Android desugar within the memory budget of small cloud runners.
 build --worker_max_instances=Desugar=1
 
