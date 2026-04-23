@@ -5,6 +5,24 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 _DEPLOY_CONFIG = "//tools/deploy:dev_environment.json"
 _DEPLOY_RUNNER = "//tools/deploy:deploy_runner"
 _DEPLOY_WRAPPER = "//tools/deploy:run_deploy.sh"
+_ANDROID_DEPLOY_SERVICE_URL = "//tools/android:android_deploy_service_url"
+_ANDROID_SERVICE_URL_PROFILE = "//tools/android:android_service_url_profile"
+
+def _android_deploy_transition_impl(settings, attr):
+    _ = settings
+    return {
+        _ANDROID_DEPLOY_SERVICE_URL: attr.service_url,
+        _ANDROID_SERVICE_URL_PROFILE: "deploy",
+    }
+
+_android_deploy_transition = transition(
+    implementation = _android_deploy_transition_impl,
+    inputs = [],
+    outputs = [
+        _ANDROID_DEPLOY_SERVICE_URL,
+        _ANDROID_SERVICE_URL_PROFILE,
+    ],
+)
 
 def _append_target_suffix(label, suffix):
     if label.startswith("@"):
@@ -97,7 +115,8 @@ _web_app_manifest = rule(
 )
 
 def _android_app_manifest_impl(ctx):
-    files = ctx.attr.app[DefaultInfo].files.to_list()
+    app = ctx.attr.app[0]
+    files = app[DefaultInfo].files.to_list()
     apk = [file for file in files if file.path.endswith(".apk") and not file.path.endswith("_unsigned.apk")]
     if len(apk) != 1:
         fail("expected exactly one signed APK output, found {}: {}".format(len(apk), [file.path for file in apk]))
@@ -107,14 +126,25 @@ def _android_app_manifest_impl(ctx):
         "firebase_app_id": ctx.attr.firebase_app_id,
         "tester_groups": _maybe_list(ctx.attr.tester_groups),
     }
-    return _deploy_manifest_common(ctx, "android_app", ctx.attr.app.label, extra)
+    manifest_info = _deploy_manifest_common(ctx, "android_app", app.label, extra)
+    return DefaultInfo(
+        files = manifest_info.files,
+        runfiles = ctx.runfiles(files = apk),
+    )
 
 _android_app_manifest = rule(
     implementation = _android_app_manifest_impl,
     attrs = {
-        "app": attr.label(mandatory = True),
+        "app": attr.label(
+            mandatory = True,
+            cfg = _android_deploy_transition,
+        ),
         "firebase_app_id": attr.string(mandatory = True),
+        "service_url": attr.string(),
         "tester_groups": attr.string_list(),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
     },
 )
 
@@ -179,19 +209,20 @@ def deploy_web_app(name, app, site, backend = None, visibility = None):
         visibility = visibility,
     )
 
-def deploy_android_app(name, app, firebase_app_id, tester_groups = None, visibility = None):
+def deploy_android_app(name, app, firebase_app_id, service_url = "", tester_groups = None, visibility = None):
     manifest_name = "{}__manifest".format(name)
     _android_app_manifest(
         name = manifest_name,
         app = app,
         firebase_app_id = firebase_app_id,
+        service_url = service_url,
         tester_groups = _maybe_list(tester_groups),
         visibility = visibility,
     )
     _deploy_target(
         name = name,
         manifest = ":{}".format(manifest_name),
-        data = [app],
+        data = [],
         deploy_kind = "android_app",
         visibility = visibility,
     )

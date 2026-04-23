@@ -1,5 +1,3 @@
 exports_files([
-    "android/android_sdk_repository.BUILD.bazel.tpl",
-    "android/android_sdk_repository.bzl",
     "tools.MODULE.bazel",
 ])

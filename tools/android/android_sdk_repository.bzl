@@ -115,7 +115,7 @@ def _android_sdk_repository_impl(repo_ctx):
 
     repo_ctx.template(
         "BUILD.bazel",
-        Label("//tools:android/android_sdk_repository.BUILD.bazel.tpl"),
+        Label("//tools/android:android_sdk_repository.BUILD.bazel.tpl"),
         substitutions = {
             "__api_levels__": str(api_level),
             "__build_tools_directory__": build_tools_directory,
