@@ -12,7 +12,7 @@ use_repo(python, "python_3_14_2")
 
 # Expose Bazel-managed Android SDK/toolchains for first-party android_* targets.
 android_sdk_repository_extension = use_extension(
-    "//tools:android/android_sdk_repository.bzl",
+    "//tools/android:android_sdk_repository.bzl",
     "android_sdk_repository_extension",
 )
 android_sdk_repository_extension.configure(

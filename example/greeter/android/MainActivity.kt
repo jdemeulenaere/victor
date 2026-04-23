@@ -26,21 +26,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.grpc.ManagedChannel
 import io.grpc.StatusRuntimeException
-import io.grpc.okhttp.OkHttpChannelBuilder
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import victor.api.v1.GreeterGrpcKt
 import victor.api.v1.HelloRequest
 import victor.example.multiplatform.rememberGreetingMessage
 
-private const val BACKEND_HOST = "127.0.0.1"
-private const val BACKEND_PORT = 8080
 private const val LOG_TAG = "GreeterAndroid"
 
 class MainActivity : ComponentActivity() {
-    private val channel: ManagedChannel by lazy {
-        OkHttpChannelBuilder.forAddress(BACKEND_HOST, BACKEND_PORT).usePlaintext().build()
-    }
+    private val channel: ManagedChannel by lazy { buildChannel(BackendConfig.endpoint) }
 
     private val greeterClient: GreeterGrpcKt.GreeterCoroutineStub by lazy {
         GreeterGrpcKt.GreeterCoroutineStub(channel)
@@ -49,7 +44,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { MainActivityContent(client = greeterClient) }
+        setContent {
+            MainActivityContent(client = greeterClient, endpoint = BackendConfig.endpoint)
+        }
     }
 
     override fun onDestroy() {
@@ -62,7 +59,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainActivityContent(client: GreeterGrpcKt.GreeterCoroutineStub) {
+fun MainActivityContent(client: GreeterGrpcKt.GreeterCoroutineStub, endpoint: BackendEndpoint) {
     var name by remember { mutableStateOf("world") }
     var loading by remember { mutableStateOf(false) }
     var responseMessage by remember { mutableStateOf("") }
@@ -85,11 +82,7 @@ fun MainActivityContent(client: GreeterGrpcKt.GreeterCoroutineStub) {
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    text = "Target: $BACKEND_HOST:$BACKEND_PORT",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Text(
-                    text = "Use adb reverse: adb reverse tcp:$BACKEND_PORT tcp:$BACKEND_PORT",
+                    text = "Target: ${endpoint.serviceUrl}",
                     style = MaterialTheme.typography.bodySmall,
                 )
 
