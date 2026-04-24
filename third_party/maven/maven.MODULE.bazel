@@ -1,4 +1,16 @@
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+
+kmp_maven_variants_repository = use_repo_rule(
+    "//rules/kotlin/multiplatform:kmp_maven_variants_repository.bzl",
+    "kmp_maven_variants_repository",
+)
+
+kmp_maven_variants_repository(
+    name = "third_party_maven_kmp_variants",
+    maven_install_json = "//third_party/maven:maven_install.json",
+    maven_repo = "third_party_maven",
+)
+
 maven.from_toml(
     name = "third_party",
     libs_versions_toml = "//third_party/maven:libs.versions.toml",
