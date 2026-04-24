@@ -119,7 +119,7 @@ def kt_multiplatform_library(
     - srcs: required dictionary with keys `common`, `jvm`, `android`.
     - deps: optional dictionary with keys:
       - `common`: deps added to both platform targets. `@third_party_maven` Kotlin Multiplatform
-        labels are resolved to pinned platform variants when available; other external labels are used as-is.
+        labels are resolved through Gradle Module Metadata when available; other external labels are used as-is.
         first-party labels are remapped to platform variants (for example `:core` -> `:core_jvm`/`:core_android`).
       - `jvm`: regular deps for the JVM target only.
       - `android`: regular deps for the Android target only.

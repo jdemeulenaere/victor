@@ -1,12 +1,21 @@
 package victor.example.multiplatform
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+
 expect object Platform {
     val name: String
 }
 
+@Serializable private data class GreetingConfig(val salutation: String)
+
+private val greetingConfig = Json.decodeFromString<GreetingConfig>("""{"salutation":"Hello"}""")
+
 class Greeting {
     fun message(name: String): String {
         val normalizedName = name.ifBlank { "world" }
-        return "Hello, $normalizedName from ${Platform.name}!"
+        val salutation = greetingConfig.salutation
+        return "$salutation, $normalizedName from ${Platform.name}!"
     }
 }

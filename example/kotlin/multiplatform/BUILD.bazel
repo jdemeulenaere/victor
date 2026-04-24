@@ -12,10 +12,16 @@ kt_multiplatform_library(
         "jvm": ["Platform.jvm.kt"],
     },
     android_custom_package = "victor.example.multiplatform",
-    plugins = ["//toolchains/kotlin/compose:compose_compiler_plugin"],
+    plugins = [
+        "//toolchains/kotlin/compose:compose_compiler_plugin",
+        "//toolchains/kotlin/serialization:serialization_compiler_plugin",
+    ],
     visibility = ["//visibility:public"],
     deps = {
-        "common": ["@third_party_maven//:androidx_compose_runtime_runtime"],
+        "common": [
+            "@third_party_maven//:androidx_compose_runtime_runtime",
+            "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_serialization_json",
+        ],
     },
 )
 
