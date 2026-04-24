@@ -1,0 +1,8 @@
+load("@rules_kotlin//kotlin:core.bzl", "kt_compiler_plugin")
+
+kt_compiler_plugin(
+    name = "serialization_compiler_plugin",
+    id = "org.jetbrains.kotlinx.serialization",
+    visibility = ["//visibility:public"],
+    deps = ["@third_party_maven//:org_jetbrains_kotlin_kotlin_serialization_compiler_plugin"],
+)
