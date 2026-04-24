@@ -15,8 +15,7 @@ kt_multiplatform_library(
     plugins = ["//toolchains/kotlin/compose:compose_compiler_plugin"],
     visibility = ["//visibility:public"],
     deps = {
-        "android": ["@third_party_maven//:androidx_compose_runtime_runtime_android"],
-        "jvm": ["@third_party_maven//:androidx_compose_runtime_runtime_desktop"],
+        "common": ["@third_party_maven//:androidx_compose_runtime_runtime"],
     },
 )
 

@@ -3,6 +3,9 @@
 load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
 load("@rules_kotlin//kotlin:core.bzl", "kt_kotlinc_options")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("@third_party_maven_kmp_variants//:variants.bzl", "KMP_MAVEN_VARIANTS")
+
+_THIRD_PARTY_MAVEN_PREFIX = "@third_party_maven//:"
 
 def _normalize_same_package_srcs(srcs, attr_name):
     normalized = []
@@ -38,7 +41,13 @@ def _target_name(dep):
     return dep
 
 def _resolve_dep_for_variant(dep, suffix):
-    # External repositories are generally regular platform-neutral deps and should not be remapped.
+    if dep.startswith(_THIRD_PARTY_MAVEN_PREFIX):
+        variants = KMP_MAVEN_VARIANTS.get(dep)
+        if variants:
+            return variants.get(suffix, dep)
+        return dep
+
+    # Other external repositories are generally regular platform-neutral deps and should not be remapped.
     if dep.startswith("@"):
         return dep
 
@@ -109,7 +118,8 @@ def kt_multiplatform_library(
     Args:
     - srcs: required dictionary with keys `common`, `jvm`, `android`.
     - deps: optional dictionary with keys:
-      - `common`: deps added to both platform targets. External labels are used as-is;
+      - `common`: deps added to both platform targets. `@third_party_maven` Kotlin Multiplatform
+        labels are resolved to pinned platform variants when available; other external labels are used as-is.
         first-party labels are remapped to platform variants (for example `:core` -> `:core_jvm`/`:core_android`).
       - `jvm`: regular deps for the JVM target only.
       - `android`: regular deps for the Android target only.
