@@ -34,6 +34,7 @@
     "org.jetbrains.compose.desktop:desktop-jvm": 1327876903,
     "org.jetbrains.compose.ui:ui-test-junit4-desktop": -1653800854,
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin": -601922000,
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable": -113555848,
     "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64": 1986710265,
     "org.jetbrains.skiko:skiko-awt-runtime-linux-x64": -1382388131,
     "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64": -806471334,
@@ -273,6 +274,7 @@
     "org.jetbrains.compose.ui:ui-util-desktop": -751857760,
     "org.jetbrains.kotlin:kotlin-compiler-embeddable": -8770414,
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin": 1403681250,
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable": 670946226,
     "org.jetbrains.kotlin:kotlin-daemon-embeddable": 640319072,
     "org.jetbrains.kotlin:kotlin-reflect": -118143280,
     "org.jetbrains.kotlin:kotlin-script-runtime": 1134725160,
@@ -1635,6 +1637,12 @@
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin": {
       "shasums": {
         "jar": "7e71ea5bee642b4febc43d9bc9c209c65a205ea1b420359a3a337b0c9c3fc877"
+      },
+      "version": "2.3.20"
+    },
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable": {
+      "shasums": {
+        "jar": "e1024c542f1d021e170cd040e4e1730f2fd76ce8ed76fc9e3496988ca643a2e0"
       },
       "version": "2.3.20"
     },
@@ -5522,6 +5530,15 @@
       "androidx.compose.compiler.plugins.kotlin.lower",
       "androidx.compose.compiler.plugins.kotlin.lower.hiddenfromobjc"
     ],
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable": [
+      "androidx.compose.compiler.plugins.kotlin",
+      "androidx.compose.compiler.plugins.kotlin.analysis",
+      "androidx.compose.compiler.plugins.kotlin.inference",
+      "androidx.compose.compiler.plugins.kotlin.k1",
+      "androidx.compose.compiler.plugins.kotlin.k2",
+      "androidx.compose.compiler.plugins.kotlin.lower",
+      "androidx.compose.compiler.plugins.kotlin.lower.hiddenfromobjc"
+    ],
     "org.jetbrains.kotlin:kotlin-daemon-embeddable": [
       "org.jetbrains.kotlin.daemon",
       "org.jetbrains.kotlin.daemon.common",
@@ -6040,6 +6057,7 @@
       "org.jetbrains.compose.ui:ui-util-desktop",
       "org.jetbrains.kotlin:kotlin-compiler-embeddable",
       "org.jetbrains.kotlin:kotlin-compose-compiler-plugin",
+      "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable",
       "org.jetbrains.kotlin:kotlin-daemon-embeddable",
       "org.jetbrains.kotlin:kotlin-reflect",
       "org.jetbrains.kotlin:kotlin-script-runtime",
@@ -6315,6 +6333,7 @@
       "org.jetbrains.compose.ui:ui-util-desktop",
       "org.jetbrains.kotlin:kotlin-compiler-embeddable",
       "org.jetbrains.kotlin:kotlin-compose-compiler-plugin",
+      "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable",
       "org.jetbrains.kotlin:kotlin-daemon-embeddable",
       "org.jetbrains.kotlin:kotlin-reflect",
       "org.jetbrains.kotlin:kotlin-script-runtime",
@@ -6529,6 +6548,20 @@
       ]
     },
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin": {
+      "org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor": [
+        "androidx.compose.compiler.plugins.kotlin.ComposeCommandLineProcessor"
+      ],
+      "org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar": [
+        "androidx.compose.compiler.plugins.kotlin.ComposePluginRegistrar"
+      ],
+      "org.jetbrains.kotlin.diagnostics.rendering.DefaultErrorMessages$Extension": [
+        "androidx.compose.compiler.plugins.kotlin.k1.ComposeErrorMessages"
+      ],
+      "org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar": [
+        "androidx.compose.compiler.plugins.kotlin.k2.ComposeFirExtensionRegistrar"
+      ]
+    },
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable": {
       "org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor": [
         "androidx.compose.compiler.plugins.kotlin.ComposeCommandLineProcessor"
       ],

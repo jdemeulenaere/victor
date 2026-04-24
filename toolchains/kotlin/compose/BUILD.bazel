@@ -8,6 +8,13 @@ kt_compiler_plugin(
     deps = ["@third_party_maven//:org_jetbrains_kotlin_kotlin_compose_compiler_plugin"],
 )
 
+kt_compiler_plugin(
+    name = "compose_compiler_plugin_embeddable",
+    id = "androidx.compose.compiler.plugins.kotlin",
+    visibility = ["//visibility:public"],
+    deps = ["@third_party_maven//:org_jetbrains_kotlin_kotlin_compose_compiler_plugin_embeddable"],
+)
+
 java_library(
     name = "skiko_runtime",
     visibility = ["//visibility:public"],

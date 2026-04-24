@@ -59,6 +59,7 @@ jetbrains-skiko-awt-runtime-windows-arm64 = { module = "org.jetbrains.skiko:skik
 jetbrains-skiko-awt-runtime-windows-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-windows-x64", version.ref = "skiko" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-compose-compiler-plugin = { module = "org.jetbrains.kotlin:kotlin-compose-compiler-plugin", version.ref = "kotlin" }
+kotlin-compose-compiler-plugin-embeddable = { module = "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable", version.ref = "kotlin" }
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }

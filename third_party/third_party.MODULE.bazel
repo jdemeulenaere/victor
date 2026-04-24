@@ -1,3 +1,24 @@
 include("//third_party/maven:maven.MODULE.bazel")
 include("//third_party/npm:npm.MODULE.bazel")
 include("//third_party/pip:pip.MODULE.bazel")
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+kmp_variants_repo = use_repo_rule("//third_party/maven:kmp_variants_repo.bzl", "kmp_variants_repo")
+
+http_file(
+    name = "kotlin_stdlib_js_klib",
+    sha256 = "1651189939bac0409c052b7f1a28900fd5d2c4f43386651d22f2b9c0892f6125",
+    urls = [
+        "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-js/2.3.20/kotlin-stdlib-js-2.3.20.klib",
+    ],
+)
+
+kmp_variants_repo(
+    name = "third_party_maven_kmp_variants",
+    maven_install_json = "//third_party/maven:maven_install.json",
+    repositories = [
+        "https://repo.maven.apache.org/maven2",
+        "https://maven.google.com",
+    ],
+)
