@@ -191,30 +191,17 @@ def kt_multiplatform_library(
             platform_srcs = android,
         )
 
-        manifest = android_manifest
-        if not manifest:
-            manifest_package = android_custom_package
-            if not manifest_package:
-                package_name = native.package_name().replace("/", ".").replace("-", "_")
-                manifest_package = "generated.{}.{}".format(package_name, name.replace("-", "_"))
-            generated_manifest = "{}_android_manifest.xml".format(name)
-            native.genrule(
-                name = "{}_android_manifest".format(name),
-                outs = [generated_manifest],
-                cmd = "echo '<manifest package=\"{}\" />' > \"$@\"".format(manifest_package),
-            )
-            manifest = ":{}".format(generated_manifest)
-
         android_kwargs = dict(
             name = "{}_android".format(name),
             srcs = common + android,
-            manifest = manifest,
             kotlinc_opts = ":{}".format(_platform_opts_name(name, "android")),
             plugins = normalized_plugins,
             tags = user_tags,
             visibility = visibility,
             deps = common_android_deps + android_deps,
         )
+        if android_manifest:
+            android_kwargs["manifest"] = android_manifest
         if android_custom_package:
             android_kwargs["custom_package"] = android_custom_package
         kt_android_library(**android_kwargs)
