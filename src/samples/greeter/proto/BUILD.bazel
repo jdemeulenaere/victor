@@ -3,6 +3,10 @@ load("//build/rules:defs.bzl", "grpc_proto")
 grpc_proto(
     name = "victor_api",
     srcs = ["greeter.proto"],
-    legacy_py_import_prefix = "example/greeter/proto",
+    platforms = [
+        "jvm",
+        "python",
+        "web",
+    ],
     visibility = ["//visibility:public"],
 )

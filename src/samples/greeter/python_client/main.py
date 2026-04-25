@@ -1,8 +1,8 @@
 import argparse
 
 import grpc
-from example.greeter.proto import greeter_pb2
-from example.greeter.proto import greeter_pb2_grpc
+from src.samples.greeter.proto import greeter_pb2
+from src.samples.greeter.proto import greeter_pb2_grpc
 
 
 def main():
