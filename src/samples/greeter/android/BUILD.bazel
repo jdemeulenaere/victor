@@ -20,9 +20,7 @@ kt_android_library(
     name = "app_lib",
     srcs = ["MainActivity.kt"],
     custom_package = "victor.greeter.android",
-    manifest = "AndroidManifest.xml",
     plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
-    resource_files = glob(["res/**"]),
     deps = [
         ":backend_channel",
         ":backend_config",
@@ -40,6 +38,7 @@ android_binary(
     name = "app",
     custom_package = "victor.greeter.android",
     manifest = "AndroidManifest.xml",
+    resource_files = glob(["appRes/**"]),
     visibility = ["//visibility:public"],
     deps = [":app_lib"],
 )
@@ -61,6 +60,7 @@ android_local_test(
     name = "app_test",
     custom_package = "victor.greeter.android",
     manifest = "AndroidManifest.xml",
+    resource_files = glob(["appRes/**"]),
     test_class = "victor.greeter.android.MainActivityTest",
     deps = [
         ":app_lib",
