@@ -1,0 +1,36 @@
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_test")
+load("//build/rules:defs.bzl", "kt_multiplatform_library")
+
+kt_multiplatform_library(
+    name = "library",
+    srcs = {
+        "common": [
+            "ComposeGreeting.kt",
+            "Greeting.kt",
+        ],
+        "android": ["Platform.android.kt"],
+        "jvm": ["Platform.jvm.kt"],
+    },
+    android_custom_package = "victor.example.multiplatform",
+    plugins = [
+        "//build/toolchains/kotlin/compose:compose_compiler_plugin",
+        "//build/toolchains/kotlin/serialization:serialization_compiler_plugin",
+    ],
+    visibility = ["//visibility:public"],
+    deps = {
+        "common": [
+            "@third_party_maven//:androidx_compose_runtime_runtime",
+            "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_serialization_json",
+        ],
+    },
+)
+
+kt_jvm_test(
+    name = "library_jvm_test",
+    srcs = ["GreetingTest.kt"],
+    test_class = "victor.example.multiplatform.GreetingTest",
+    deps = [
+        ":library_jvm",
+        "@third_party_maven//:junit_junit",
+    ],
+)

@@ -1,1 +1,0 @@
-include("//tools/format/keep_sorted:keep_sorted.MODULE.bazel")

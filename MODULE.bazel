@@ -4,8 +4,7 @@ module(
 )
 
 # keep-sorted start
-include("//rules:rules.MODULE.bazel")
+include("//build/toolchains:toolchains.MODULE.bazel")
+include("//build/tools:tools.MODULE.bazel")
 include("//third_party:third_party.MODULE.bazel")
-include("//toolchains:toolchains.MODULE.bazel")
-include("//tools:tools.MODULE.bazel")
 # keep-sorted end

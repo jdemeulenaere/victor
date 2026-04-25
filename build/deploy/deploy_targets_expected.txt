@@ -1,0 +1,3 @@
+//src/samples/greeter/android:deploy
+//src/samples/greeter/backend:deploy
+//src/samples/greeter/web:deploy

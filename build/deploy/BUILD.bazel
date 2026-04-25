@@ -1,0 +1,91 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+exports_files([
+    "dev_environment.json",
+    "deploy_targets_expected.txt",
+    "run_deploy.sh",
+    "verify_ci_permissions.sh",
+])
+
+py_library(
+    name = "runner_lib",
+    srcs = ["runner_lib.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "emit_github_actions_outputs_lib",
+    srcs = ["emit_github_actions_outputs.py"],
+)
+
+py_binary(
+    name = "deploy_runner",
+    srcs = ["deploy_runner.py"],
+    main = "deploy_runner.py",
+    visibility = ["//visibility:public"],
+    deps = [":runner_lib"],
+)
+
+py_test(
+    name = "runner_test",
+    srcs = ["runner_test.py"],
+    main = "runner_test.py",
+    deps = [":runner_lib"],
+)
+
+py_binary(
+    name = "emit_github_actions_outputs",
+    srcs = ["emit_github_actions_outputs.py"],
+    main = "emit_github_actions_outputs.py",
+    visibility = ["//visibility:public"],
+    deps = [":emit_github_actions_outputs_lib"],
+)
+
+py_test(
+    name = "emit_github_actions_outputs_test",
+    srcs = ["emit_github_actions_outputs_test.py"],
+    main = "emit_github_actions_outputs_test.py",
+    deps = [":emit_github_actions_outputs_lib"],
+)
+
+py_binary(
+    name = "list_deploy_targets",
+    srcs = ["list_deploy_targets.py"],
+    main = "list_deploy_targets.py",
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "verify_ci_permissions",
+    srcs = ["verify_ci_permissions.sh"],
+    visibility = ["//visibility:public"],
+)
+
+genquery(
+    name = "deploy_targets_query",
+    expression = 'attr("tags", "deploy_on_main", set(//src/samples/greeter/android:deploy //src/samples/greeter/android:deploy__manifest //src/samples/greeter/backend:deploy //src/samples/greeter/backend:deploy__manifest //src/samples/greeter/web:deploy //src/samples/greeter/web:deploy__manifest))',
+    opts = ["--output=label"],
+    scope = [
+        "//src/samples/greeter/android:deploy",
+        "//src/samples/greeter/android:deploy__manifest",
+        "//src/samples/greeter/backend:deploy",
+        "//src/samples/greeter/backend:deploy__manifest",
+        "//src/samples/greeter/web:deploy",
+        "//src/samples/greeter/web:deploy__manifest",
+    ],
+)
+
+sh_test(
+    name = "deploy_target_discovery_test",
+    srcs = ["assert_expected_labels.sh"],
+    args = [
+        "$(location :deploy_targets_query)",
+        "$(location :deploy_targets_expected.txt)",
+    ],
+    data = [
+        ":deploy_targets_expected.txt",
+        ":deploy_targets_query",
+    ],
+)

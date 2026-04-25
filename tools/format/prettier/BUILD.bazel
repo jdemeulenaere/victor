@@ -1,7 +1,0 @@
-load("@npm//:prettier/package_json.bzl", prettier_bin = "bin")
-
-prettier_bin.prettier_binary(
-    name = "prettier",
-    data = ["//:node_modules_public"],
-    visibility = ["//visibility:public"],
-)

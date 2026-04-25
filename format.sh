@@ -143,9 +143,9 @@ echo "Formatting mode: ${MODE} (${SELECTOR})"
 if [[ ${#keep_sorted_files[@]} -gt 0 ]]; then
   echo "keep-sorted files: ${#keep_sorted_files[@]}"
   if [[ "${MODE}" == "check" ]]; then
-    bazel run //tools/format/keep_sorted:keep_sorted -- --mode=lint "${keep_sorted_files[@]}"
+    bazel run //build/tools/format/keep_sorted:keep_sorted -- --mode=lint "${keep_sorted_files[@]}"
   else
-    bazel run //tools/format/keep_sorted:keep_sorted -- --mode=fix "${keep_sorted_files[@]}"
+    bazel run //build/tools/format/keep_sorted:keep_sorted -- --mode=fix "${keep_sorted_files[@]}"
   fi
 fi
 
@@ -161,27 +161,27 @@ fi
 if [[ ${#kotlin_files[@]} -gt 0 ]]; then
   echo "Kotlin files: ${#kotlin_files[@]}"
   if [[ "${MODE}" == "check" ]]; then
-    bazel run //tools/format/ktfmt:ktfmt -- --kotlinlang-style --dry-run --set-exit-if-changed "${kotlin_files[@]}"
+    bazel run //build/tools/format/ktfmt:ktfmt -- --kotlinlang-style --dry-run --set-exit-if-changed "${kotlin_files[@]}"
   else
-    bazel run //tools/format/ktfmt:ktfmt -- --kotlinlang-style "${kotlin_files[@]}"
+    bazel run //build/tools/format/ktfmt:ktfmt -- --kotlinlang-style "${kotlin_files[@]}"
   fi
 fi
 
 if [[ ${#python_files[@]} -gt 0 ]]; then
   echo "Python files: ${#python_files[@]}"
   if [[ "${MODE}" == "check" ]]; then
-    bazel run //tools/format/ruff:ruff -- format --check "${python_files[@]}"
+    bazel run //build/tools/format/ruff:ruff -- format --check "${python_files[@]}"
   else
-    bazel run //tools/format/ruff:ruff -- format "${python_files[@]}"
+    bazel run //build/tools/format/ruff:ruff -- format "${python_files[@]}"
   fi
 fi
 
 if [[ ${#typescript_files[@]} -gt 0 ]]; then
   echo "TypeScript/Web files: ${#typescript_files[@]}"
   if [[ "${MODE}" == "check" ]]; then
-    bazel run //tools/format/prettier:prettier -- --check "${typescript_files[@]}"
+    bazel run //build/tools/format/prettier:prettier -- --check "${typescript_files[@]}"
   else
-    bazel run //tools/format/prettier:prettier -- --write "${typescript_files[@]}"
+    bazel run //build/tools/format/prettier:prettier -- --write "${typescript_files[@]}"
   fi
 fi
 

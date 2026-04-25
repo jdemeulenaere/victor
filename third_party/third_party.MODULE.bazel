@@ -1,3 +1,4 @@
+include("//third_party/bazel:modules.MODULE.bazel")
 include("//third_party/maven:maven.MODULE.bazel")
 include("//third_party/npm:npm.MODULE.bazel")
 include("//third_party/pip:pip.MODULE.bazel")
