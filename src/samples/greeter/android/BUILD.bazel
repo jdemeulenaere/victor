@@ -26,8 +26,8 @@ kt_android_library(
     deps = [
         ":backend_channel",
         ":backend_config",
-        "//src/samples/greeter/shared:library_android",
         "//src/samples/greeter/proto:victor_api_kt_grpc",
+        "//src/samples/greeter/shared:library_android",
         "@third_party_maven//:androidx_activity_activity",
         "@third_party_maven//:androidx_activity_activity_compose",
         "@third_party_maven//:androidx_activity_activity_ktx",

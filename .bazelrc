@@ -5,6 +5,12 @@ common --incompatible_enable_proto_toolchain_resolution
 # Use protobuf's prebuilt protoc (v33.4+) to avoid rebuilding C++ protobuf tools on clean builds.
 common --@com_google_protobuf//bazel/toolchains:prefer_prebuilt_protoc
 
+common --disk_cache=~/.cache/bazel-disk-cache
+common --repository_cache=~/.cache/bazel-repo-cache
+common --remote_cache_compression
+# common --repo_contents_cache=~/.cache/bazel-repo-contents-cache
+# startup --experimental_remote_repo_contents_cache
+
 common --java_runtime_version=remotejdk_21
 common --tool_java_runtime_version=remotejdk_21
 common --java_language_version=21
@@ -16,10 +22,15 @@ build --android_platforms=@rules_android//:arm64-v8a
 # Keep Android desugar within the memory budget of small cloud runners.
 build --worker_max_instances=Desugar=1
 
-# CI logs are non-interactive, so reduce progress chatter without changing
-# normal build/test behavior or failure reporting.
 common:ci --curses=no
 common:ci --noshow_loading_progress
 common:ci --show_progress_rate_limit=30
 common:ci --progress_report_interval=60
 common:ci --ui_actions_shown=1
+
+common:ci --disk_cache=
+common:ci --bes_results_url=https://app.buildbuddy.io/invocation/
+common:ci --bes_backend=grpcs://remote.buildbuddy.io
+common:ci --remote_cache=grpcs://remote.buildbuddy.io
+common:ci --remote_download_toplevel
+common:ci --remote_timeout=3600
