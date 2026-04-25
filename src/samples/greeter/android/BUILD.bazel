@@ -1,0 +1,79 @@
+load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("//build/rules:defs.bzl", "android_binary", "android_local_test", "android_service_url_config", "deploy_android_app")
+
+android_service_url_config(
+    name = "backend_config",
+    custom_package = "victor.greeter.android",
+)
+
+kt_jvm_library(
+    name = "backend_channel",
+    srcs = ["BackendChannel.kt"],
+    deps = [
+        ":backend_config",
+        "@third_party_maven//:io_grpc_grpc_okhttp",
+    ],
+)
+
+kt_android_library(
+    name = "app_lib",
+    srcs = ["MainActivity.kt"],
+    custom_package = "victor.greeter.android",
+    manifest = "AndroidManifest.xml",
+    plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
+    resource_files = glob(["res/**"]),
+    deps = [
+        ":backend_channel",
+        ":backend_config",
+        "//src/common/kotlin/multiplatform:library_android",
+        "//src/samples/greeter/proto:victor_api_kt_grpc",
+        "@third_party_maven//:androidx_activity_activity",
+        "@third_party_maven//:androidx_activity_activity_compose",
+        "@third_party_maven//:androidx_activity_activity_ktx",
+        "@third_party_maven//:androidx_compose_material3_material3_android",
+        "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_coroutines_android",
+    ],
+)
+
+android_binary(
+    name = "app",
+    custom_package = "victor.greeter.android",
+    manifest = "AndroidManifest.xml",
+    visibility = ["//visibility:public"],
+    deps = [":app_lib"],
+)
+
+kt_jvm_library(
+    name = "app_test_lib",
+    testonly = True,
+    srcs = ["MainActivityTest.kt"],
+    deps = [
+        ":app_lib",
+        "@third_party_maven//:androidx_compose_ui_ui_test_junit4_android",
+        "@third_party_maven//:junit_junit",
+        "@third_party_maven//:org_robolectric_junit",
+        "@third_party_maven//:org_robolectric_robolectric",
+    ],
+)
+
+android_local_test(
+    name = "app_test",
+    custom_package = "victor.greeter.android",
+    manifest = "AndroidManifest.xml",
+    test_class = "victor.greeter.android.MainActivityTest",
+    deps = [
+        ":app_lib",
+        ":app_test_lib",
+        "@rules_robolectric//bazel:android-all",
+        "@third_party_maven//:androidx_compose_ui_ui_test_manifest",
+    ],
+)
+
+deploy_android_app(
+    name = "deploy",
+    app = ":app",
+    firebase_app_id = "1:617611994239:android:7506bbb54eb2decb430b4a",
+    service_url = "https://greeter-backend-dev-617611994239.europe-west1.run.app",
+    visibility = ["//visibility:public"],
+)

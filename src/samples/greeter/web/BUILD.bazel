@@ -1,0 +1,21 @@
+load("//build/rules:defs.bzl", "deploy_web_app", "web_app")
+
+web_app(
+    name = "web",
+    srcs = [
+        "App.tsx",
+        "index.html",
+        "main.tsx",
+    ],
+    visibility = ["//visibility:public"],
+    vite_config = "vite.config.mjs",
+    deps = ["//src/samples/greeter/proto:victor_api_js_proto_files"],
+)
+
+deploy_web_app(
+    name = "deploy",
+    app = ":web",
+    backend = "//src/samples/greeter/backend:deploy",
+    site = "greeter-web-dev",
+    visibility = ["//visibility:public"],
+)

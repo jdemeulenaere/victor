@@ -1,3 +1,0 @@
-//example/greeter/android:deploy
-//example/greeter/kotlin:deploy
-//example/greeter/web:deploy

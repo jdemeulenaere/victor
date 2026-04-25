@@ -1,7 +1,7 @@
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 
 kmp_maven_variants_repository = use_repo_rule(
-    "//rules/kotlin/multiplatform:kmp_maven_variants_repository.bzl",
+    "//build/rules/kotlin/multiplatform:kmp_maven_variants_repository.bzl",
     "kmp_maven_variants_repository",
 )
 
@@ -45,7 +45,7 @@ maven.install(
 maven.override(
     name = "third_party",
     coordinates = "com.google.guava:listenablefuture",
-    target = "//third_party/guava:listenablefuture_from_guava",
+    target = "//third_party/maven/overrides/guava:listenablefuture_from_guava",
 )
 
 # Keep a separate shared @maven repo for transitive modules (grpc-java/protobuf).
