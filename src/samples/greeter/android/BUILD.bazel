@@ -14,8 +14,8 @@ kt_android_library(
     plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
     deps = [
         ":backend_config",
-        "//src/backend:backend_channel",
-        "//src/backend:backend_endpoint",
+        "//src/common/grpc/client:backend_channel",
+        "//src/common/grpc/client:backend_endpoint",
         "//src/samples/greeter/proto:victor_api_kt_grpc",
         "//src/samples/greeter/shared:library_android",
         "@third_party_maven//:androidx_activity_activity",
