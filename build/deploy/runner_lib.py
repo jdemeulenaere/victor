@@ -23,6 +23,7 @@ _ANDROID_SERVICE_URL_PROFILE_FLAG = (
 _ANDROID_DEPLOY_SERVICE_URL_FLAG = (
     "--//build/tools/android:android_deploy_service_url={service_url}"
 )
+_ANDROID_DEPLOY_BAZEL_FLAGS = ("-c", "opt")
 
 
 def _workspace_root(explicit_workspace_root: str | None = None) -> Path:
@@ -246,6 +247,7 @@ def _bazel_android_build_command(app_label: str, service_url: str) -> list[str]:
     return [
         "bazel",
         "build",
+        *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_android_deploy_service_url_flags(service_url),
         app_label,
     ]
@@ -255,6 +257,7 @@ def _bazel_android_cquery_command(app_label: str, service_url: str) -> list[str]
     return [
         "bazel",
         "cquery",
+        *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_android_deploy_service_url_flags(service_url),
         "--output=files",
         app_label,
