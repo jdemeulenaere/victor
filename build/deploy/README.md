@@ -92,6 +92,7 @@ Copy the Firebase App ID after registration. It looks like this:
 ```
 
 That value is required by `deploy_android_app(...)` in `src/samples/greeter/android/BUILD.bazel`.
+The backend service name is supplied by the `deploy_android_app(...)` `backend` parameter.
 
 ## 6. Create the App Distribution tester group
 

@@ -10,8 +10,8 @@ kt_android_library(
     deps = [
         "//src/common/grpc/client:backend_channel",
         "//src/common/grpc/client:backend_endpoint",
+        "//src/samples/greeter/backend:backend_config",
         "//src/samples/greeter/proto:victor_api_kt_grpc",
-        "//src/samples/greeter/shared:backend_config",
         "//src/samples/greeter/shared:library_android",
         "@third_party_maven//:androidx_activity_activity",
         "@third_party_maven//:androidx_activity_activity_compose",
@@ -60,7 +60,7 @@ android_local_test(
 deploy_android_app(
     name = "deploy",
     app = ":app",
+    backend = "//src/samples/greeter/backend:deploy",
     firebase_app_id = "1:617611994239:android:7506bbb54eb2decb430b4a",
-    service = "greeter-backend-dev",
     visibility = ["//visibility:public"],
 )

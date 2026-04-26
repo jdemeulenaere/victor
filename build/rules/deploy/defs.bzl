@@ -98,7 +98,8 @@ _web_app_manifest = rule(
 
 def _android_app_manifest_impl(ctx):
     extra = {
-        "service": ctx.attr.service,
+        "backend_manifest_path": ctx.file.backend_manifest.path,
+        "backend_manifest_runfiles_path": _workspace_runfiles_path(ctx.file.backend_manifest),
         "firebase_app_id": ctx.attr.firebase_app_id,
         "tester_groups": _maybe_list(ctx.attr.tester_groups),
     }
@@ -108,8 +109,8 @@ _android_app_manifest = rule(
     implementation = _android_app_manifest_impl,
     attrs = {
         "app": attr.label(mandatory = True),
+        "backend_manifest": attr.label(allow_single_file = True, mandatory = True),
         "firebase_app_id": attr.string(mandatory = True),
-        "service": attr.string(mandatory = True),
         "tester_groups": attr.string_list(),
     },
 )
@@ -175,20 +176,21 @@ def deploy_web_app(name, app, site, backend = None, visibility = None):
         visibility = visibility,
     )
 
-def deploy_android_app(name, app, firebase_app_id, service, tester_groups = None, visibility = None):
+def deploy_android_app(name, app, backend, firebase_app_id, tester_groups = None, visibility = None):
     manifest_name = "{}__manifest".format(name)
+    backend_manifest = _append_target_suffix(backend, "__manifest")
     _android_app_manifest(
         name = manifest_name,
         app = app,
+        backend_manifest = backend_manifest,
         firebase_app_id = firebase_app_id,
-        service = service,
         tester_groups = _maybe_list(tester_groups),
         visibility = visibility,
     )
     _deploy_target(
         name = name,
         manifest = ":{}".format(manifest_name),
-        data = [],
+        data = [backend_manifest],
         deploy_kind = "android_app",
         visibility = visibility,
     )
