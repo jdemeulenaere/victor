@@ -1,1 +1,2 @@
 include("//build/tools/format/keep_sorted:keep_sorted.MODULE.bazel")
+include("//build/tools/format/swiftformat:swiftformat.MODULE.bazel")

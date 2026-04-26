@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic formatter/checker for Bazel, Kotlin, Python, TypeScript, and keep-sorted blocks.
+# Deterministic formatter/checker for Bazel, Kotlin, Python, Swift, TypeScript, and keep-sorted blocks.
 #
 # Default mode is "fix" (rewrite files) over all tracked files.
 # Use --check to verify formatting without rewriting.
@@ -90,6 +90,7 @@ bazel_files=()
 kotlin_files=()
 python_files=()
 keep_sorted_files=()
+swift_files=()
 typescript_files=()
 
 while IFS= read -r path; do
@@ -128,6 +129,12 @@ while IFS= read -r path; do
   case "${rel}" in
     *.py)
       python_files+=("${abs}")
+      ;;
+  esac
+
+  case "${rel}" in
+    *.swift)
+      swift_files+=("${abs}")
       ;;
   esac
 
@@ -173,6 +180,15 @@ if [[ ${#python_files[@]} -gt 0 ]]; then
     bazel run //build/tools/format/ruff:ruff -- format --check "${python_files[@]}"
   else
     bazel run //build/tools/format/ruff:ruff -- format "${python_files[@]}"
+  fi
+fi
+
+if [[ ${#swift_files[@]} -gt 0 ]]; then
+  echo "Swift files: ${#swift_files[@]}"
+  if [[ "${MODE}" == "check" ]]; then
+    bazel run //build/tools/format/swiftformat:swiftformat -- --cache ignore --swiftversion 6.0 --lint "${swift_files[@]}"
+  else
+    bazel run //build/tools/format/swiftformat:swiftformat -- --cache ignore --swiftversion 6.0 "${swift_files[@]}"
   fi
 fi
 

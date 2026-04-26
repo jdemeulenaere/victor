@@ -1,0 +1,23 @@
+# SwiftFormat prebuilt binaries managed via Bazel repositories.
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "swiftformat_darwin",
+    build_file_content = "exports_files([\"swiftformat\"])",
+    sha256 = "0356130b976e0cc1022dd6712da7a23319203125ba208fad9f37b06e9feca994",
+    urls = ["https://github.com/nicklockwood/SwiftFormat/releases/download/0.61.0/swiftformat.zip"],
+)
+
+http_archive(
+    name = "swiftformat_linux",
+    build_file_content = "exports_files([\"swiftformat_linux\"])",
+    sha256 = "43c2ff67470153e9bb96a9e7926a317e2d17988c8996a72a6e0ff211d8e8c092",
+    urls = ["https://github.com/nicklockwood/SwiftFormat/releases/download/0.61.0/swiftformat_linux.zip"],
+)
+
+http_archive(
+    name = "swiftformat_linux_aarch64",
+    build_file_content = "exports_files([\"swiftformat_linux_aarch64\"])",
+    sha256 = "e2fe9a1e5cc2a4a1b9e7aec1b66ec39899de1e23a02da1d6e82444731e3b7782",
+    urls = ["https://github.com/nicklockwood/SwiftFormat/releases/download/0.61.0/swiftformat_linux_aarch64.zip"],
+)
