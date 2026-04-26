@@ -1,4 +1,4 @@
-package victor.greeter.android
+package victor.backend.client
 
 import io.grpc.ManagedChannel
 import io.grpc.okhttp.OkHttpChannelBuilder

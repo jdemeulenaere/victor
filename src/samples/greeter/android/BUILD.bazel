@@ -7,23 +7,15 @@ android_service_url_config(
     custom_package = "victor.greeter.android",
 )
 
-kt_jvm_library(
-    name = "backend_channel",
-    srcs = ["BackendChannel.kt"],
-    deps = [
-        ":backend_config",
-        "@third_party_maven//:io_grpc_grpc_okhttp",
-    ],
-)
-
 kt_android_library(
     name = "app_lib",
     srcs = ["MainActivity.kt"],
     custom_package = "victor.greeter.android",
     plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
     deps = [
-        ":backend_channel",
         ":backend_config",
+        "//src/backend:backend_channel",
+        "//src/backend:backend_endpoint",
         "//src/samples/greeter/proto:victor_api_kt_grpc",
         "//src/samples/greeter/shared:library_android",
         "@third_party_maven//:androidx_activity_activity",

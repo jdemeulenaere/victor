@@ -30,6 +30,8 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import victor.api.v1.GreeterGrpcKt
 import victor.api.v1.HelloRequest
+import victor.backend.client.BackendEndpoint
+import victor.backend.client.buildChannel
 import victor.example.multiplatform.rememberGreetingMessage
 
 private const val LOG_TAG = "GreeterAndroid"

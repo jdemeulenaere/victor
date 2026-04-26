@@ -1,0 +1,28 @@
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
+
+kt_jvm_library(
+    name = "backend_endpoint",
+    srcs = ["BackendEndpoint.kt"],
+    visibility = ["//visibility:public"],
+)
+
+kt_jvm_library(
+    name = "backend_channel",
+    srcs = ["BackendChannel.kt"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":backend_endpoint",
+        "@third_party_maven//:io_grpc_grpc_okhttp",
+    ],
+)
+
+kt_jvm_test(
+    name = "backend_channel_test",
+    srcs = ["BackendChannelTest.kt"],
+    test_class = "victor.backend.client.BackendChannelTest",
+    deps = [
+        ":backend_channel",
+        ":backend_endpoint",
+        "@third_party_maven//:junit_junit",
+    ],
+)
