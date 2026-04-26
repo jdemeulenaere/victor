@@ -7,8 +7,6 @@ This test:
 3. Executes the Python client binary and verifies the backend response message.
 """
 
-from __future__ import annotations
-
 import os
 import signal
 import shutil
