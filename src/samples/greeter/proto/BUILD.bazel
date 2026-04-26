@@ -4,6 +4,7 @@ grpc_proto(
     name = "victor_api",
     srcs = ["greeter.proto"],
     platforms = [
+        "ios",
         "jvm",
         "python",
         "web",
