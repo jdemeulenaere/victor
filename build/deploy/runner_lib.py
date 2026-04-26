@@ -24,6 +24,8 @@ _ANDROID_DEPLOY_SERVICE_URL_FLAG = (
     "--//build/tools/android:android_deploy_service_url={service_url}"
 )
 _ANDROID_DEPLOY_BAZEL_FLAGS = ("-c", "opt")
+_ANDROID_VERSION_CODE_DEFINE = "ANDROID_VERSION_CODE"
+_ANDROID_VERSION_NAME_DEFINE = "ANDROID_VERSION_NAME"
 
 
 def _workspace_root(explicit_workspace_root: str | None = None) -> Path:
@@ -195,6 +197,29 @@ def _release_notes(environment: dict[str, str], workspace_root: Path) -> str:
     return f"Manual deploy at {datetime.now(timezone.utc).isoformat()}"
 
 
+def _android_version_code(environment: dict[str, str]) -> str:
+    run_number = environment.get("GITHUB_RUN_NUMBER")
+    if not run_number:
+        return "1"
+    run_attempt = environment.get("GITHUB_RUN_ATTEMPT", "1")
+    try:
+        return str(int(run_number) * 100 + int(run_attempt))
+    except ValueError as exc:
+        raise RuntimeError(
+            "GITHUB_RUN_NUMBER and GITHUB_RUN_ATTEMPT must be integers "
+            "for Android deploy versioning"
+        ) from exc
+
+
+def _android_version(
+    environment: dict[str, str], workspace_root: Path
+) -> dict[str, str]:
+    return {
+        "version_code": _android_version_code(environment),
+        "version_name": _release_revision(environment, workspace_root),
+    }
+
+
 def _require_tools(tools: list[str]) -> None:
     missing = [tool for tool in tools if shutil.which(tool) is None]
     if missing:
@@ -226,6 +251,15 @@ def _android_deploy_service_url_flags(service_url: str) -> list[str]:
     ]
 
 
+def _android_version_define_flags(android_version: dict[str, str]) -> list[str]:
+    return [
+        "--define",
+        f"{_ANDROID_VERSION_CODE_DEFINE}={android_version['version_code']}",
+        "--define",
+        f"{_ANDROID_VERSION_NAME_DEFINE}={android_version['version_name']}",
+    ]
+
+
 def _cloud_run_url_command(service: str, config: dict[str, Any]) -> list[str]:
     return [
         "gcloud",
@@ -243,22 +277,28 @@ def _cloud_run_url_command(service: str, config: dict[str, Any]) -> list[str]:
     ]
 
 
-def _bazel_android_build_command(app_label: str, service_url: str) -> list[str]:
+def _bazel_android_build_command(
+    app_label: str, service_url: str, android_version: dict[str, str]
+) -> list[str]:
     return [
         "bazel",
         "build",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_android_deploy_service_url_flags(service_url),
+        *_android_version_define_flags(android_version),
         app_label,
     ]
 
 
-def _bazel_android_cquery_command(app_label: str, service_url: str) -> list[str]:
+def _bazel_android_cquery_command(
+    app_label: str, service_url: str, android_version: dict[str, str]
+) -> list[str]:
     return [
         "bazel",
         "cquery",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_android_deploy_service_url_flags(service_url),
+        *_android_version_define_flags(android_version),
         "--output=files",
         app_label,
     ]
@@ -477,11 +517,20 @@ def _plan_android_app(
         "default_tester_groups", []
     )
     release_notes = _release_notes(environment, workspace_root)
+    android_version = _android_version(environment, workspace_root)
     app_label = manifest["app_label"]
     commands = [
         _cloud_run_url_command(manifest["service"], config),
-        _bazel_android_build_command(app_label, CLOUD_RUN_URL_PLACEHOLDER),
-        _bazel_android_cquery_command(app_label, CLOUD_RUN_URL_PLACEHOLDER),
+        _bazel_android_build_command(
+            app_label,
+            CLOUD_RUN_URL_PLACEHOLDER,
+            android_version,
+        ),
+        _bazel_android_cquery_command(
+            app_label,
+            CLOUD_RUN_URL_PLACEHOLDER,
+            android_version,
+        ),
         [
             "firebase",
             "appdistribution:distribute",
@@ -505,6 +554,7 @@ def _plan_android_app(
             "workspace_root": str(workspace_root),
         },
         "service_url": CLOUD_RUN_URL_PLACEHOLDER,
+        "android_version": android_version,
         "tester_groups": tester_groups,
         "release_notes": release_notes,
         "commands": commands,

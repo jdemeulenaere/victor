@@ -14,6 +14,8 @@ _DEFAULT_LOCAL_SERVICE_URL_PORT = 8080
 _DEFAULT_MIN_SDK_VERSION = "23"
 _DEFAULT_PROGUARD_SPECS = ["//build/tools/android:proguard-rules.pro"]
 _DEFAULT_TARGET_SDK_VERSION = "36"
+_DEFAULT_VERSION_CODE = "$(ANDROID_VERSION_CODE)"
+_DEFAULT_VERSION_NAME = "$(ANDROID_VERSION_NAME)"
 _DEPLOY_SERVICE_URL = "//build/tools/android:android_deploy_service_url"
 _OPT_COMPILATION_MODE = "//build/tools/android:compilation_mode_opt"
 _SERVICE_URL_PROFILE = "//build/tools/android:android_service_url_profile"
@@ -28,6 +30,8 @@ def _with_default_manifest_values(manifest_values):
     values = {
         "minSdkVersion": _DEFAULT_MIN_SDK_VERSION,
         "targetSdkVersion": _DEFAULT_TARGET_SDK_VERSION,
+        "versionCode": _DEFAULT_VERSION_CODE,
+        "versionName": _DEFAULT_VERSION_NAME,
     }
     if manifest_values != None:
         values.update(manifest_values)
