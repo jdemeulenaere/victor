@@ -1,0 +1,26 @@
+load("//build/rules:defs.bzl", "ios_application", "swift_library")
+
+swift_library(
+    name = "app_lib",
+    srcs = ["GreeterApp.swift"],
+    module_name = "VictorGreeterIOS",
+    deps = [
+        "//src/samples/greeter/proto:victor_api_ios_swift_client_proto",
+        "@com_github_apple_swift_nio//:NIOCore",
+        "@com_github_apple_swift_nio//:NIOPosix",
+        "@com_github_grpc_grpc_swift//:GRPC",
+    ],
+)
+
+ios_application(
+    name = "app",
+    bundle_id = "victor.greeter.ios",
+    families = [
+        "iphone",
+        "ipad",
+    ],
+    infoplists = ["Info.plist"],
+    minimum_os_version = "15.0",
+    visibility = ["//visibility:public"],
+    deps = [":app_lib"],
+)

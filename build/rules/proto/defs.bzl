@@ -1,6 +1,7 @@
 """Repository proto macros."""
 
 load("@aspect_rules_js//js:defs.bzl", "js_info_files", "js_library")
+load("@build_bazel_rules_swift//proto:swift_proto_library.bzl", "swift_proto_library")
 load("@com_google_protobuf//bazel:java_proto_library.bzl", "java_proto_library")
 load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
 load("@grpc_kotlin//:kt_jvm_grpc.bzl", "kt_jvm_grpc_library")
@@ -8,11 +9,24 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//build/rules/npm:defs.bzl", "npm_node_modules")
 load("//build/rules/python/grpc:defs.bzl", "py_grpc_library")
 
-_ALL_PLATFORMS = ["jvm", "python", "web"]
+_ALL_PLATFORMS = ["ios", "jvm", "python", "web"]
 _PLATFORM_SET = {
     platform: True
     for platform in _ALL_PLATFORMS
 }
+_IOS_OR_MACOS_TARGET_COMPATIBLE_WITH = select({
+    "@platforms//os:ios": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+def _capitalize_ascii(value):
+    if not value:
+        return ""
+    return value[0].upper() + value[1:]
+
+def _swift_module_name(name):
+    return "{}IosSwiftClientProto".format("".join([_capitalize_ascii(part) for part in name.split("_")]))
 
 def _normalize_platforms(platforms):
     if platforms == None:
@@ -46,7 +60,7 @@ def grpc_proto(
     """Creates repo-standard gRPC/proto targets for selected platforms.
 
     Args:
-      platforms: required list containing any of `jvm`, `python`, and `web`.
+      platforms: required list containing any of `ios`, `jvm`, `python`, and `web`.
     """
     selected_platforms = _normalize_platforms(platforms)
     proto_name = "{}_proto".format(name)
@@ -68,6 +82,19 @@ def grpc_proto(
             srcs = [":{}".format(proto_name)],
             visibility = visibility,
             deps = [":{}_java_proto".format(name)],
+        )
+
+    if "ios" in selected_platforms:
+        swift_proto_library(
+            name = "{}_ios_swift_client_proto".format(name),
+            compilers = [
+                "@build_bazel_rules_swift//proto/compilers:swift_client_proto",
+                "@build_bazel_rules_swift//proto/compilers:swift_proto",
+            ],
+            module_name = _swift_module_name(name),
+            protos = [":{}".format(proto_name)],
+            target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
+            visibility = visibility,
         )
 
     if "python" in selected_platforms:
