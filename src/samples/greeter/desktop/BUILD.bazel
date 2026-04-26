@@ -6,9 +6,11 @@ kt_jvm_library(
     plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
     runtime_deps = ["//build/toolchains/kotlin/compose:skiko_runtime"],
     deps = [
+        "//src/common/grpc/client:backend_channel",
+        "//src/common/grpc/client:backend_endpoint",
         "//src/samples/greeter/proto:victor_api_kt_grpc",
+        "//src/samples/greeter/shared:backend_config",
         "//src/samples/greeter/shared:library_jvm",
-        "@third_party_maven//:io_grpc_grpc_okhttp",
         "@third_party_maven//:org_jetbrains_compose_desktop_desktop_jvm",
     ],
 )

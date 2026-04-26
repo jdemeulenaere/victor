@@ -1,11 +1,6 @@
 load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
-load("//build/rules:defs.bzl", "android_binary", "android_local_test", "android_service_url_config", "deploy_android_app")
-
-android_service_url_config(
-    name = "backend_config",
-    custom_package = "victor.greeter.android",
-)
+load("//build/rules:defs.bzl", "android_binary", "android_local_test", "deploy_android_app")
 
 kt_android_library(
     name = "app_lib",
@@ -13,10 +8,10 @@ kt_android_library(
     custom_package = "victor.greeter.android",
     plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
     deps = [
-        ":backend_config",
         "//src/common/grpc/client:backend_channel",
         "//src/common/grpc/client:backend_endpoint",
         "//src/samples/greeter/proto:victor_api_kt_grpc",
+        "//src/samples/greeter/shared:backend_config",
         "//src/samples/greeter/shared:library_android",
         "@third_party_maven//:androidx_activity_activity",
         "@third_party_maven//:androidx_activity_activity_compose",
