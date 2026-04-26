@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+  merge_group:
   push:
     branches:
       - main
@@ -11,6 +12,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  format_check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-${{ runner.os }}
+          repository-cache: true
+          external-cache: true
+          cache-save: ${{ github.event_name != 'pull_request' }}
+      - name: Check formatting for PR files
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          mapfile -t changed_files < <(git diff --name-only --diff-filter=ACMR "${PR_BASE_SHA}...HEAD")
+          if [[ ${#changed_files[@]} -eq 0 ]]; then
+            echo "No PR files to format-check."
+            exit 0
+          fi
+
+          ./.github/scripts/run-bazel-ci.sh run --config=ci //:format_check -- -- "${changed_files[@]}"
+
   build_test:
     runs-on: ubuntu-latest
     permissions:
