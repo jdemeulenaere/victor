@@ -12,9 +12,17 @@ _DEFAULT_DEBUG_SIGNING_KEYS = ["//build/signing/android/debug:debug.keystore"]
 _DEFAULT_LOCAL_SERVICE_URL = "127.0.0.1"
 _DEFAULT_LOCAL_SERVICE_URL_PORT = 8080
 _DEFAULT_MIN_SDK_VERSION = "23"
+_DEFAULT_PROGUARD_SPECS = ["//build/tools/android:proguard-rules.pro"]
 _DEFAULT_TARGET_SDK_VERSION = "36"
 _DEPLOY_SERVICE_URL = "//build/tools/android:android_deploy_service_url"
+_OPT_COMPILATION_MODE = "//build/tools/android:compilation_mode_opt"
 _SERVICE_URL_PROFILE = "//build/tools/android:android_service_url_profile"
+
+def _select_for_opt(opt_value, default_value):
+    return select({
+        _OPT_COMPILATION_MODE: opt_value,
+        "//conditions:default": default_value,
+    })
 
 def _with_default_manifest_values(manifest_values):
     values = {
@@ -25,10 +33,17 @@ def _with_default_manifest_values(manifest_values):
         values.update(manifest_values)
     return values
 
-def android_binary(name, debug_signing_keys = None, manifest_values = None, **kwargs):
-    """android_binary with repo-wide debug signing key and manifest SDK defaults."""
+def android_binary(name, debug_signing_keys = None, manifest_values = None, proguard_specs = None, **kwargs):
+    """android_binary with repo-wide defaults and -c opt-only shrinking."""
     if debug_signing_keys == None:
         debug_signing_keys = _DEFAULT_DEBUG_SIGNING_KEYS
+    if proguard_specs == None:
+        proguard_specs = _DEFAULT_PROGUARD_SPECS
+    if type(proguard_specs) == "select" or proguard_specs:
+        if "shrink_resources" in kwargs:
+            fail("android_binary cannot set both proguard_specs and shrink_resources")
+        kwargs["proguard_specs"] = _select_for_opt(proguard_specs, [])
+        kwargs["shrink_resources"] = _select_for_opt(1, 0)
     _android_binary(
         name = name,
         debug_signing_keys = debug_signing_keys,

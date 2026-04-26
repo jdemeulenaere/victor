@@ -260,6 +260,7 @@ class RunnerDryRunTest(unittest.TestCase):
             ],
         )
         self.assertEqual(plan["commands"][1][0:2], ["bazel", "build"])
+        self.assertEqual(plan["commands"][1][2:4], ["-c", "opt"])
         self.assertIn(
             "--//build/tools/android:android_service_url_profile=deploy",
             plan["commands"][1],
@@ -273,6 +274,7 @@ class RunnerDryRunTest(unittest.TestCase):
             "//src/samples/greeter/android:app",
         )
         self.assertEqual(plan["commands"][2][0:2], ["bazel", "cquery"])
+        self.assertEqual(plan["commands"][2][2:4], ["-c", "opt"])
         self.assertIn("--output=files", plan["commands"][2])
         command = plan["commands"][3]
         self.assertEqual(command[0], "firebase")
