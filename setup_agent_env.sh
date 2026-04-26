@@ -20,6 +20,9 @@ common:ci --remote_timeout=3600
 common --remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY
 EOF
 
+# Install git hooks.
+./install-hooks.sh
+
 # Build and test.
 ./build.sh
 ./test.sh
