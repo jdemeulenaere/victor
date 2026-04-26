@@ -432,6 +432,32 @@ def _plan_grpc_server(
     }
 
 
+def _load_grpc_backend_manifest(
+    manifest: dict[str, Any],
+    workspace_root: Path,
+    environment: dict[str, str],
+    deploy_runfiles_root: Path | None,
+) -> dict[str, Any] | None:
+    backend_manifest_path = manifest.get("backend_manifest_path")
+    if not backend_manifest_path:
+        return None
+    resolved_path = _resolve_runtime_path(
+        workspace_root,
+        environment,
+        artifact_path=backend_manifest_path,
+        runfiles_logical_path=manifest.get("backend_manifest_runfiles_path"),
+        runfiles_root=deploy_runfiles_root,
+    )
+    if resolved_path is None:
+        raise RuntimeError("Could not resolve backend deploy manifest path")
+    backend_manifest = _load_json(resolved_path)
+    if backend_manifest.get("deploy_kind") != "grpc_server":
+        raise RuntimeError(
+            f"Expected backend deploy manifest to be grpc_server, got {backend_manifest.get('deploy_kind')}",
+        )
+    return backend_manifest
+
+
 def _plan_web_app(
     manifest: dict[str, Any],
     config: dict[str, Any],
@@ -454,21 +480,13 @@ def _plan_web_app(
             "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
         },
     }
-    backend_manifest_path = manifest.get("backend_manifest_path")
-    if backend_manifest_path:
-        backend_manifest = _load_json(
-            _resolve_runtime_path(
-                workspace_root,
-                environment,
-                artifact_path=backend_manifest_path,
-                runfiles_logical_path=manifest.get("backend_manifest_runfiles_path"),
-                runfiles_root=deploy_runfiles_root,
-            )
-        )
-        if backend_manifest.get("deploy_kind") != "grpc_server":
-            raise RuntimeError(
-                f"Expected backend deploy manifest to be grpc_server, got {backend_manifest.get('deploy_kind')}",
-            )
+    backend_manifest = _load_grpc_backend_manifest(
+        manifest,
+        workspace_root,
+        environment,
+        deploy_runfiles_root,
+    )
+    if backend_manifest:
         firebase_config["hosting"]["rewrites"] = [
             {
                 "source": "/grpc/**",
@@ -512,15 +530,26 @@ def _plan_android_app(
     environment: dict[str, str],
     deploy_runfiles_root: Path | None,
 ) -> dict[str, Any]:
-    _ = deploy_runfiles_root
+    backend_manifest = _load_grpc_backend_manifest(
+        manifest,
+        workspace_root,
+        environment,
+        deploy_runfiles_root,
+    )
+    if backend_manifest is None:
+        raise RuntimeError(
+            "Android app deploy manifest missing backend deploy manifest"
+        )
+
     tester_groups = manifest.get("tester_groups") or config["firebase"].get(
         "default_tester_groups", []
     )
     release_notes = _release_notes(environment, workspace_root)
     android_version = _android_version(environment, workspace_root)
     app_label = manifest["app_label"]
+    service = backend_manifest["service"]
     commands = [
-        _cloud_run_url_command(manifest["service"], config),
+        _cloud_run_url_command(service, config),
         _bazel_android_build_command(
             app_label,
             CLOUD_RUN_URL_PLACEHOLDER,
@@ -547,7 +576,7 @@ def _plan_android_app(
         commands[-1].extend(["--groups", ",".join(tester_groups)])
     return {
         "deploy_kind": "android_app",
-        "service": manifest["service"],
+        "service": service,
         "firebase_app_id": manifest["firebase_app_id"],
         "inputs": {
             "app_label": app_label,

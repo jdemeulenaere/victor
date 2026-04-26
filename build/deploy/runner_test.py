@@ -221,13 +221,23 @@ class RunnerDryRunTest(unittest.TestCase):
         self.assertTrue(rewrites[0]["run"]["pinTag"])
 
     def test_android_app_dry_run_uses_default_tester_groups(self) -> None:
+        backend_manifest = self._write_manifest(
+            "android_backend_manifest",
+            {
+                "deploy_kind": "grpc_server",
+                "service": "greeter-backend-dev",
+            },
+        )
         plan = self._dry_run(
             self._write_manifest(
                 "android_manifest",
                 {
                     "deploy_kind": "android_app",
                     "app_label": "//src/samples/greeter/android:app",
-                    "service": "greeter-backend-dev",
+                    "backend_manifest_path": str(
+                        backend_manifest.relative_to(self.workspace_root)
+                    ),
+                    "backend_manifest_runfiles_path": "_main/android_backend_manifest.json",
                     "firebase_app_id": "1:1234567890:android:deadbeef",
                     "tester_groups": [],
                 },

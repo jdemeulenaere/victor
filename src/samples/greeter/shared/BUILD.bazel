@@ -1,11 +1,5 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_test")
-load("//build/rules:defs.bzl", "backend_service_url_config", "kt_multiplatform_library")
-
-backend_service_url_config(
-    name = "backend_config",
-    custom_package = "victor.greeter.shared",
-    visibility = ["//visibility:public"],
-)
+load("//build/rules:defs.bzl", "kt_multiplatform_library")
 
 kt_multiplatform_library(
     name = "library",
