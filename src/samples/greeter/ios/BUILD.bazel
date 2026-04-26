@@ -1,4 +1,4 @@
-load("//build/rules:defs.bzl", "ios_application", "swift_library")
+load("//build/rules:defs.bzl", "ios_application", "ios_unit_test", "swift_library")
 
 swift_library(
     name = "app_lib",
@@ -23,4 +23,18 @@ ios_application(
     minimum_os_version = "15.0",
     visibility = ["//visibility:public"],
     deps = [":app_lib"],
+)
+
+swift_library(
+    name = "app_test_lib",
+    testonly = True,
+    srcs = ["GreeterAppTest.swift"],
+    module_name = "VictorGreeterIOSTests",
+    deps = [":app_lib"],
+)
+
+ios_unit_test(
+    name = "app_test",
+    minimum_os_version = "15.0",
+    deps = [":app_test_lib"],
 )
