@@ -1,0 +1,5 @@
+load(":defs.bzl", "backend_service_url_settings")
+
+exports_files(["defs.bzl"])
+
+backend_service_url_settings()

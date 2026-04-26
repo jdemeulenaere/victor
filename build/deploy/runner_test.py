@@ -274,11 +274,11 @@ class RunnerDryRunTest(unittest.TestCase):
         self.assertEqual(plan["commands"][1][0:2], ["bazel", "build"])
         self.assertEqual(plan["commands"][1][2:4], ["-c", "opt"])
         self.assertIn(
-            "--//build/tools/android:android_service_url_profile=deploy",
+            "--//build/rules/backend:backend_service_url_profile=deploy",
             plan["commands"][1],
         )
         self.assertIn(
-            "--//build/tools/android:android_deploy_service_url=$CLOUD_RUN_URL",
+            "--//build/rules/backend:backend_deploy_service_url=$CLOUD_RUN_URL",
             plan["commands"][1],
         )
         self.assertIn("ANDROID_VERSION_CODE=12304", plan["commands"][1])

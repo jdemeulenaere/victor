@@ -21,16 +21,16 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import io.grpc.ManagedChannel
 import io.grpc.StatusRuntimeException
-import io.grpc.okhttp.OkHttpChannelBuilder
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.launch
 import victor.api.v1.GreeterGrpcKt
 import victor.api.v1.HelloRequest
+import victor.backend.client.BackendEndpoint
+import victor.backend.client.buildChannel
 import victor.example.multiplatform.rememberGreetingMessage
+import victor.greeter.shared.BackendConfig
 
 private const val APP_TITLE = "Victor Greeter Desktop"
-private const val BACKEND_HOST = "127.0.0.1"
-private const val BACKEND_PORT = 8080
 private const val DEFAULT_NAME = "world"
 
 interface GreeterClient {
@@ -38,7 +38,7 @@ interface GreeterClient {
 }
 
 fun main() = application {
-    val client = remember { DesktopGreeterClient(BACKEND_HOST, BACKEND_PORT) }
+    val client = remember { DesktopGreeterClient(BackendConfig.endpoint) }
 
     Window(
         onCloseRequest = {
@@ -65,7 +65,7 @@ fun DesktopGreeterApp(client: GreeterClient) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(text = rememberGreetingMessage("Compose Desktop"))
-            Text(text = "Target: $BACKEND_HOST:$BACKEND_PORT")
+            Text(text = "Target: ${BackendConfig.endpoint.serviceUrl}")
 
             OutlinedTextField(
                 value = name,
@@ -108,9 +108,8 @@ fun DesktopGreeterApp(client: GreeterClient) {
     }
 }
 
-private class DesktopGreeterClient(host: String, port: Int) : GreeterClient {
-    private val channel: ManagedChannel =
-        OkHttpChannelBuilder.forAddress(host, port).usePlaintext().build()
+private class DesktopGreeterClient(endpoint: BackendEndpoint) : GreeterClient {
+    private val channel: ManagedChannel = buildChannel(endpoint)
 
     private val client: GreeterGrpcKt.GreeterCoroutineStub =
         GreeterGrpcKt.GreeterCoroutineStub(channel)

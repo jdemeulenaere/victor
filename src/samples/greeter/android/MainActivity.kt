@@ -33,6 +33,7 @@ import victor.api.v1.HelloRequest
 import victor.backend.client.BackendEndpoint
 import victor.backend.client.buildChannel
 import victor.example.multiplatform.rememberGreetingMessage
+import victor.greeter.shared.BackendConfig
 
 private const val LOG_TAG = "GreeterAndroid"
 

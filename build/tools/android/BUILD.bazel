@@ -1,12 +1,8 @@
-load("//build/tools/android:service.bzl", "android_service_url_settings")
-
 exports_files([
     "android_sdk_repository.BUILD.bazel.tpl",
     "android_sdk_repository.bzl",
     "proguard-rules.pro",
 ])
-
-android_service_url_settings()
 
 config_setting(
     name = "compilation_mode_opt",

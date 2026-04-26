@@ -17,11 +17,11 @@ from typing import Any
 
 CLOUD_RUN_URL_PLACEHOLDER = "$CLOUD_RUN_URL"
 APK_PATH_PLACEHOLDER = "$APK_PATH"
-_ANDROID_SERVICE_URL_PROFILE_FLAG = (
-    "--//build/tools/android:android_service_url_profile=deploy"
+_BACKEND_SERVICE_URL_PROFILE_FLAG = (
+    "--//build/rules/backend:backend_service_url_profile=deploy"
 )
-_ANDROID_DEPLOY_SERVICE_URL_FLAG = (
-    "--//build/tools/android:android_deploy_service_url={service_url}"
+_BACKEND_DEPLOY_SERVICE_URL_FLAG = (
+    "--//build/rules/backend:backend_deploy_service_url={service_url}"
 )
 _ANDROID_DEPLOY_BAZEL_FLAGS = ("-c", "opt")
 _ANDROID_VERSION_CODE_DEFINE = "ANDROID_VERSION_CODE"
@@ -244,10 +244,10 @@ def _build_backend_image_uri(
     return f"{registry_host}/{project_id}/{repository}/{service}:{revision}"
 
 
-def _android_deploy_service_url_flags(service_url: str) -> list[str]:
+def _backend_deploy_service_url_flags(service_url: str) -> list[str]:
     return [
-        _ANDROID_SERVICE_URL_PROFILE_FLAG,
-        _ANDROID_DEPLOY_SERVICE_URL_FLAG.format(service_url=service_url),
+        _BACKEND_SERVICE_URL_PROFILE_FLAG,
+        _BACKEND_DEPLOY_SERVICE_URL_FLAG.format(service_url=service_url),
     ]
 
 
@@ -284,7 +284,7 @@ def _bazel_android_build_command(
         "bazel",
         "build",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
-        *_android_deploy_service_url_flags(service_url),
+        *_backend_deploy_service_url_flags(service_url),
         *_android_version_define_flags(android_version),
         app_label,
     ]
@@ -297,7 +297,7 @@ def _bazel_android_cquery_command(
         "bazel",
         "cquery",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
-        *_android_deploy_service_url_flags(service_url),
+        *_backend_deploy_service_url_flags(service_url),
         *_android_version_define_flags(android_version),
         "--output=files",
         app_label,
