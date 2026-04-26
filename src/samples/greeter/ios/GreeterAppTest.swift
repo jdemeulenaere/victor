@@ -1,5 +1,5 @@
-import XCTest
 @testable import VictorGreeterIOS
+import XCTest
 
 final class GreeterAppTest: XCTestCase {
     @MainActor

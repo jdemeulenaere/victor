@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalJsExport::class)
+
 package victor.example.multiplatform
 
+import kotlin.js.ExperimentalJsExport
+import kotlin.js.JsExport
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -18,4 +22,9 @@ class Greeting {
         val salutation = greetingConfig.salutation
         return "$salutation, $normalizedName from ${Platform.name}!"
     }
+}
+
+@JsExport
+fun greetingMessage(name: String): String {
+    return Greeting().message(name)
 }

@@ -26,7 +26,7 @@ append_range_files() {
 
 append_single_commit_files() {
   local sha="$1"
-  git diff-tree --no-commit-id --name-only -r --diff-filter=ACMR "${sha}" >>"${changed_file_list}"
+  git diff-tree --root --no-commit-id --name-only -r --diff-filter=ACMR "${sha}" >>"${changed_file_list}"
 }
 
 had_updates="false"
@@ -86,7 +86,8 @@ if ! bazel run //:format_check -- -- "${files[@]}"; then
   echo "Pre-push formatting check failed for files in your push range."
   echo "To fix exactly this push, run:"
   print_fix_command_for_files "${files[@]}"
-  echo "If you only want to fix your latest commit, run:"
+  echo "If the failing files are in your latest commit, run:"
   echo "  bazel run //:format -- --last-commit"
+  echo "Otherwise, use the exact push-range command above; --last-commit only inspects HEAD plus staged additions."
   exit 1
 fi

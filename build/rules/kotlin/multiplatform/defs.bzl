@@ -3,8 +3,10 @@
 load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
 load("@rules_kotlin//kotlin:core.bzl", "kt_kotlinc_options")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
-load("@third_party_maven_kmp_variants//:variants.bzl", "KMP_MAVEN_VARIANTS")
+load("@third_party_maven_kmp_variants//:variants.bzl", "KMP_MAVEN_VARIANTS", "KOTLIN_STDLIB_WASM_LABEL")
+load("//build/rules/kotlin/multiplatform:wasm.bzl", "kt_wasm_files", "kt_wasm_library")
 
+_SUPPORTED_PLATFORMS = ["android", "jvm", "wasm"]
 _THIRD_PARTY_MAVEN_PREFIX = "@third_party_maven//:"
 
 def _normalize_same_package_srcs(srcs, attr_name):
@@ -44,7 +46,11 @@ def _resolve_dep_for_variant(dep, suffix):
     if dep.startswith(_THIRD_PARTY_MAVEN_PREFIX):
         variants = KMP_MAVEN_VARIANTS.get(dep)
         if variants:
-            return variants.get(suffix, dep)
+            variant = variants.get(suffix)
+            if variant:
+                return variant
+        if suffix == "wasm":
+            fail("No Kotlin/WASM Maven variant found for {}".format(dep))
         return dep
 
     # Other external repositories are generally regular platform-neutral deps and should not be remapped.
@@ -52,7 +58,7 @@ def _resolve_dep_for_variant(dep, suffix):
         return dep
 
     target = _target_name(dep)
-    if target.endswith("_jvm") or target.endswith("_android"):
+    if target.endswith("_jvm") or target.endswith("_android") or target.endswith("_wasm"):
         return dep
 
     return _platform_target(dep, suffix)
@@ -84,6 +90,28 @@ def _normalize_tag_list(values):
 def _platform_opts_name(name, platform_suffix):
     return "{}_{}_kmp_opts".format(name, platform_suffix)
 
+def _normalize_platforms(platforms):
+    if not type(platforms) == "list":
+        fail("platforms must be a list containing any of: {}".format(", ".join(_SUPPORTED_PLATFORMS)))
+    if not platforms:
+        fail("kt_multiplatform_library requires at least one platform")
+
+    seen = {}
+    normalized = []
+    for platform in platforms:
+        if not type(platform) == "string":
+            fail("platforms values must be strings, got {}".format(type(platform)))
+        if platform not in _SUPPORTED_PLATFORMS:
+            fail("Unsupported platform '{}'. Expected one of: {}".format(platform, ", ".join(_SUPPORTED_PLATFORMS)))
+        if seen.get(platform):
+            fail("Duplicate platform '{}'".format(platform))
+        seen[platform] = True
+        normalized.append(platform)
+    return normalized
+
+def _has_platform(platforms, platform):
+    return platform in platforms
+
 def _define_platform_opts(name, platform_suffix, platform_fragment, common_srcs, platform_srcs):
     kt_kotlinc_options(
         name = _platform_opts_name(name, platform_suffix),
@@ -97,69 +125,72 @@ def _define_platform_opts(name, platform_suffix, platform_fragment, common_srcs,
 def kt_multiplatform_library(
         name,
         srcs,
+        platforms,
         deps = None,
         plugins = None,
         android_manifest = None,
         android_custom_package = None,
         tags = None,
         visibility = None):
-    """Creates Kotlin Multiplatform-style JVM/Android libraries.
+    """Creates Kotlin Multiplatform-style JVM/Android/WASM libraries.
 
     This macro follows the Kotlin Gradle plugin model for platform compilations:
     - each platform target compiles common + platform sources together
-    - Kotlin fragment flags model source-set relations (`commonMain` refined by `jvmMain`/`androidMain`)
+    - Kotlin fragment flags model source-set relations (`commonMain` refined by each platform source set)
     - first-party common deps are remapped to platform variants
 
     Generated targets:
-    - :<name>_jvm (when `srcs["jvm"]` is non-empty)
-    - :<name>_android (when `srcs["android"]` is non-empty)
-    - :<name> alias to :<name>_jvm when JVM sources exist
+    - :<name>_jvm when `platforms` contains `jvm`
+    - :<name>_android when `platforms` contains `android`
+    - :<name>_wasm and :<name>_wasm_files when `platforms` contains `wasm`
+    - :<name> alias to :<name>_jvm when JVM is selected
 
     Args:
-    - srcs: required dictionary with keys `common`, `jvm`, `android`.
+    - platforms: required list containing any of `android`, `jvm`, `wasm`.
+    - srcs: required dictionary with keys `common`, `jvm`, `android`, `wasm`.
     - deps: optional dictionary with keys:
-      - `common`: deps added to both platform targets. `@third_party_maven` Kotlin Multiplatform
+      - `common`: deps added to all selected platform targets. `@third_party_maven` Kotlin Multiplatform
         labels are resolved through Gradle Module Metadata when available; other external labels are used as-is.
-        first-party labels are remapped to platform variants (for example `:core` -> `:core_jvm`/`:core_android`).
+        first-party labels are remapped to platform variants (for example `:core` -> `:core_jvm`/`:core_android`/`:core_wasm`).
       - `jvm`: regular deps for the JVM target only.
       - `android`: regular deps for the Android target only.
-    - plugins: optional list of compiler plugins applied to both platform targets.
-    - tags: optional list of tags applied to both platform targets.
+      - `wasm`: KLIB deps for the WASM target only.
+    - plugins: optional list of compiler plugins applied to all selected platform targets.
+    - tags: optional list of tags applied to all selected platform targets.
     """
+    selected_platforms = _normalize_platforms(platforms)
     if deps == None:
         deps = {}
     if not type(deps) == "dict":
-        fail("deps must be a dict with keys common/jvm/android")
+        fail("deps must be a dict with keys common/android/jvm/wasm")
     for key in deps.keys():
-        if key not in ["common", "jvm", "android"]:
-            fail("Unsupported deps key '{}'. Expected one of: common, jvm, android".format(key))
+        if key not in ["common", "android", "jvm", "wasm"]:
+            fail("Unsupported deps key '{}'. Expected one of: common, android, jvm, wasm".format(key))
 
     normalized_plugins = _normalize_dep_list(plugins, "plugins")
 
     if not type(srcs) == "dict":
-        fail("srcs must be a dict with keys common/jvm/android")
+        fail("srcs must be a dict with keys common/android/jvm/wasm")
     for key in srcs.keys():
-        if key not in ["common", "jvm", "android"]:
-            fail("Unsupported srcs key '{}'. Expected one of: common, jvm, android".format(key))
+        if key not in ["common", "android", "jvm", "wasm"]:
+            fail("Unsupported srcs key '{}'. Expected one of: common, android, jvm, wasm".format(key))
 
     common = _normalize_same_package_srcs(srcs.get("common", []), "common_srcs")
-    jvm = _normalize_same_package_srcs(srcs.get("jvm", []), "jvm_srcs")
     android = _normalize_same_package_srcs(srcs.get("android", []), "android_srcs")
+    jvm = _normalize_same_package_srcs(srcs.get("jvm", []), "jvm_srcs")
+    wasm = _normalize_same_package_srcs(srcs.get("wasm", []), "wasm_srcs")
 
     if not common:
         fail("kt_multiplatform_library requires non-empty common_srcs")
-    if not jvm and not android:
-        fail("kt_multiplatform_library requires at least one platform source set")
 
     common_deps = _normalize_dep_list(deps.get("common"), "deps[\"common\"]")
-    jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
     android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
+    jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
+    wasm_deps = _normalize_dep_list(deps.get("wasm"), "deps[\"wasm\"]")
     user_tags = _normalize_tag_list(tags)
 
-    common_jvm_deps = [_resolve_dep_for_variant(dep, "jvm") for dep in common_deps]
-    common_android_deps = [_resolve_dep_for_variant(dep, "android") for dep in common_deps]
-
-    if jvm:
+    if _has_platform(selected_platforms, "jvm"):
+        common_jvm_deps = [_resolve_dep_for_variant(dep, "jvm") for dep in common_deps]
         _define_platform_opts(
             name = name,
             platform_suffix = "jvm",
@@ -182,7 +213,8 @@ def kt_multiplatform_library(
             visibility = visibility,
         )
 
-    if android:
+    if _has_platform(selected_platforms, "android"):
+        common_android_deps = [_resolve_dep_for_variant(dep, "android") for dep in common_deps]
         _define_platform_opts(
             name = name,
             platform_suffix = "android",
@@ -205,3 +237,22 @@ def kt_multiplatform_library(
         if android_custom_package:
             android_kwargs["custom_package"] = android_custom_package
         kt_android_library(**android_kwargs)
+
+    if _has_platform(selected_platforms, "wasm"):
+        common_wasm_deps = [_resolve_dep_for_variant(dep, "wasm") for dep in common_deps]
+        kt_wasm_library(
+            name = "{}_wasm".format(name),
+            common_srcs = common,
+            deps = common_wasm_deps + wasm_deps + [KOTLIN_STDLIB_WASM_LABEL],
+            module_name = name,
+            platform_srcs = wasm,
+            plugins = normalized_plugins,
+            tags = user_tags,
+            visibility = visibility,
+        )
+        kt_wasm_files(
+            name = "{}_wasm_files".format(name),
+            module = ":{}_wasm".format(name),
+            module_name = name,
+            visibility = visibility,
+        )

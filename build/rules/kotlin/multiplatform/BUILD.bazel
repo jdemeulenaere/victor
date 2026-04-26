@@ -1,4 +1,6 @@
 exports_files([
     "defs.bzl",
     "kmp_maven_variants_repository.bzl",
+    "wasm.bzl",
+    "wasm_kotlinc.sh",
 ])

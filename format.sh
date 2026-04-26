@@ -6,7 +6,7 @@
 # Selectors:
 #   --all          all tracked files (default)
 #   --staged       only staged files
-#   --last-commit  only files changed in HEAD
+#   --last-commit  files changed in HEAD, plus staged files added while amending
 
 set -euo pipefail
 
@@ -75,11 +75,14 @@ else
       ;;
     last_commit)
       if git rev-parse --verify HEAD >/dev/null 2>&1; then
-        # Include file changes for regular and merge commits. `-m` asks Git to
-        # diff merge commits against each parent so files introduced via merge
-        # are included as well.
-        git show -m --name-only --pretty='' --diff-filter=ACMR HEAD >"${candidate_file}"
+        # Include file changes for regular, root, and merge commits. `--root`
+        # makes additions in the initial commit visible; `-m` asks Git to diff
+        # merge commits against each parent.
+        git diff-tree --root -m --no-commit-id --name-only -r --diff-filter=ACMR HEAD >"${candidate_file}"
       fi
+      # Support the common "format before git commit --amend" workflow, where
+      # a new file has been staged for inclusion in the latest commit.
+      git diff --cached --name-only --diff-filter=A >>"${candidate_file}"
       ;;
   esac
 fi
