@@ -171,6 +171,6 @@ def android_service_url_config(
     kt_jvm_library(
         name = name,
         srcs = [":{}".format(src)],
-        deps = ["//src/backend:backend_endpoint"],
+        deps = ["//src/common/grpc/client:backend_endpoint"],
         visibility = visibility,
     )
