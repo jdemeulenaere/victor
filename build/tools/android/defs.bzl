@@ -116,12 +116,7 @@ def _render_backend_config(package, service_url, default_port = None):
     return "\n".join([
         "package {}".format(package),
         "",
-        "data class BackendEndpoint(",
-        "    val serviceUrl: String,",
-        "    val host: String,",
-        "    val port: Int,",
-        "    val usePlaintext: Boolean,",
-        ")",
+        "import victor.backend.client.BackendEndpoint",
         "",
         "object BackendConfig {",
         "    val endpoint =",
@@ -176,5 +171,6 @@ def android_service_url_config(
     kt_jvm_library(
         name = name,
         srcs = [":{}".format(src)],
+        deps = ["//src/backend:backend_endpoint"],
         visibility = visibility,
     )
