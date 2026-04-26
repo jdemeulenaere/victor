@@ -221,39 +221,89 @@ class RunnerDryRunTest(unittest.TestCase):
         self.assertTrue(rewrites[0]["run"]["pinTag"])
 
     def test_android_app_dry_run_uses_default_tester_groups(self) -> None:
-        apk_path = (
-            self.workspace_root
-            / "bazel-out"
-            / "test"
-            / "bin"
-            / "src"
-            / "samples"
-            / "greeter"
-            / "android"
-            / "app.apk"
-        )
-        apk_path.parent.mkdir(parents=True)
-        apk_path.write_text("apk", encoding="utf-8")
-
         plan = self._dry_run(
             self._write_manifest(
                 "android_manifest",
                 {
                     "deploy_kind": "android_app",
+                    "app_label": "//src/samples/greeter/android:app",
+                    "service": "greeter-backend-dev",
                     "firebase_app_id": "1:1234567890:android:deadbeef",
-                    "apk_path": "bazel-out/test/bin/src/samples/greeter/android/app.apk",
-                    "apk_runfiles_path": "_main/src/samples/greeter/android/app.apk",
                     "tester_groups": [],
                 },
             ),
         )
 
         self.assertEqual(plan["deploy_kind"], "android_app")
+        self.assertEqual(plan["service"], "greeter-backend-dev")
+        self.assertEqual(
+            plan["inputs"]["app_label"],
+            "//src/samples/greeter/android:app",
+        )
+        self.assertEqual(plan["service_url"], runner_lib.CLOUD_RUN_URL_PLACEHOLDER)
         self.assertEqual(plan["tester_groups"], ["android-dev-testers"])
-        command = plan["commands"][0]
+        self.assertEqual(
+            plan["commands"][0],
+            [
+                "gcloud",
+                "run",
+                "services",
+                "describe",
+                "greeter-backend-dev",
+                "--project",
+                "victor-dev-project",
+                "--region",
+                "europe-west1",
+                "--platform",
+                "managed",
+                "--format=value(status.url)",
+            ],
+        )
+        self.assertEqual(plan["commands"][1][0:2], ["bazel", "build"])
+        self.assertIn(
+            "--//build/tools/android:android_service_url_profile=deploy",
+            plan["commands"][1],
+        )
+        self.assertIn(
+            "--//build/tools/android:android_deploy_service_url=$CLOUD_RUN_URL",
+            plan["commands"][1],
+        )
+        self.assertEqual(
+            plan["commands"][1][-1],
+            "//src/samples/greeter/android:app",
+        )
+        self.assertEqual(plan["commands"][2][0:2], ["bazel", "cquery"])
+        self.assertIn("--output=files", plan["commands"][2])
+        command = plan["commands"][3]
         self.assertEqual(command[0], "firebase")
+        self.assertIn(runner_lib.APK_PATH_PLACEHOLDER, command)
         self.assertIn("--groups", command)
         self.assertIn("1:1234567890:android:deadbeef", command)
+
+    def test_select_signed_apk_path_ignores_unsigned_outputs(self) -> None:
+        cquery_output = "\n".join(
+            [
+                "bazel-out/test/bin/src/samples/greeter/android/app_unsigned.apk",
+                "bazel-out/test/bin/src/samples/greeter/android/app.apk",
+                "bazel-out/test/bin/src/samples/greeter/android/app.deploy.jar",
+            ],
+        )
+
+        self.assertEqual(
+            runner_lib._select_signed_apk_path(cquery_output),
+            "bazel-out/test/bin/src/samples/greeter/android/app.apk",
+        )
+
+    def test_select_signed_apk_path_rejects_ambiguous_outputs(self) -> None:
+        cquery_output = "\n".join(
+            [
+                "bazel-out/test/bin/src/samples/greeter/android/app.apk",
+                "bazel-out/test/bin/src/samples/greeter/android/other.apk",
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "expected exactly one signed APK"):
+            runner_lib._select_signed_apk_path(cquery_output)
 
 
 if __name__ == "__main__":

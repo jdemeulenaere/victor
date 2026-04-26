@@ -138,7 +138,7 @@ def _android_service_url_config_src_impl(ctx):
         service_url = ctx.attr._deploy_service_url[AndroidStringFlagInfo].value
         default_port = None
         if not service_url:
-            fail("{} is built for deploy, but deploy_android_app did not set service_url".format(ctx.label))
+            fail("{} is built for deploy, but no resolved deploy service URL was set".format(ctx.label))
     out = ctx.actions.declare_file("{}.kt".format(ctx.label.name))
     ctx.actions.write(
         out,
@@ -161,7 +161,7 @@ def android_service_url_config(
         custom_package,
         local_service_url = _DEFAULT_LOCAL_SERVICE_URL,
         visibility = None):
-    """Generates a BackendConfig using local_service_url locally and deploy_android_app.service_url for deploys."""
+    """Generates a BackendConfig using local_service_url locally and the resolved deploy service URL for deploys."""
     src = "{}_src".format(name)
     _android_service_url_config_src(
         name = src,

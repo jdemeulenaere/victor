@@ -15,6 +15,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+CLOUD_RUN_URL_PLACEHOLDER = "$CLOUD_RUN_URL"
+APK_PATH_PLACEHOLDER = "$APK_PATH"
+_ANDROID_SERVICE_URL_PROFILE_FLAG = (
+    "--//build/tools/android:android_service_url_profile=deploy"
+)
+_ANDROID_DEPLOY_SERVICE_URL_FLAG = (
+    "--//build/tools/android:android_deploy_service_url={service_url}"
+)
+
 
 def _workspace_root(explicit_workspace_root: str | None = None) -> Path:
     if explicit_workspace_root:
@@ -129,6 +138,24 @@ def _run_command(command: list[str], *, cwd: Path | None = None) -> None:
     subprocess.run(command, cwd=str(cwd) if cwd else None, check=True)
 
 
+def _run_command_output(command: list[str], *, cwd: Path | None = None) -> str:
+    print(f"[deploy] {_command_display(command)}", file=sys.stderr)
+    result = subprocess.run(
+        command,
+        cwd=str(cwd) if cwd else None,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        message = f"Command failed ({result.returncode}): {_command_display(command)}"
+        if detail:
+            message = f"{message}\n{detail}"
+        raise RuntimeError(message)
+    return result.stdout.strip()
+
+
 def _git_output(workspace_root: Path, *args: str) -> str | None:
     result = subprocess.run(
         ["git", *args],
@@ -188,6 +215,77 @@ def _build_backend_image_uri(
     repository = config["gcp"]["artifact_registry_repository"]
     registry_host = f"{region}-docker.pkg.dev"
     return f"{registry_host}/{project_id}/{repository}/{service}:{revision}"
+
+
+def _android_deploy_service_url_flags(service_url: str) -> list[str]:
+    return [
+        _ANDROID_SERVICE_URL_PROFILE_FLAG,
+        _ANDROID_DEPLOY_SERVICE_URL_FLAG.format(service_url=service_url),
+    ]
+
+
+def _cloud_run_url_command(service: str, config: dict[str, Any]) -> list[str]:
+    return [
+        "gcloud",
+        "run",
+        "services",
+        "describe",
+        service,
+        "--project",
+        config["gcp"]["project_id"],
+        "--region",
+        config["gcp"]["region"],
+        "--platform",
+        "managed",
+        "--format=value(status.url)",
+    ]
+
+
+def _bazel_android_build_command(app_label: str, service_url: str) -> list[str]:
+    return [
+        "bazel",
+        "build",
+        *_android_deploy_service_url_flags(service_url),
+        app_label,
+    ]
+
+
+def _bazel_android_cquery_command(app_label: str, service_url: str) -> list[str]:
+    return [
+        "bazel",
+        "cquery",
+        *_android_deploy_service_url_flags(service_url),
+        "--output=files",
+        app_label,
+    ]
+
+
+def _select_signed_apk_path(cquery_output: str) -> str:
+    output_paths = [line.strip() for line in cquery_output.splitlines() if line.strip()]
+    apk_paths = [
+        path
+        for path in output_paths
+        if path.endswith(".apk") and not path.endswith("_unsigned.apk")
+    ]
+    if len(apk_paths) != 1:
+        raise RuntimeError(
+            "expected exactly one signed APK output, found {}: {}".format(
+                len(apk_paths),
+                apk_paths,
+            ),
+        )
+    return apk_paths[0]
+
+
+def _replace_command_placeholders(
+    command: list[str], replacements: dict[str, str]
+) -> list[str]:
+    materialized = []
+    for part in command:
+        for placeholder, value in replacements.items():
+            part = part.replace(placeholder, value)
+        materialized.append(part)
+    return materialized
 
 
 def _grpc_dockerfile(entrypoint_name: str) -> str:
@@ -370,23 +468,20 @@ def _plan_android_app(
     environment: dict[str, str],
     deploy_runfiles_root: Path | None,
 ) -> dict[str, Any]:
-    apk_path = _resolve_runtime_path(
-        workspace_root,
-        environment,
-        artifact_path=manifest["apk_path"],
-        runfiles_logical_path=manifest.get("apk_runfiles_path"),
-        runfiles_root=deploy_runfiles_root,
-    )
-    assert apk_path is not None
+    _ = deploy_runfiles_root
     tester_groups = manifest.get("tester_groups") or config["firebase"].get(
         "default_tester_groups", []
     )
     release_notes = _release_notes(environment, workspace_root)
+    app_label = manifest["app_label"]
     commands = [
+        _cloud_run_url_command(manifest["service"], config),
+        _bazel_android_build_command(app_label, CLOUD_RUN_URL_PLACEHOLDER),
+        _bazel_android_cquery_command(app_label, CLOUD_RUN_URL_PLACEHOLDER),
         [
             "firebase",
             "appdistribution:distribute",
-            str(apk_path),
+            APK_PATH_PLACEHOLDER,
             "--app",
             manifest["firebase_app_id"],
             "--project",
@@ -396,13 +491,16 @@ def _plan_android_app(
         ],
     ]
     if tester_groups:
-        commands[0].extend(["--groups", ",".join(tester_groups)])
+        commands[-1].extend(["--groups", ",".join(tester_groups)])
     return {
         "deploy_kind": "android_app",
+        "service": manifest["service"],
         "firebase_app_id": manifest["firebase_app_id"],
         "inputs": {
-            "apk_path": str(apk_path),
+            "app_label": app_label,
+            "workspace_root": str(workspace_root),
         },
+        "service_url": CLOUD_RUN_URL_PLACEHOLDER,
         "tester_groups": tester_groups,
         "release_notes": release_notes,
         "commands": commands,
@@ -504,9 +602,36 @@ def _execute_web_app(plan: dict[str, Any]) -> None:
 
 
 def _execute_android_app(plan: dict[str, Any]) -> None:
-    _require_tools(["firebase"])
-    for command in plan["commands"]:
-        _run_command(command)
+    _require_tools(["bazel", "firebase", "gcloud"])
+    workspace_root = Path(plan["inputs"]["workspace_root"])
+
+    service_url = _run_command_output(plan["commands"][0], cwd=workspace_root)
+    if not service_url:
+        raise RuntimeError(
+            "Cloud Run service {} did not report status.url".format(plan["service"]),
+        )
+
+    replacements = {CLOUD_RUN_URL_PLACEHOLDER: service_url}
+    _run_command(
+        _replace_command_placeholders(plan["commands"][1], replacements),
+        cwd=workspace_root,
+    )
+    cquery_output = _run_command_output(
+        _replace_command_placeholders(plan["commands"][2], replacements),
+        cwd=workspace_root,
+    )
+    apk_output_path = _select_signed_apk_path(cquery_output)
+    apk_path = _resolve_artifact_path(workspace_root, apk_output_path)
+    if apk_path is None or not apk_path.exists():
+        raise RuntimeError(
+            "signed APK output does not exist: {}".format(apk_output_path)
+        )
+
+    replacements[APK_PATH_PLACEHOLDER] = str(apk_path)
+    _run_command(
+        _replace_command_placeholders(plan["commands"][3], replacements),
+        cwd=workspace_root,
+    )
 
 
 def execute_plan(plan: dict[str, Any]) -> None:

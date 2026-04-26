@@ -66,6 +66,6 @@ deploy_android_app(
     name = "deploy",
     app = ":app",
     firebase_app_id = "1:617611994239:android:7506bbb54eb2decb430b4a",
-    service_url = "https://greeter-backend-dev-617611994239.europe-west1.run.app",
+    service = "greeter-backend-dev",
     visibility = ["//visibility:public"],
 )
