@@ -88,10 +88,11 @@ def _manifest_rlocation(
         if not manifest_candidate.exists():
             return None
         manifest_file = str(manifest_candidate)
-    for line in Path(manifest_file).read_text(encoding="utf-8").splitlines():
-        logical_path, _, real_path = line.partition(" ")
-        if logical_path == runfiles_logical_path and real_path:
-            return Path(real_path).resolve()
+    with open(manifest_file, encoding="utf-8") as f:
+        for line in f:
+            logical_path, _, real_path = line.rstrip("\n").partition(" ")
+            if logical_path == runfiles_logical_path and real_path:
+                return Path(real_path).resolve()
     return None
 
 
