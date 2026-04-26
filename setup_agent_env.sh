@@ -11,11 +11,12 @@ sudo ln -s /usr/bin/bazel-9.0.1 /usr/bin/bazel
 
 # Set up BuildBuddy remote caching.
 cat >> ~/.bazelrc << EOF
-common --bes_results_url=https://app.buildbuddy.io/invocation/
-common --bes_backend=grpcs://remote.buildbuddy.io
-common --remote_cache=grpcs://remote.buildbuddy.io
-common --noremote_upload_local_results
-common --remote_timeout=10m
+common:ci --disk_cache=
+common:ci --bes_results_url=https://app.buildbuddy.io/invocation/
+common:ci --bes_backend=grpcs://remote.buildbuddy.io
+common:ci --remote_cache=grpcs://remote.buildbuddy.io
+common:ci --remote_download_toplevel
+common:ci --remote_timeout=3600
 common --remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY
 EOF
 
