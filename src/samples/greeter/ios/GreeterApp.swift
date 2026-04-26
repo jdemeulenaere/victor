@@ -36,7 +36,7 @@ final class GrpcGreeterClient: GreeterServing {
         }
 
         client.sayHello(request).response.whenComplete { result in
-            completion(result.map { $0.message })
+            completion(result.map(\.message))
         }
     }
 
@@ -58,7 +58,7 @@ final class FailingGreeterClient: GreeterServing {
         self.error = error
     }
 
-    func sayHello(name: String, completion: @escaping (Result<String, Error>) -> Void) {
+    func sayHello(name _: String, completion: @escaping (Result<String, Error>) -> Void) {
         completion(.failure(error))
     }
 }

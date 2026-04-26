@@ -1,0 +1,14 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+exports_files(["swiftformat.MODULE.bazel"])
+
+sh_binary(
+    name = "swiftformat",
+    srcs = ["swiftformat.sh"],
+    data = [
+        "@swiftformat_darwin//:swiftformat",
+        "@swiftformat_linux",
+        "@swiftformat_linux_aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
