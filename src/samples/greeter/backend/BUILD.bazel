@@ -1,8 +1,9 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary", "kt_jvm_library", "kt_jvm_test")
-load("//build/rules:defs.bzl", "backend_service_url_config", "deploy_grpc_server")
+load("//build/rules:defs.bzl", "backend_endpoint_config", "deploy_grpc_server")
 
-backend_service_url_config(
+backend_endpoint_config(
     name = "backend_config",
+    backend = ":deploy",
     custom_package = "victor.greeter.shared",
     visibility = ["//visibility:public"],
 )

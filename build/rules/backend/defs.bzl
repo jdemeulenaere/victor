@@ -1,12 +1,14 @@
 """Shared backend endpoint config generation rules."""
 
+load("@rules_java//java:defs.bzl", "JavaInfo")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("@rules_kotlin//kotlin/internal:defs.bzl", "KtJvmInfo")
+load(":providers.bzl", "BackendDeployInfo", "BackendEndpointConfigInfo")
 
 BackendStringFlagInfo = provider(fields = ["value"])
 
 DEFAULT_LOCAL_SERVICE_URL = "127.0.0.1"
 DEFAULT_LOCAL_SERVICE_URL_PORT = 8080
-_DEFAULT_DEPLOY_SERVICE_URL = "//build/rules/backend:backend_deploy_service_url"
 _DEFAULT_SERVICE_URL_PROFILE = "//build/rules/backend:backend_service_url_profile"
 
 def _string_flag_impl(ctx):
@@ -16,6 +18,11 @@ backend_string_flag = rule(
     implementation = _string_flag_impl,
     build_setting = config.string(flag = True),
 )
+
+def _repo_label(label):
+    if label.package:
+        return "//{}:{}".format(label.package, label.name)
+    return "//:{}".format(label.name)
 
 def backend_service_url_settings():
     """Declares backend service URL build settings in the current package."""
@@ -30,12 +37,6 @@ def backend_service_url_settings():
         flag_values = {
             ":backend_service_url_profile": "deploy",
         },
-        visibility = ["//visibility:public"],
-    )
-
-    backend_string_flag(
-        name = "backend_deploy_service_url",
-        build_setting_default = "",
         visibility = ["//visibility:public"],
     )
 
@@ -156,25 +157,68 @@ _backend_service_url_config_src = rule(
     },
 )
 
-def backend_service_url_config(
+def _backend_endpoint_config_impl(ctx):
+    library = ctx.attr.library
+    backend = ctx.attr.backend[BackendDeployInfo]
+
+    return [
+        library[DefaultInfo],
+        library[JavaInfo],
+        library[KtJvmInfo],
+        BackendEndpointConfigInfo(
+            deploy_service_url_flag = _repo_label(ctx.attr.deploy_service_url.label),
+            service = backend.service,
+        ),
+    ]
+
+_backend_endpoint_config = rule(
+    implementation = _backend_endpoint_config_impl,
+    attrs = {
+        "backend": attr.label(
+            # This dependency is deploy metadata, not app code.
+            cfg = "exec",
+            mandatory = True,
+            providers = [BackendDeployInfo],
+        ),
+        "deploy_service_url": attr.label(
+            mandatory = True,
+            providers = [BackendStringFlagInfo],
+        ),
+        "library": attr.label(
+            mandatory = True,
+            providers = [JavaInfo, KtJvmInfo],
+        ),
+    },
+    provides = [JavaInfo, KtJvmInfo, BackendEndpointConfigInfo],
+)
+
+def backend_endpoint_config(
         name,
         custom_package,
+        backend,
         local_service_url = DEFAULT_LOCAL_SERVICE_URL,
         local_default_port = DEFAULT_LOCAL_SERVICE_URL_PORT,
         deploy_profile = "deploy",
-        deploy_service_url = _DEFAULT_DEPLOY_SERVICE_URL,
         service_url_profile = _DEFAULT_SERVICE_URL_PROFILE,
         visibility = None):
     """Generates a Kotlin BackendConfig exposing a parsed BackendEndpoint."""
     src = "{}_src".format(name)
+    library = "{}__library".format(name)
+    deploy_service_url = "{}_deploy_service_url".format(name)
+
+    backend_string_flag(
+        name = deploy_service_url,
+        build_setting_default = "",
+        visibility = ["//visibility:public"],
+    )
+
     src_kwargs = {
         "custom_package": custom_package,
         "deploy_profile": deploy_profile,
+        "deploy_service_url": ":{}".format(deploy_service_url),
         "local_default_port": local_default_port,
         "local_service_url": local_service_url,
     }
-    if deploy_service_url != None:
-        src_kwargs["deploy_service_url"] = deploy_service_url
     if service_url_profile != None:
         src_kwargs["service_url_profile"] = service_url_profile
 
@@ -183,8 +227,15 @@ def backend_service_url_config(
         **src_kwargs
     )
     kt_jvm_library(
-        name = name,
+        name = library,
         srcs = [":{}".format(src)],
         deps = ["//src/common/grpc/client:backend_endpoint"],
+        visibility = ["//visibility:private"],
+    )
+    _backend_endpoint_config(
+        name = name,
+        backend = backend,
+        deploy_service_url = ":{}".format(deploy_service_url),
+        library = ":{}".format(library),
         visibility = visibility,
     )
