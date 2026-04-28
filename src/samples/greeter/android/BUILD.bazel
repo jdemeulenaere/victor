@@ -60,7 +60,6 @@ android_local_test(
 deploy_android_app(
     name = "deploy",
     app = ":app",
-    backend = "//src/samples/greeter/backend:deploy",
     firebase_app_id = "1:617611994239:android:7506bbb54eb2decb430b4a",
     visibility = ["//visibility:public"],
 )

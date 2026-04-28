@@ -5,7 +5,6 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 exports_files([
     "dev_environment.json",
     "deploy_targets_expected.txt",
-    "run_deploy.sh",
     "verify_ci_permissions.sh",
 ])
 

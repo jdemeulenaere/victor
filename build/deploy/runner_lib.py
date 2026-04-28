@@ -20,9 +20,6 @@ APK_PATH_PLACEHOLDER = "$APK_PATH"
 _BACKEND_SERVICE_URL_PROFILE_FLAG = (
     "--//build/rules/backend:backend_service_url_profile=deploy"
 )
-_BACKEND_DEPLOY_SERVICE_URL_FLAG = (
-    "--//build/rules/backend:backend_deploy_service_url={service_url}"
-)
 _ANDROID_DEPLOY_BAZEL_FLAGS = ("-c", "opt")
 _ANDROID_VERSION_CODE_DEFINE = "ANDROID_VERSION_CODE"
 _ANDROID_VERSION_NAME_DEFINE = "ANDROID_VERSION_NAME"
@@ -244,11 +241,26 @@ def _build_backend_image_uri(
     return f"{registry_host}/{project_id}/{repository}/{service}:{revision}"
 
 
-def _backend_deploy_service_url_flags(service_url: str) -> list[str]:
-    return [
-        _BACKEND_SERVICE_URL_PROFILE_FLAG,
-        _BACKEND_DEPLOY_SERVICE_URL_FLAG.format(service_url=service_url),
-    ]
+def _service_url_placeholder(index: int) -> str:
+    if index == 0:
+        return CLOUD_RUN_URL_PLACEHOLDER
+    return f"$CLOUD_RUN_URL_{index}"
+
+
+def _backend_endpoint_config_flags(
+    endpoint_configs: list[dict[str, str]],
+) -> list[str]:
+    if not endpoint_configs:
+        return []
+    flags = [_BACKEND_SERVICE_URL_PROFILE_FLAG]
+    for endpoint_config in endpoint_configs:
+        flags.append(
+            "--{}={}".format(
+                endpoint_config["deploy_service_url_flag"],
+                endpoint_config["service_url"],
+            ),
+        )
+    return flags
 
 
 def _android_version_define_flags(android_version: dict[str, str]) -> list[str]:
@@ -278,26 +290,30 @@ def _cloud_run_url_command(service: str, config: dict[str, Any]) -> list[str]:
 
 
 def _bazel_android_build_command(
-    app_label: str, service_url: str, android_version: dict[str, str]
+    app_label: str,
+    endpoint_configs: list[dict[str, str]],
+    android_version: dict[str, str],
 ) -> list[str]:
     return [
         "bazel",
         "build",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
-        *_backend_deploy_service_url_flags(service_url),
+        *_backend_endpoint_config_flags(endpoint_configs),
         *_android_version_define_flags(android_version),
         app_label,
     ]
 
 
 def _bazel_android_cquery_command(
-    app_label: str, service_url: str, android_version: dict[str, str]
+    app_label: str,
+    endpoint_configs: list[dict[str, str]],
+    android_version: dict[str, str],
 ) -> list[str]:
     return [
         "bazel",
         "cquery",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
-        *_backend_deploy_service_url_flags(service_url),
+        *_backend_endpoint_config_flags(endpoint_configs),
         *_android_version_define_flags(android_version),
         "--output=files",
         app_label,
@@ -530,63 +546,82 @@ def _plan_android_app(
     environment: dict[str, str],
     deploy_runfiles_root: Path | None,
 ) -> dict[str, Any]:
-    backend_manifest = _load_grpc_backend_manifest(
-        manifest,
-        workspace_root,
-        environment,
-        deploy_runfiles_root,
-    )
-    if backend_manifest is None:
-        raise RuntimeError(
-            "Android app deploy manifest missing backend deploy manifest"
-        )
-
     tester_groups = manifest.get("tester_groups") or config["firebase"].get(
         "default_tester_groups", []
     )
     release_notes = _release_notes(environment, workspace_root)
     android_version = _android_version(environment, workspace_root)
     app_label = manifest["app_label"]
-    service = backend_manifest["service"]
-    commands = [
-        _cloud_run_url_command(service, config),
-        _bazel_android_build_command(
-            app_label,
-            CLOUD_RUN_URL_PLACEHOLDER,
-            android_version,
-        ),
-        _bazel_android_cquery_command(
-            app_label,
-            CLOUD_RUN_URL_PLACEHOLDER,
-            android_version,
-        ),
-        [
-            "firebase",
-            "appdistribution:distribute",
-            APK_PATH_PLACEHOLDER,
-            "--app",
-            manifest["firebase_app_id"],
-            "--project",
-            config["firebase"]["project_id"],
-            "--release-notes",
-            release_notes,
-        ],
+
+    endpoint_configs = sorted(
+        manifest.get("backend_endpoint_configs", []),
+        key=lambda endpoint_config: endpoint_config["deploy_service_url_flag"],
+    )
+    services = sorted(
+        {endpoint_config["service"] for endpoint_config in endpoint_configs},
+    )
+    service_placeholders = {
+        service: _service_url_placeholder(index)
+        for index, service in enumerate(services)
+    }
+    service_url_commands = [
+        {
+            "command": _cloud_run_url_command(service, config),
+            "placeholder": service_placeholders[service],
+            "service": service,
+        }
+        for service in services
+    ]
+    endpoint_configs = [
+        {
+            **endpoint_config,
+            "service_url": service_placeholders[endpoint_config["service"]],
+        }
+        for endpoint_config in endpoint_configs
+    ]
+
+    build_command = _bazel_android_build_command(
+        app_label,
+        endpoint_configs,
+        android_version,
+    )
+    cquery_command = _bazel_android_cquery_command(
+        app_label,
+        endpoint_configs,
+        android_version,
+    )
+    distribute_command = [
+        "firebase",
+        "appdistribution:distribute",
+        APK_PATH_PLACEHOLDER,
+        "--app",
+        manifest["firebase_app_id"],
+        "--project",
+        config["firebase"]["project_id"],
+        "--release-notes",
+        release_notes,
     ]
     if tester_groups:
-        commands[-1].extend(["--groups", ",".join(tester_groups)])
+        distribute_command.extend(["--groups", ",".join(tester_groups)])
+
     return {
+        "backend_endpoint_configs": endpoint_configs,
         "deploy_kind": "android_app",
-        "service": service,
         "firebase_app_id": manifest["firebase_app_id"],
         "inputs": {
             "app_label": app_label,
             "workspace_root": str(workspace_root),
         },
-        "service_url": CLOUD_RUN_URL_PLACEHOLDER,
+        "service_url_commands": service_url_commands,
+        "services": services,
         "android_version": android_version,
         "tester_groups": tester_groups,
         "release_notes": release_notes,
-        "commands": commands,
+        "commands": [
+            build_command,
+            cquery_command,
+            distribute_command,
+        ],
     }
 
 
@@ -685,22 +720,38 @@ def _execute_web_app(plan: dict[str, Any]) -> None:
 
 
 def _execute_android_app(plan: dict[str, Any]) -> None:
-    _require_tools(["bazel", "firebase", "gcloud"])
+    required_tools = ["bazel", "firebase"]
+    if plan["service_url_commands"]:
+        required_tools.append("gcloud")
+    _require_tools(required_tools)
     workspace_root = Path(plan["inputs"]["workspace_root"])
 
-    service_url = _run_command_output(plan["commands"][0], cwd=workspace_root)
-    if not service_url:
-        raise RuntimeError(
-            "Cloud Run service {} did not report status.url".format(plan["service"]),
+    replacements = {}
+    for service_url_command in plan["service_url_commands"]:
+        service_url = _run_command_output(
+            service_url_command["command"],
+            cwd=workspace_root,
         )
+        if not service_url:
+            raise RuntimeError(
+                "Cloud Run service {} did not report status.url".format(
+                    service_url_command["service"],
+                ),
+            )
+        replacements[service_url_command["placeholder"]] = service_url
 
-    replacements = {CLOUD_RUN_URL_PLACEHOLDER: service_url}
     _run_command(
-        _replace_command_placeholders(plan["commands"][1], replacements),
+        _replace_command_placeholders(
+            plan["commands"][0],
+            replacements,
+        ),
         cwd=workspace_root,
     )
     cquery_output = _run_command_output(
-        _replace_command_placeholders(plan["commands"][2], replacements),
+        _replace_command_placeholders(
+            plan["commands"][1],
+            replacements,
+        ),
         cwd=workspace_root,
     )
     apk_output_path = _select_signed_apk_path(cquery_output)
@@ -712,7 +763,10 @@ def _execute_android_app(plan: dict[str, Any]) -> None:
 
     replacements[APK_PATH_PLACEHOLDER] = str(apk_path)
     _run_command(
-        _replace_command_placeholders(plan["commands"][3], replacements),
+        _replace_command_placeholders(
+            plan["commands"][2],
+            replacements,
+        ),
         cwd=workspace_root,
     )
 
