@@ -12,7 +12,7 @@ kt_jvm_library(
     name = "backend_lib",
     srcs = ["Main.kt"],
     deps = [
-        "//src/samples/greeter/proto:victor_api_kt_grpc",
+        "//src/samples/greeter/proto:victor_api",
         "@third_party_maven//:ch_qos_logback_logback_classic",
         "@third_party_maven//:com_linecorp_armeria_armeria",
         "@third_party_maven//:com_linecorp_armeria_armeria_grpc",

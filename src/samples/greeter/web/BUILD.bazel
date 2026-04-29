@@ -10,7 +10,7 @@ web_app(
     visibility = ["//visibility:public"],
     vite_config = "vite.config.mjs",
     deps = [
-        "//src/samples/greeter/proto:victor_api_js_proto_files",
+        "//src/samples/greeter/proto:victor_api",
         "//src/samples/greeter/shared:library_wasm_files",
     ],
 )

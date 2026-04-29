@@ -6,8 +6,7 @@ py_binary(
     main = "main.py",
     visibility = ["//visibility:public"],
     deps = [
-        "//src/samples/greeter/proto:victor_api_py_pb2",
-        "//src/samples/greeter/proto:victor_api_py_pb2_grpc",
+        "//src/samples/greeter/proto:victor_api",
     ],
 )
 
