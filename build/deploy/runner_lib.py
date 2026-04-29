@@ -23,6 +23,7 @@ _BACKEND_SERVICE_URL_PROFILE_FLAG = (
 _ANDROID_DEPLOY_BAZEL_FLAGS = ("-c", "opt")
 _ANDROID_VERSION_CODE_DEFINE = "ANDROID_VERSION_CODE"
 _ANDROID_VERSION_NAME_DEFINE = "ANDROID_VERSION_NAME"
+_CI_BAZEL_WRAPPER = Path(".github/scripts/run-bazel-ci.sh")
 
 
 def _workspace_root(explicit_workspace_root: str | None = None) -> Path:
@@ -272,6 +273,18 @@ def _android_version_define_flags(android_version: dict[str, str]) -> list[str]:
     ]
 
 
+def _bazel_android_command_prefix(
+    workspace_root: Path, environment: dict[str, str], subcommand: str
+) -> list[str]:
+    if not environment.get("BUILDBUDDY_API_KEY"):
+        return ["bazel", subcommand]
+
+    wrapper = workspace_root / _CI_BAZEL_WRAPPER
+    if not wrapper.exists():
+        raise RuntimeError(f"CI Bazel wrapper does not exist: {wrapper}")
+    return [f"./{_CI_BAZEL_WRAPPER}", subcommand, "--config=ci"]
+
+
 def _cloud_run_url_command(service: str, config: dict[str, Any]) -> list[str]:
     return [
         "gcloud",
@@ -293,10 +306,10 @@ def _bazel_android_build_command(
     app_label: str,
     endpoint_configs: list[dict[str, str]],
     android_version: dict[str, str],
+    bazel_command_prefix: list[str],
 ) -> list[str]:
     return [
-        "bazel",
-        "build",
+        *bazel_command_prefix,
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_backend_endpoint_config_flags(endpoint_configs),
         *_android_version_define_flags(android_version),
@@ -308,10 +321,10 @@ def _bazel_android_cquery_command(
     app_label: str,
     endpoint_configs: list[dict[str, str]],
     android_version: dict[str, str],
+    bazel_command_prefix: list[str],
 ) -> list[str]:
     return [
-        "bazel",
-        "cquery",
+        *bazel_command_prefix,
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_backend_endpoint_config_flags(endpoint_configs),
         *_android_version_define_flags(android_version),
@@ -584,11 +597,13 @@ def _plan_android_app(
         app_label,
         endpoint_configs,
         android_version,
+        _bazel_android_command_prefix(workspace_root, environment, "build"),
     )
     cquery_command = _bazel_android_cquery_command(
         app_label,
         endpoint_configs,
         android_version,
+        _bazel_android_command_prefix(workspace_root, environment, "cquery"),
     )
     distribute_command = [
         "firebase",

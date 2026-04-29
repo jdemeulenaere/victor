@@ -321,6 +321,46 @@ class RunnerDryRunTest(unittest.TestCase):
         self.assertIn("--groups", command)
         self.assertIn("1:1234567890:android:deadbeef", command)
 
+    def test_android_app_dry_run_uses_ci_bazel_wrapper_when_buildbuddy_is_available(
+        self,
+    ) -> None:
+        wrapper = self.workspace_root / ".github" / "scripts" / "run-bazel-ci.sh"
+        wrapper.parent.mkdir(parents=True, exist_ok=True)
+        wrapper.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+
+        plan = self._dry_run(
+            self._write_manifest(
+                "android_ci_manifest",
+                {
+                    "deploy_kind": "android_app",
+                    "app_label": "//src/samples/greeter/android:app",
+                    "backend_endpoint_configs": [],
+                    "firebase_app_id": "1:1234567890:android:deadbeef",
+                    "tester_groups": [],
+                },
+            ),
+            environment={
+                "BUILDBUDDY_API_KEY": "secret-key",
+                "GITHUB_EVENT_NAME": "push",
+                "GITHUB_REF": "refs/heads/main",
+            },
+        )
+
+        plan_json = json.dumps(plan)
+        self.assertNotIn("secret-key", plan_json)
+
+        build_command = plan["commands"][0]
+        self.assertEqual(
+            build_command[0:3],
+            ["./.github/scripts/run-bazel-ci.sh", "build", "--config=ci"],
+        )
+
+        cquery_command = plan["commands"][1]
+        self.assertEqual(
+            cquery_command[0:3],
+            ["./.github/scripts/run-bazel-ci.sh", "cquery", "--config=ci"],
+        )
+
     def test_android_app_dry_run_supports_multiple_backend_endpoint_configs(
         self,
     ) -> None:
