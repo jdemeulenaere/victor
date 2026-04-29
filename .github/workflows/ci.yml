@@ -24,10 +24,6 @@ jobs:
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: ${{ github.workflow }}-${{ runner.os }}
-          repository-cache: true
-          external-cache: true
-          cache-save: ${{ github.event_name != 'pull_request' }}
       - name: Check formatting for PR files
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
@@ -51,10 +47,6 @@ jobs:
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: ${{ github.workflow }}-${{ runner.os }}
-          repository-cache: true
-          external-cache: true
-          cache-save: ${{ github.event_name != 'pull_request' }}
       - name: Build
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
@@ -76,10 +68,6 @@ jobs:
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: ${{ github.workflow }}-${{ runner.os }}
-          repository-cache: true
-          external-cache: true
-          cache-save: ${{ github.event_name != 'pull_request' }}
       - id: deploy_config
         name: Load deploy config
         env:
