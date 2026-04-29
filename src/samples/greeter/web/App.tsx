@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@connectrpc/connect";
 import { createGrpcWebTransport } from "@connectrpc/connect-web";
 import { Greeter } from "../proto/greeter_pb.js";
-import { greetingMessage } from "../shared/library_wasm_files/library.mjs";
+import { greetingMessage } from "../shared/library/library.mjs";
 
 const grpcBaseUrl = "/grpc";
 const transport = createGrpcWebTransport({ baseUrl: grpcBaseUrl });

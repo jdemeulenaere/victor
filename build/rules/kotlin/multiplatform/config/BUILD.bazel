@@ -1,0 +1,47 @@
+load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_variant")
+
+kmp_variant(
+    name = "kmp_variant",
+    build_setting_default = "jvm",
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_variant_android",
+    flag_values = {
+        ":kmp_variant": "android",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_variant_ios",
+    flag_values = {
+        ":kmp_variant": "ios",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_variant_jvm",
+    flag_values = {
+        ":kmp_variant": "jvm",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_variant_wasm",
+    flag_values = {
+        ":kmp_variant": "wasm",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_variant_wasm_imports",
+    flag_values = {
+        ":kmp_variant": "wasm_imports",
+    },
+    visibility = ["//visibility:public"],
+)
