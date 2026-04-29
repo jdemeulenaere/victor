@@ -16,10 +16,6 @@ common --tool_java_runtime_version=remotejdk_21
 common --java_language_version=21
 common --tool_java_language_version=21
 
-# Defaults for Android manifest stamping; deploys override these with CI metadata.
-build --define=ANDROID_VERSION_CODE=1
-build --define=ANDROID_VERSION_NAME=dev-local
-
 # Always package Android binaries for arm64-v8a, independent of the host CPU.
 build --android_platforms=@rules_android//:arm64-v8a
 

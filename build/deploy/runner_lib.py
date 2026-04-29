@@ -21,8 +21,6 @@ _BACKEND_SERVICE_URL_PROFILE_FLAG = (
     "--//build/rules/backend:backend_service_url_profile=deploy"
 )
 _ANDROID_DEPLOY_BAZEL_FLAGS = ("-c", "opt")
-_ANDROID_VERSION_CODE_DEFINE = "ANDROID_VERSION_CODE"
-_ANDROID_VERSION_NAME_DEFINE = "ANDROID_VERSION_NAME"
 
 
 def _workspace_root(explicit_workspace_root: str | None = None) -> Path:
@@ -194,29 +192,6 @@ def _release_notes(environment: dict[str, str], workspace_root: Path) -> str:
     return f"Manual deploy at {datetime.now(timezone.utc).isoformat()}"
 
 
-def _android_version_code(environment: dict[str, str]) -> str:
-    run_number = environment.get("GITHUB_RUN_NUMBER")
-    if not run_number:
-        return "1"
-    run_attempt = environment.get("GITHUB_RUN_ATTEMPT", "1")
-    try:
-        return str(int(run_number) * 100 + int(run_attempt))
-    except ValueError as exc:
-        raise RuntimeError(
-            "GITHUB_RUN_NUMBER and GITHUB_RUN_ATTEMPT must be integers "
-            "for Android deploy versioning"
-        ) from exc
-
-
-def _android_version(
-    environment: dict[str, str], workspace_root: Path
-) -> dict[str, str]:
-    return {
-        "version_code": _android_version_code(environment),
-        "version_name": _release_revision(environment, workspace_root),
-    }
-
-
 def _require_tools(tools: list[str]) -> None:
     missing = [tool for tool in tools if shutil.which(tool) is None]
     if missing:
@@ -263,15 +238,6 @@ def _backend_endpoint_config_flags(
     return flags
 
 
-def _android_version_define_flags(android_version: dict[str, str]) -> list[str]:
-    return [
-        "--define",
-        f"{_ANDROID_VERSION_CODE_DEFINE}={android_version['version_code']}",
-        "--define",
-        f"{_ANDROID_VERSION_NAME_DEFINE}={android_version['version_name']}",
-    ]
-
-
 def _cloud_run_url_command(service: str, config: dict[str, Any]) -> list[str]:
     return [
         "gcloud",
@@ -292,14 +258,12 @@ def _cloud_run_url_command(service: str, config: dict[str, Any]) -> list[str]:
 def _bazel_android_build_command(
     app_label: str,
     endpoint_configs: list[dict[str, str]],
-    android_version: dict[str, str],
 ) -> list[str]:
     return [
         "bazel",
         "build",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_backend_endpoint_config_flags(endpoint_configs),
-        *_android_version_define_flags(android_version),
         app_label,
     ]
 
@@ -307,14 +271,12 @@ def _bazel_android_build_command(
 def _bazel_android_cquery_command(
     app_label: str,
     endpoint_configs: list[dict[str, str]],
-    android_version: dict[str, str],
 ) -> list[str]:
     return [
         "bazel",
         "cquery",
         *_ANDROID_DEPLOY_BAZEL_FLAGS,
         *_backend_endpoint_config_flags(endpoint_configs),
-        *_android_version_define_flags(android_version),
         "--output=files",
         app_label,
     ]
@@ -550,7 +512,6 @@ def _plan_android_app(
         "default_tester_groups", []
     )
     release_notes = _release_notes(environment, workspace_root)
-    android_version = _android_version(environment, workspace_root)
     app_label = manifest["app_label"]
 
     endpoint_configs = sorted(
@@ -583,12 +544,10 @@ def _plan_android_app(
     build_command = _bazel_android_build_command(
         app_label,
         endpoint_configs,
-        android_version,
     )
     cquery_command = _bazel_android_cquery_command(
         app_label,
         endpoint_configs,
-        android_version,
     )
     distribute_command = [
         "firebase",
@@ -614,14 +573,9 @@ def _plan_android_app(
         },
         "service_url_commands": service_url_commands,
         "services": services,
-        "android_version": android_version,
         "tester_groups": tester_groups,
         "release_notes": release_notes,
-        "commands": [
-            build_command,
-            cquery_command,
-            distribute_command,
-        ],
+        "commands": [build_command, cquery_command, distribute_command],
     }
 
 

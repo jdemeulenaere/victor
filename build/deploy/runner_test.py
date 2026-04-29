@@ -238,8 +238,6 @@ class RunnerDryRunTest(unittest.TestCase):
                 },
             ),
             environment={
-                "GITHUB_RUN_NUMBER": "123",
-                "GITHUB_RUN_ATTEMPT": "4",
                 "GITHUB_SHA": "abcdef1234567890abcdef1234567890abcdef12",
             },
         )
@@ -260,13 +258,7 @@ class RunnerDryRunTest(unittest.TestCase):
                 },
             ],
         )
-        self.assertEqual(
-            plan["android_version"],
-            {
-                "version_code": "12304",
-                "version_name": "abcdef123456",
-            },
-        )
+        self.assertNotIn("android_version", plan)
         self.assertEqual(plan["tester_groups"], ["android-dev-testers"])
         self.assertEqual(len(plan["service_url_commands"]), 1)
         self.assertEqual(
@@ -304,17 +296,14 @@ class RunnerDryRunTest(unittest.TestCase):
             "--//build/rules/backend:backend_deploy_service_url=$CLOUD_RUN_URL",
             plan["commands"][0],
         )
-        self.assertIn("ANDROID_VERSION_CODE=12304", plan["commands"][0])
-        self.assertIn("ANDROID_VERSION_NAME=abcdef123456", plan["commands"][0])
         self.assertEqual(
             plan["commands"][0][-1],
             "//src/samples/greeter/android:app",
         )
         self.assertEqual(plan["commands"][1][0:2], ["bazel", "cquery"])
         self.assertEqual(plan["commands"][1][2:4], ["-c", "opt"])
-        self.assertIn("ANDROID_VERSION_CODE=12304", plan["commands"][1])
-        self.assertIn("ANDROID_VERSION_NAME=abcdef123456", plan["commands"][1])
         self.assertIn("--output=files", plan["commands"][1])
+        self.assertEqual(len(plan["commands"]), 3)
         command = plan["commands"][2]
         self.assertEqual(command[0], "firebase")
         self.assertIn(runner_lib.APK_PATH_PLACEHOLDER, command)

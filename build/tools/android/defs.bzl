@@ -10,8 +10,8 @@ _DEFAULT_DEBUG_SIGNING_KEYS = ["//build/signing/android/debug:debug.keystore"]
 _DEFAULT_MIN_SDK_VERSION = "23"
 _DEFAULT_PROGUARD_SPECS = ["//build/tools/android:proguard-rules.pro"]
 _DEFAULT_TARGET_SDK_VERSION = "36"
-_DEFAULT_VERSION_CODE = "$(ANDROID_VERSION_CODE)"
-_DEFAULT_VERSION_NAME = "$(ANDROID_VERSION_NAME)"
+_DEFAULT_VERSION_CODE = "1"
+_DEFAULT_VERSION_NAME = "1"
 _OPT_COMPILATION_MODE = "//build/tools/android:compilation_mode_opt"
 
 def _select_for_opt(opt_value, default_value):
