@@ -100,17 +100,42 @@ jobs:
           package-manager-cache: false
       - name: Install Firebase CLI
         run: npm install --global firebase-tools@latest
-      - name: Deploy registered targets
+      - name: Deploy gRPC server targets
         env:
           BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          DEPLOY_KIND: grpc_server
         run: |
           set -euo pipefail
-          for kind in grpc_server web_app android_app; do
-            while IFS= read -r target; do
-              if [[ -z "$target" ]]; then
-                continue
-              fi
-              echo "Deploying $target"
-              ./.github/scripts/run-bazel-ci.sh run --config=ci "$target"
-            done < <(./.github/scripts/run-bazel-ci.sh run --config=ci //build/deploy:list_deploy_targets -- --kind "$kind")
-          done
+          while IFS= read -r target; do
+            if [[ -z "$target" ]]; then
+              continue
+            fi
+            echo "Deploying $target"
+            ./.github/scripts/run-bazel-ci.sh run --config=ci "$target"
+          done < <(./.github/scripts/run-bazel-ci.sh run --config=ci //build/deploy:list_deploy_targets -- --kind "$DEPLOY_KIND")
+      - name: Deploy web app targets
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          DEPLOY_KIND: web_app
+        run: |
+          set -euo pipefail
+          while IFS= read -r target; do
+            if [[ -z "$target" ]]; then
+              continue
+            fi
+            echo "Deploying $target"
+            ./.github/scripts/run-bazel-ci.sh run --config=ci "$target"
+          done < <(./.github/scripts/run-bazel-ci.sh run --config=ci //build/deploy:list_deploy_targets -- --kind "$DEPLOY_KIND")
+      - name: Deploy Android app targets
+        env:
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          DEPLOY_KIND: android_app
+        run: |
+          set -euo pipefail
+          while IFS= read -r target; do
+            if [[ -z "$target" ]]; then
+              continue
+            fi
+            echo "Deploying $target"
+            ./.github/scripts/run-bazel-ci.sh run --config=ci "$target"
+          done < <(./.github/scripts/run-bazel-ci.sh run --config=ci //build/deploy:list_deploy_targets -- --kind "$DEPLOY_KIND")
