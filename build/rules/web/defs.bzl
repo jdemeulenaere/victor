@@ -2,6 +2,7 @@
 
 load("@npm//:typescript/package_json.bzl", typescript_bin = "bin")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
+load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_variant_binary", "kmp_variant_forward", "kmp_variant_test")
 load("//build/rules/npm:defs.bzl", "npm_node_modules")
 
 _TSC_COMMON_ARGS = [
@@ -61,11 +62,14 @@ def web_app(
 
     npm_node_modules(name = "node_modules")
 
+    build_impl = "{}__impl".format(name)
+    dev_impl = "dev__impl"
+    typecheck_impl = "typecheck__impl"
     vite_config_path = _vite_config_path(vite_config)
     common_inputs = [":node_modules", vite_config] + deps + srcs
 
     vite_bin.vite_binary(
-        name = "dev",
+        name = dev_impl,
         args = [
             "dev",
             "--host",
@@ -74,11 +78,12 @@ def web_app(
         ],
         data = common_inputs,
         chdir = native.package_name(),
-        visibility = visibility,
+        tags = ["manual"],
+        visibility = ["//visibility:private"],
     )
 
     vite_bin.vite(
-        name = name,
+        name = build_impl,
         args = [
             "build",
             "--config",
@@ -87,13 +92,45 @@ def web_app(
         srcs = common_inputs,
         out_dirs = ["dist"],
         chdir = native.package_name(),
-        visibility = visibility,
+        tags = ["manual"],
+        visibility = ["//visibility:private"],
     )
 
     typescript_bin.tsc_test(
-        name = "typecheck",
+        name = typecheck_impl,
         args = _TSC_COMMON_ARGS + ts_srcs,
         data = common_inputs,
         chdir = native.package_name(),
+        tags = ["manual"],
+        visibility = ["//visibility:private"],
+    )
+
+    kmp_variant_binary(
+        name = "dev",
+        actual = ":{}".format(dev_impl),
+        chdir = native.package_name(),
+        forward_args = [
+            "dev",
+            "--host",
+            "--config",
+            vite_config_path,
+        ],
+        variant = "wasm_imports",
+        visibility = visibility,
+    )
+
+    kmp_variant_forward(
+        name = name,
+        actual = ":{}".format(build_impl),
+        variant = "wasm_imports",
+        visibility = visibility,
+    )
+
+    kmp_variant_test(
+        name = "typecheck",
+        actual = ":{}".format(typecheck_impl),
+        chdir = native.package_name(),
+        forward_args = _TSC_COMMON_ARGS + ts_srcs,
+        variant = "wasm_imports",
         visibility = visibility,
     )

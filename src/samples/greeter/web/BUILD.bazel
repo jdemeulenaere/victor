@@ -11,7 +11,7 @@ web_app(
     vite_config = "vite.config.mjs",
     deps = [
         "//src/samples/greeter/proto:victor_api",
-        "//src/samples/greeter/shared:library_wasm_files",
+        "//src/samples/greeter/shared:library",
     ],
 )
 

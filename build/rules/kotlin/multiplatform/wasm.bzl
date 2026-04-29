@@ -179,3 +179,32 @@ kt_wasm_files = rule(
     },
     toolchains = [_JAVA_RUNTIME_TOOLCHAIN_TYPE, _KOTLIN_TOOLCHAIN_TYPE],
 )
+
+def _kt_wasm_imports_impl(ctx):
+    files = ctx.attr.files[DefaultInfo].files.to_list()
+    directories = [file for file in files if file.is_directory]
+    if len(directories) != 1:
+        fail("expected exactly one Kotlin/WASM files directory, found {}: {}".format(len(directories), [file.path for file in directories]))
+
+    output = ctx.actions.declare_directory(ctx.attr.out)
+    ctx.actions.run_shell(
+        inputs = depset(files),
+        outputs = [output],
+        command = "mkdir -p \"$1\" && cp -RP \"$2\"/. \"$1\"/",
+        arguments = [
+            output.path,
+            directories[0].path,
+        ],
+        mnemonic = "KtWasmImports",
+        progress_message = "Preparing Kotlin/WASM imports %{label}",
+    )
+
+    return [DefaultInfo(files = depset([output]))]
+
+kt_wasm_imports = rule(
+    implementation = _kt_wasm_imports_impl,
+    attrs = {
+        "files": attr.label(mandatory = True),
+        "out": attr.string(mandatory = True),
+    },
+)

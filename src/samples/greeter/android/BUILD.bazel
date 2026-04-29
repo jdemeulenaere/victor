@@ -1,6 +1,4 @@
-load("@rules_kotlin//kotlin:android.bzl", "kt_android_library")
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
-load("//build/rules:defs.bzl", "android_binary", "android_local_test", "deploy_android_app")
+load("//build/rules:defs.bzl", "android_binary", "android_local_test", "deploy_android_app", "kt_android_library", "kt_jvm_library")
 
 kt_android_library(
     name = "app_lib",
@@ -12,7 +10,7 @@ kt_android_library(
         "//src/common/grpc/client:backend_endpoint",
         "//src/samples/greeter/backend:backend_config",
         "//src/samples/greeter/proto:victor_api",
-        "//src/samples/greeter/shared:library_android",
+        "//src/samples/greeter/shared:library",
         "@third_party_maven//:androidx_activity_activity",
         "@third_party_maven//:androidx_activity_activity_compose",
         "@third_party_maven//:androidx_activity_activity_ktx",

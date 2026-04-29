@@ -1,5 +1,4 @@
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_test")
-load("//build/rules:defs.bzl", "kt_multiplatform_library")
+load("//build/rules:defs.bzl", "kt_jvm_test", "kt_multiplatform_library")
 
 kt_multiplatform_library(
     name = "library",
@@ -32,11 +31,11 @@ kt_multiplatform_library(
 )
 
 kt_jvm_test(
-    name = "library_jvm_test",
+    name = "library_test",
     srcs = ["GreetingTest.kt"],
     test_class = "victor.example.multiplatform.GreetingTest",
     deps = [
-        ":library_jvm",
+        ":library",
         "@third_party_maven//:junit_junit",
     ],
 )
