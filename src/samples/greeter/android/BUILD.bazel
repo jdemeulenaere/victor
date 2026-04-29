@@ -11,7 +11,7 @@ kt_android_library(
         "//src/common/grpc/client:backend_channel",
         "//src/common/grpc/client:backend_endpoint",
         "//src/samples/greeter/backend:backend_config",
-        "//src/samples/greeter/proto:victor_api_kt_grpc",
+        "//src/samples/greeter/proto:victor_api",
         "//src/samples/greeter/shared:library_android",
         "@third_party_maven//:androidx_activity_activity",
         "@third_party_maven//:androidx_activity_activity_compose",
