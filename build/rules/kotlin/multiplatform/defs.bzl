@@ -20,6 +20,7 @@ load("@rules_kotlin//kotlin:android.bzl", _kt_android_library = "kt_android_libr
 load("@rules_kotlin//kotlin:core.bzl", "kt_kotlinc_options")
 load("@rules_kotlin//kotlin:jvm.bzl", _kt_jvm_binary = "kt_jvm_binary", _kt_jvm_library = "kt_jvm_library", _kt_jvm_test = "kt_jvm_test")
 load("@rules_kotlin//kotlin/internal:defs.bzl", "KtJvmInfo")
+load("@rules_kotlin//kotlin/internal:opts.bzl", "KotlincOptions")
 load("@third_party_maven_kmp_variants//:variants.bzl", "KMP_MAVEN_VARIANTS", "KOTLIN_STDLIB_WASM_LABEL")
 load("//build/rules/backend:providers.bzl", "BackendEndpointConfigInfo")
 load("//build/rules/kotlin/multiplatform:wasm.bzl", "KtWasmInfo", "kt_wasm_files", "kt_wasm_imports", "kt_wasm_library")
@@ -198,12 +199,6 @@ def _normalize_same_package_srcs(srcs, attr_name):
         normalized.append(src[1:] if src.startswith(":") else src)
     return normalized
 
-def _fragment_sources_flags(fragment_name, srcs):
-    package_name = native.package_name()
-    if package_name:
-        return ["{}:{}/{}".format(fragment_name, package_name, src) for src in srcs]
-    return ["{}:{}".format(fragment_name, src) for src in srcs]
-
 def _resolve_dep_for_variant(dep, suffix):
     if dep.startswith(_THIRD_PARTY_MAVEN_PREFIX):
         variants = KMP_MAVEN_VARIANTS.get(dep)
@@ -220,6 +215,23 @@ def _resolve_dep_for_variant(dep, suffix):
         return dep
 
     return dep
+
+def _resolve_deps_for_variant(name, deps, suffix, dep_group):
+    resolved = []
+    for index, dep in enumerate(deps):
+        variant_dep = _resolve_dep_for_variant(dep, suffix)
+        if variant_dep != dep or dep.startswith("@"):
+            resolved.append(variant_dep)
+        else:
+            forward_name = _private_target_name(name, "{}_{}_dep_{}".format(suffix, dep_group, index))
+            kmp_variant_forward(
+                name = forward_name,
+                actual = dep,
+                variant = suffix,
+                visibility = ["//visibility:private"],
+            )
+            resolved.append(":{}".format(forward_name))
+    return resolved
 
 def _label_string(name):
     package_name = native.package_name()
@@ -372,14 +384,48 @@ def _public_common_kwargs(kwargs):
             public_kwargs[attr_name] = value
     return public_kwargs
 
+def _fragment_source_file_flags(fragment_name, files):
+    return ["{}:{}".format(fragment_name, file.path) for file in files]
+
+def _kmp_platform_kotlinc_options_impl(ctx):
+    platform_fragment = ctx.attr.platform_fragment
+    base_options = ctx.attr.base_options[KotlincOptions]
+    values = {name: getattr(base_options, name) for name in dir(base_options)}
+    values.update({
+        "x_expect_actual_classes": True,
+        "x_fragment_refines": ["{}:commonMain".format(platform_fragment)],
+        "x_fragment_sources": (
+            _fragment_source_file_flags(platform_fragment, ctx.files.platform_srcs) +
+            _fragment_source_file_flags("commonMain", ctx.files.common_srcs)
+        ),
+        "x_fragments": [platform_fragment, "commonMain"],
+        "x_multi_platform": True,
+    })
+    return [KotlincOptions(**values)]
+
+_kmp_platform_kotlinc_options = rule(
+    implementation = _kmp_platform_kotlinc_options_impl,
+    attrs = {
+        "base_options": attr.label(
+            mandatory = True,
+            providers = [KotlincOptions],
+        ),
+        "common_srcs": attr.label_list(allow_files = [".kt"]),
+        "platform_fragment": attr.string(mandatory = True),
+        "platform_srcs": attr.label_list(allow_files = [".kt"]),
+    },
+    provides = [KotlincOptions],
+)
+
 def _define_platform_opts(name, platform_suffix, platform_fragment, common_srcs, platform_srcs):
-    kt_kotlinc_options(
+    base_options = "{}__base".format(_platform_opts_name(name, platform_suffix))
+    kt_kotlinc_options(name = base_options)
+    _kmp_platform_kotlinc_options(
         name = _platform_opts_name(name, platform_suffix),
-        x_expect_actual_classes = True,
-        x_fragment_refines = ["{}:commonMain".format(platform_fragment)],
-        x_fragment_sources = _fragment_sources_flags(platform_fragment, platform_srcs) + _fragment_sources_flags("commonMain", common_srcs),
-        x_fragments = [platform_fragment, "commonMain"],
-        x_multi_platform = True,
+        base_options = ":{}".format(base_options),
+        common_srcs = common_srcs,
+        platform_fragment = platform_fragment,
+        platform_srcs = platform_srcs,
     )
 
 def _define_transitioned_rule(
@@ -473,6 +519,7 @@ def kt_multiplatform_library(
         plugins = None,
         android_manifest = None,
         android_custom_package = None,
+        wasm_module_name = None,
         tags = None,
         visibility = None):
     """Creates a Kotlin Multiplatform-style library with one public label.
@@ -525,10 +572,12 @@ def kt_multiplatform_library(
     android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
     jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
     wasm_deps = _normalize_dep_list(deps.get("wasm"), "deps[\"wasm\"]")
+    resolved_wasm_module_name = wasm_module_name if wasm_module_name != None else name
     user_tags = _normalize_tag_list(tags)
 
     if _has_platform(selected_platforms, "jvm"):
-        common_jvm_deps = [_resolve_dep_for_variant(dep, "jvm") for dep in common_deps]
+        common_jvm_deps = _resolve_deps_for_variant(name, common_deps, "jvm", "common")
+        platform_jvm_deps = _resolve_deps_for_variant(name, jvm_deps, "jvm", "jvm")
         _define_platform_opts(
             name = name,
             platform_suffix = "jvm",
@@ -543,11 +592,12 @@ def kt_multiplatform_library(
             plugins = normalized_plugins,
             tags = user_tags,
             visibility = ["//visibility:private"],
-            deps = common_jvm_deps + jvm_deps,
+            deps = common_jvm_deps + platform_jvm_deps,
         )
 
     if _has_platform(selected_platforms, "android"):
-        common_android_deps = [_resolve_dep_for_variant(dep, "android") for dep in common_deps]
+        common_android_deps = _resolve_deps_for_variant(name, common_deps, "android", "common")
+        platform_android_deps = _resolve_deps_for_variant(name, android_deps, "android", "android")
         _define_platform_opts(
             name = name,
             platform_suffix = "android",
@@ -563,7 +613,7 @@ def kt_multiplatform_library(
             plugins = normalized_plugins,
             tags = user_tags,
             visibility = ["//visibility:private"],
-            deps = common_android_deps + android_deps,
+            deps = common_android_deps + platform_android_deps,
         )
         if android_manifest:
             android_kwargs["manifest"] = android_manifest
@@ -572,12 +622,13 @@ def kt_multiplatform_library(
         _kt_android_library(**android_kwargs)
 
     if _has_platform(selected_platforms, "wasm"):
-        common_wasm_deps = [_resolve_dep_for_variant(dep, "wasm") for dep in common_deps]
+        common_wasm_deps = _resolve_deps_for_variant(name, common_deps, "wasm", "common")
+        platform_wasm_deps = _resolve_deps_for_variant(name, wasm_deps, "wasm", "wasm")
         kt_wasm_library(
             name = _private_target_name(name, "wasm"),
             common_srcs = common,
-            deps = common_wasm_deps + wasm_deps + [KOTLIN_STDLIB_WASM_LABEL],
-            module_name = name,
+            deps = common_wasm_deps + platform_wasm_deps + [KOTLIN_STDLIB_WASM_LABEL],
+            module_name = resolved_wasm_module_name,
             platform_srcs = wasm,
             plugins = normalized_plugins,
             tags = user_tags,
@@ -586,13 +637,13 @@ def kt_multiplatform_library(
         kt_wasm_files(
             name = _private_target_name(name, "wasm_files"),
             module = ":{}".format(_private_target_name(name, "wasm")),
-            module_name = name,
+            module_name = resolved_wasm_module_name,
             visibility = ["//visibility:private"],
         )
         kt_wasm_imports(
             name = _private_target_name(name, "wasm_imports"),
             files = ":{}".format(_private_target_name(name, "wasm_files")),
-            out = name,
+            out = resolved_wasm_module_name,
             visibility = ["//visibility:private"],
         )
 

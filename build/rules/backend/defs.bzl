@@ -1,8 +1,8 @@
 """Shared backend endpoint config generation rules."""
 
 load("@rules_java//java:defs.bzl", "JavaInfo")
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 load("@rules_kotlin//kotlin/internal:defs.bzl", "KtJvmInfo")
+load("//build/rules/kotlin/multiplatform:defs.bzl", "kt_multiplatform_library")
 load(":providers.bzl", "BackendDeployInfo", "BackendEndpointConfigInfo")
 
 BackendStringFlagInfo = provider(fields = ["value"])
@@ -111,8 +111,12 @@ def _render_backend_config(package, service_url, default_port = None):
     endpoint = _parse_service_url(service_url, default_port = default_port)
 
     return "\n".join([
+        "@file:OptIn(ExperimentalJsExport::class)",
+        "",
         "package {}".format(package),
         "",
+        "import kotlin.js.ExperimentalJsExport",
+        "import kotlin.js.JsExport",
         "import victor.backend.client.BackendEndpoint",
         "",
         "object BackendConfig {",
@@ -124,6 +128,15 @@ def _render_backend_config(package, service_url, default_port = None):
         "            usePlaintext = {},".format("true" if endpoint.use_plaintext else "false"),
         "        )",
         "}",
+        "",
+        "@JsExport",
+        "fun backendServiceUrl(): String = BackendConfig.endpoint.serviceUrl",
+        "",
+        "@JsExport",
+        "fun backendHost(): String = BackendConfig.endpoint.host",
+        "",
+        "@JsExport",
+        "fun backendPort(): Int = BackendConfig.endpoint.port",
         "",
     ])
 
@@ -161,15 +174,18 @@ def _backend_endpoint_config_impl(ctx):
     library = ctx.attr.library
     backend = ctx.attr.backend[BackendDeployInfo]
 
-    return [
+    providers = [
         library[DefaultInfo],
-        library[JavaInfo],
-        library[KtJvmInfo],
         BackendEndpointConfigInfo(
             deploy_service_url_flag = _repo_label(ctx.attr.deploy_service_url.label),
             service = backend.service,
         ),
     ]
+    if JavaInfo in library:
+        providers.append(library[JavaInfo])
+    if KtJvmInfo in library:
+        providers.append(library[KtJvmInfo])
+    return providers
 
 _backend_endpoint_config = rule(
     implementation = _backend_endpoint_config_impl,
@@ -186,10 +202,9 @@ _backend_endpoint_config = rule(
         ),
         "library": attr.label(
             mandatory = True,
-            providers = [JavaInfo, KtJvmInfo],
         ),
     },
-    provides = [JavaInfo, KtJvmInfo, BackendEndpointConfigInfo],
+    provides = [BackendEndpointConfigInfo],
 )
 
 def backend_endpoint_config(
@@ -201,7 +216,7 @@ def backend_endpoint_config(
         deploy_profile = "deploy",
         service_url_profile = _DEFAULT_SERVICE_URL_PROFILE,
         visibility = None):
-    """Generates a Kotlin BackendConfig exposing a parsed BackendEndpoint."""
+    """Generates a Kotlin Multiplatform BackendConfig exposing a parsed BackendEndpoint."""
     src = "{}_src".format(name)
     library = "{}__library".format(name)
     deploy_service_url = "{}_deploy_service_url".format(name)
@@ -226,11 +241,20 @@ def backend_endpoint_config(
         name = src,
         **src_kwargs
     )
-    kt_jvm_library(
+    kt_multiplatform_library(
         name = library,
-        srcs = [":{}".format(src)],
-        deps = ["//src/common/grpc/client:backend_endpoint"],
+        srcs = {
+            "common": [":{}".format(src)],
+        },
+        platforms = [
+            "jvm",
+            "wasm",
+        ],
+        wasm_module_name = name,
         visibility = ["//visibility:private"],
+        deps = {
+            "common": ["//src/common/grpc/client:backend_endpoint"],
+        },
     )
     _backend_endpoint_config(
         name = name,

@@ -1,8 +1,14 @@
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
+load("//build/rules:defs.bzl", "kt_jvm_library", "kt_jvm_test", "kt_multiplatform_library")
 
-kt_jvm_library(
+kt_multiplatform_library(
     name = "backend_endpoint",
-    srcs = ["BackendEndpoint.kt"],
+    srcs = {
+        "common": ["BackendEndpoint.kt"],
+    },
+    platforms = [
+        "jvm",
+        "wasm",
+    ],
     visibility = ["//visibility:public"],
 )
 

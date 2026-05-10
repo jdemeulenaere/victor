@@ -39,14 +39,22 @@ done < "$sources_file"
 
 if [[ "$mode" == "compile" ]]; then
   mkdir -p "$output_dir"
-  "$java_bin" -cp "$compiler_classpath" "$compiler_main" \
-    -libraries "$library_arg" \
-    -ir-output-dir "$output_dir" \
-    -ir-output-name "$module_name" \
-    -main noCall \
-    "${plugin_args[@]}" \
-    "${flags[@]}" \
-    "${sources[@]}"
+  compile_args=(
+    -libraries "$library_arg"
+    -ir-output-dir "$output_dir"
+    -ir-output-name "$module_name"
+    -main noCall
+  )
+  if (( ${#plugin_args[@]} > 0 )); then
+    compile_args+=("${plugin_args[@]}")
+  fi
+  if (( ${#flags[@]} > 0 )); then
+    compile_args+=("${flags[@]}")
+  fi
+  if (( ${#sources[@]} > 0 )); then
+    compile_args+=("${sources[@]}")
+  fi
+  "$java_bin" -cp "$compiler_classpath" "$compiler_main" "${compile_args[@]}"
 elif [[ "$mode" == "link" ]]; then
   mkdir -p "$output_dir"
   resolved_main_klib="$(realpath "$main_klib")"
