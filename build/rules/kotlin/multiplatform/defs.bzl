@@ -290,15 +290,22 @@ def _selected_variant_target(name, variant):
         return ":{}".format(_private_target_name(name, "wasm_imports"))
     return ":{}".format(_private_target_name(name, variant))
 
+def _public_alias_variants(name, selected_platforms):
+    variants = {
+        _kmp_variant_condition(variant): _selected_variant_target(name, variant)
+        for variant in _KMP_VARIANTS
+        if _variant_platform(variant) in selected_platforms
+    }
+    if _has_platform(selected_platforms, "jvm") and not _has_platform(selected_platforms, "android"):
+        # Android libraries can consume plain JVM bytecode when no Android-specific variant exists.
+        variants[_kmp_variant_condition("android")] = _selected_variant_target(name, "jvm")
+    return variants
+
 def _define_public_alias(name, selected_platforms, visibility):
     native.alias(
         name = name,
         actual = select(
-            {
-                _kmp_variant_condition(variant): _selected_variant_target(name, variant)
-                for variant in _KMP_VARIANTS
-                if _variant_platform(variant) in selected_platforms
-            },
+            _public_alias_variants(name, selected_platforms),
             no_match_error = "KMP target {} does not provide the selected variant. Available platforms: {}".format(
                 _label_string(name),
                 ", ".join(selected_platforms),
@@ -477,6 +484,7 @@ def kt_multiplatform_library(
 
     Args:
     - platforms: required list containing any of `android`, `jvm`, `wasm`.
+      Android consumers select the JVM variant when a library provides `jvm` but no `android` platform.
     - srcs: required dictionary with keys `common`, `jvm`, `android`, `wasm`.
     - deps: optional dictionary with keys:
       - `common`: deps added to all selected platform targets. `@third_party_maven` Kotlin Multiplatform
