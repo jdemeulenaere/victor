@@ -1,7 +1,9 @@
+import GreeterSharedLibrary
 import GRPC
 import NIOCore
 import NIOPosix
 import SwiftUI
+import UIKit
 import VictorApiIosSwiftClientProto
 
 private let backendHost = "127.0.0.1"
@@ -77,11 +79,12 @@ final class GreeterViewModel: ObservableObject {
     }
 
     func callSayHello() {
+        let effectiveName = normalizedName(name)
         loading = true
         responseMessage = ""
         errorMessage = ""
 
-        client.sayHello(name: name) { [weak self] result in
+        client.sayHello(name: effectiveName) { [weak self] result in
             Task { @MainActor in
                 guard let self else {
                     return
@@ -95,6 +98,31 @@ final class GreeterViewModel: ObservableObject {
                 self.loading = false
             }
         }
+    }
+
+    private func normalizedName(_ name: String) -> String {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.isEmpty ? defaultName : trimmedName
+    }
+}
+
+struct SharedGreetingComposeView: UIViewControllerRepresentable {
+    let name: String
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        context.coordinator.controller.makeViewController(name: name)
+    }
+
+    func updateUIViewController(_: UIViewController, context: Context) {
+        context.coordinator.controller.setName(name: name)
+    }
+
+    final class Coordinator {
+        let controller = SharedGreetingComposeController()
     }
 }
 
@@ -115,6 +143,8 @@ struct GreeterView: View {
             Text("Target: \(backendHost):\(backendPort)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+            SharedGreetingComposeView(name: model.name)
+                .frame(height: 28)
 
             TextField("Name", text: $model.name)
                 .textFieldStyle(.roundedBorder)

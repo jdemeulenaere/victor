@@ -8,12 +8,18 @@ kt_multiplatform_library(
             "Greeting.kt",
         ],
         "android": ["Platform.android.kt"],
+        "ios": [
+            "Platform.ios.kt",
+            "SharedGreetingComposeController.kt",
+        ],
         "jvm": ["Platform.jvm.kt"],
         "wasm": ["Platform.wasm.kt"],
     },
     android_custom_package = "victor.example.multiplatform",
+    ios_framework_module_name = "GreeterSharedLibrary",
     platforms = [
         "android",
+        "ios",
         "jvm",
         "wasm",
     ],
@@ -26,6 +32,10 @@ kt_multiplatform_library(
         "common": [
             "@third_party_maven//:androidx_compose_runtime_runtime",
             "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_serialization_json",
+        ],
+        "ios": [
+            "@third_party_maven//:org_jetbrains_compose_foundation_foundation",
+            "@third_party_maven//:org_jetbrains_compose_ui_ui",
         ],
     },
 )
