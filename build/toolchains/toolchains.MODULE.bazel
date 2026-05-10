@@ -1,7 +1,7 @@
 # Root-level Go SDK pin: rules_android's Gazelle deps currently resolve a module
 # that requires Go >= 1.23.
 go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
-go_sdk.download(version = "1.23.10")
+go_sdk.download(version = "1.26.3")
 
 # Pin the Python toolchain for Python targets.
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
@@ -17,7 +17,7 @@ android_sdk_repository_extension = use_extension(
 )
 android_sdk_repository_extension.configure(
     api_level = 36,
-    build_tools_version = "36.0.0",
+    build_tools_version = "37.0.0",
 )
 use_repo(android_sdk_repository_extension, "androidsdk")
 

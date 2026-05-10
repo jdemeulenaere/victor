@@ -3,23 +3,23 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.0.9",
   "dependencies": {
-    "@bufbuild/protobuf": "2.11.0",
+    "@bufbuild/protobuf": "2.12.0",
     "@connectrpc/connect": "2.1.1",
     "@connectrpc/connect-web": "2.1.1",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "scheduler": "0.27.0"
   },
   "devDependencies": {
-    "@bufbuild/protoc-gen-es": "2.11.0",
+    "@bufbuild/protoc-gen-es": "2.12.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "5.0.2",
-    "prettier": "3.8.2",
-    "typescript": "6.0.2",
-    "vite": "7.1.4"
+    "@vitejs/plugin-react": "6.0.1",
+    "prettier": "3.8.3",
+    "typescript": "6.0.3",
+    "vite": "8.0.11"
   },
   "pnpm": {
     "onlyBuiltDependencies": []
