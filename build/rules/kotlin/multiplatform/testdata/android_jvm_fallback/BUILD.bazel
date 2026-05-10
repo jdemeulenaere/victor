@@ -1,0 +1,36 @@
+load("//build/rules:defs.bzl", "kt_android_library", "kt_multiplatform_library")
+
+kt_multiplatform_library(
+    name = "jvm_only_library",
+    srcs = {
+        "common": ["JvmOnlyApi.kt"],
+    },
+    platforms = ["jvm"],
+)
+
+kt_android_library(
+    name = "android_consumes_jvm_only_library",
+    srcs = ["AndroidConsumesJvmOnly.kt"],
+    custom_package = "victor.rules.kotlin.multiplatform.testdata",
+    deps = [":jvm_only_library"],
+)
+
+kt_multiplatform_library(
+    name = "android_and_jvm_library",
+    srcs = {
+        "common": ["CommonApi.kt"],
+        "android": ["AndroidOnlyApi.kt"],
+    },
+    android_custom_package = "victor.rules.kotlin.multiplatform.testdata",
+    platforms = [
+        "android",
+        "jvm",
+    ],
+)
+
+kt_android_library(
+    name = "android_prefers_android_library_variant",
+    srcs = ["AndroidConsumesAndroidVariant.kt"],
+    custom_package = "victor.rules.kotlin.multiplatform.testdata",
+    deps = [":android_and_jvm_library"],
+)
