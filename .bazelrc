@@ -28,7 +28,6 @@ common:ci --show_progress_rate_limit=30
 common:ci --progress_report_interval=60
 common:ci --ui_actions_shown=1
 
-common:ci --disk_cache=
 common:ci --bes_results_url=https://app.buildbuddy.io/invocation/
 common:ci --bes_backend=grpcs://remote.buildbuddy.io
 common:ci --remote_cache=grpcs://remote.buildbuddy.io
