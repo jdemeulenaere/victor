@@ -144,7 +144,7 @@ diff --git a/BUILD.bazel b/BUILD.bazel
 +alias(
 +    name = "protoc",
 +    actual = select({
-+        "//bazel/toolchains:prefer_prebuilt_protoc.flag_set": ":protoc_prebuilt_for_host",
++        "//bazel/flags:prefer_prebuilt_protoc.flag_set": ":protoc_prebuilt_for_host",
 +        "//conditions:default": ":protoc_compiled",
 +    }),
 +    visibility = ["//visibility:public"],

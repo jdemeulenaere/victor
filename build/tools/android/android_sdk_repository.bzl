@@ -3,7 +3,7 @@
 _ANDROID_REPOSITORY_BASE_URL = "https://dl.google.com/android/repository"
 
 _DEFAULT_API_LEVEL = 36
-_DEFAULT_BUILD_TOOLS_VERSION = "36.0.0"
+_DEFAULT_BUILD_TOOLS_VERSION = "37.0.0"
 _DEFAULT_PLATFORM_TOOLS_VERSION = "37.0.0"
 
 # Keep the managed SDK minimal: Bazel only needs platform-tools, the selected
@@ -22,6 +22,20 @@ _PACKAGE_METADATA = {
             "sha256": "04e7f3a72044de4926fa038fa0e251a37bba1e1c3fb8beab6f8401bfd9eb4bf3",
             "strip_prefix": "android-16",
             "url": "build-tools_r36_macosx.zip",
+        },
+    },
+    "build-tools;37.0.0": {
+        "linux": {
+            "output": "build-tools/37.0.0",
+            "sha256": "01af179347cbcd9c208b7f8171f7b21f6dd1d2f85bcd15e88caa51d5d7b86060",
+            "strip_prefix": "android-37.0",
+            "url": "build-tools_r37_linux.zip",
+        },
+        "macosx": {
+            "output": "build-tools/37.0.0",
+            "sha256": "b5b1ac529028a49f11b596b89d9b34252e0f39388ee7dbd16ae3110f1c9c5722",
+            "strip_prefix": "android-37.0",
+            "url": "build-tools_r37_macosx.zip",
         },
     },
     "platform-tools": {

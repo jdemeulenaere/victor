@@ -18,8 +18,8 @@ maven.from_toml(
 
 THIRD_PARTY_FORCE_ARTIFACTS = [
     # keep-sorted start
-    ("com.google.protobuf", "protobuf-java", "4.33.4"),
-    ("com.google.protobuf", "protobuf-java-util", "4.33.4"),
+    ("com.google.protobuf", "protobuf-java", "4.34.1"),
+    ("com.google.protobuf", "protobuf-java-util", "4.34.1"),
     # keep-sorted end
 ]
 
@@ -53,9 +53,9 @@ maven.override(
 MAVEN_FORCE_ARTIFACTS = [
     # keep-sorted start
     ("com.google.code.findbugs", "jsr305", "3.0.2"),
-    ("com.google.code.gson", "gson", "2.12.1"),
-    ("com.google.errorprone", "error_prone_annotations", "2.44.0"),
-    ("com.google.guava", "guava", "32.0.1-jre"),
+    ("com.google.code.gson", "gson", "2.14.0"),
+    ("com.google.errorprone", "error_prone_annotations", "2.49.0"),
+    ("com.google.guava", "guava", "33.6.0-jre"),
     # keep-sorted end
 ]
 

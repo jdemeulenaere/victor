@@ -18,7 +18,7 @@ kotlin = "2.3.20"
 kotlinx-serialization = "1.11.0"
 ktfmt = "0.62"
 logback = "1.5.32"
-protobuf = "4.33.4"
+protobuf = "4.34.1"
 robolectric = "4.16.1"
 skiko = "0.9.37.4"
 # keep-sorted end
