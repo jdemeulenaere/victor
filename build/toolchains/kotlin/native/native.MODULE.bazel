@@ -1,0 +1,67 @@
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "kotlin_native_prebuilt_macos_aarch64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "bin/konanc",
+    "bin/kotlinc-native",
+])
+
+filegroup(
+    name = "all",
+    srcs = glob(["**"]),
+)
+""",
+    sha256 = "0146dcab539d08e40c2f2fc0a9a28b6fd0a7731e3d31a50c9ed01ff7001ebe22",
+    strip_prefix = "kotlin-native-prebuilt-macos-aarch64-2.3.20",
+    urls = ["https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-native-prebuilt/2.3.20/kotlin-native-prebuilt-2.3.20-macos-aarch64.tar.gz"],
+)
+
+http_archive(
+    name = "kotlin_native_libffi_3_3_1_macos_arm64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "all",
+    srcs = glob(["**"]),
+)
+""",
+    sha256 = "8ca0102ad5b626e8b1699f311ab098354a90154ea3e44951f28ebdd256862ba9",
+    strip_prefix = "libffi-3.3-1-macos-arm64",
+    urls = ["https://download.jetbrains.com/kotlin/native/libffi-3.3-1-macos-arm64.tar.gz"],
+)
+
+http_archive(
+    name = "kotlin_native_llvm_19_aarch64_macos_essentials_81",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "all",
+    srcs = glob(["**"]),
+)
+""",
+    sha256 = "06991994f4d42dd0229c91cf339ef5353519d8160b52a9b54812e74915d10a87",
+    strip_prefix = "llvm-19-aarch64-macos-essentials-81",
+    urls = ["https://download.jetbrains.com/kotlin/native/resources/llvm/19-aarch64-macos/llvm-19-aarch64-macos-essentials-81.tar.gz"],
+)
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "kotlin_compose_compiler_plugin_embeddable_2_3_20",
+    downloaded_file_path = "kotlin-compose-compiler-plugin-embeddable-2.3.20.jar",
+    sha256 = "e1024c542f1d021e170cd040e4e1730f2fd76ce8ed76fc9e3496988ca643a2e0",
+    urls = ["https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-compose-compiler-plugin-embeddable/2.3.20/kotlin-compose-compiler-plugin-embeddable-2.3.20.jar"],
+)
+
+http_file(
+    name = "kotlin_serialization_compiler_plugin_embeddable_2_3_20",
+    downloaded_file_path = "kotlin-serialization-compiler-plugin-embeddable-2.3.20.jar",
+    sha256 = "178edb62cda3e255fc80e270656f2848b6e0752f7b4b4c27e4a88cc537bea674",
+    urls = ["https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-serialization-compiler-plugin-embeddable/2.3.20/kotlin-serialization-compiler-plugin-embeddable-2.3.20.jar"],
+)

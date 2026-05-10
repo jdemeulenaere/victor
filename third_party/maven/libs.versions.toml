@@ -7,7 +7,7 @@ androidx-compose-material3 = "1.4.0"
 androidx-compose-runtime-annotation-jvm = "1.11.0-rc01"
 androidx-lifecycle = "2.10.0"
 androidx-lifecycle-common-jvm = "2.11.0-alpha03"
-androidx-savedstate = "1.2.1"
+androidx-savedstate = "1.3.3"
 androidx-test-core = "1.7.0"
 androidx-test-monitor = "1.8.0"
 armeria = "1.38.0"
@@ -51,6 +51,8 @@ armeria = { module = "com.linecorp.armeria:armeria", version.ref = "armeria" }
 armeria-grpc = { module = "com.linecorp.armeria:armeria-grpc", version.ref = "armeria" }
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
 jetbrains-compose-desktop = { module = "org.jetbrains.compose.desktop:desktop-jvm", version.ref = "jetbrains-compose" }
+jetbrains-compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "jetbrains-compose" }
+jetbrains-compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "jetbrains-compose" }
 jetbrains-compose-ui-test-junit4-desktop = { module = "org.jetbrains.compose.ui:ui-test-junit4-desktop", version.ref = "jetbrains-compose" }
 jetbrains-skiko-awt-runtime-linux-arm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
 jetbrains-skiko-awt-runtime-linux-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version.ref = "skiko" }

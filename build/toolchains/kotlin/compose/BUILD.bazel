@@ -1,8 +1,15 @@
-load("@rules_kotlin//kotlin:core.bzl", "kt_compiler_plugin")
+load("@rules_java//java:defs.bzl", "java_import")
+load("//build/rules/kotlin/multiplatform:compiler_plugin.bzl", "kt_compiler_plugin")
+
+java_import(
+    name = "compose_compiler_plugin_embeddable",
+    jars = ["@kotlin_compose_compiler_plugin_embeddable_2_3_20//file"],
+)
 
 kt_compiler_plugin(
     name = "compose_compiler_plugin",
     id = "androidx.compose.compiler.plugins.kotlin",
+    native_deps = [":compose_compiler_plugin_embeddable"],
     visibility = ["//visibility:public"],
     deps = ["@third_party_maven//:org_jetbrains_kotlin_kotlin_compose_compiler_plugin"],
 )

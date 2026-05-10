@@ -1,5 +1,7 @@
 """Macros and wrappers for Kotlin expect/actual multiplatform libraries."""
 
+load("@build_bazel_rules_apple//apple:apple.bzl", "apple_dynamic_framework_import")
+load("@build_bazel_rules_swift//swift:providers.bzl", "SwiftInfo")
 load(
     "@rules_android//providers:providers.bzl",
     "AndroidCcLinkParamsInfo",
@@ -22,12 +24,18 @@ load("@rules_kotlin//kotlin:jvm.bzl", _kt_jvm_binary = "kt_jvm_binary", _kt_jvm_
 load("@rules_kotlin//kotlin/internal:defs.bzl", "KtJvmInfo")
 load("@third_party_maven_kmp_variants//:variants.bzl", "KMP_MAVEN_VARIANTS", "KOTLIN_STDLIB_WASM_LABEL")
 load("//build/rules/backend:providers.bzl", "BackendEndpointConfigInfo")
+load("//build/rules/kotlin/multiplatform:ios.bzl", "kt_ios_framework_files")
 load("//build/rules/kotlin/multiplatform:wasm.bzl", "KtWasmInfo", "kt_wasm_files", "kt_wasm_imports", "kt_wasm_library")
 
-_SUPPORTED_PLATFORMS = ["android", "jvm", "wasm"]
+_SUPPORTED_PLATFORMS = ["android", "ios", "jvm", "wasm"]
 _KMP_VARIANTS = ["jvm", "android", "wasm", "wasm_imports", "ios"]
 _KMP_VARIANT_SETTING = "//build/rules/kotlin/multiplatform/config:kmp_variant"
 _THIRD_PARTY_MAVEN_PREFIX = "@third_party_maven//:"
+_IOS_OR_MACOS_TARGET_COMPATIBLE_WITH = select({
+    "@platforms//os:ios": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
 
 def _kmp_variant_impl(ctx):
     variant = ctx.build_setting_value
@@ -65,6 +73,7 @@ _FORWARDED_PROVIDER_TYPES = [
     KtWasmInfo,
     ProguardSpecInfo,
     StarlarkAndroidResourcesInfo,
+    SwiftInfo,
 ]
 
 def _single_actual(actual):
@@ -211,6 +220,8 @@ def _resolve_dep_for_variant(dep, suffix):
             variant = variants.get(suffix)
             if variant:
                 return variant
+        if suffix == "ios":
+            fail("No Kotlin/iOS simulator Maven variant found for {}".format(dep))
         if suffix == "wasm":
             fail("No Kotlin/WASM Maven variant found for {}".format(dep))
         return dep
@@ -473,6 +484,7 @@ def kt_multiplatform_library(
         plugins = None,
         android_manifest = None,
         android_custom_package = None,
+        ios_framework_module_name = None,
         tags = None,
         visibility = None):
     """Creates a Kotlin Multiplatform-style library with one public label.
@@ -483,38 +495,43 @@ def kt_multiplatform_library(
     - `:<name>` selects the correct private implementation target for the consumer's KMP variant
 
     Args:
-    - platforms: required list containing any of `android`, `jvm`, `wasm`.
+    - platforms: required list containing any of `android`, `ios`, `jvm`, `wasm`.
+      The current iOS platform compiles `ios_simulator_arm64` Kotlin/Native artifacts.
       Android consumers select the JVM variant when a library provides `jvm` but no `android` platform.
-    - srcs: required dictionary with keys `common`, `jvm`, `android`, `wasm`.
+    - srcs: required dictionary with keys `common`, `jvm`, `android`, `ios`, `wasm`.
     - deps: optional dictionary with keys:
       - `common`: deps added to all selected platform targets. `@third_party_maven` Kotlin Multiplatform
         labels are resolved through Gradle Module Metadata when available; other external labels are used as-is.
         first-party KMP labels are selected through the public target's KMP variant.
       - `jvm`: regular deps for the JVM target only.
       - `android`: regular deps for the Android target only.
+      - `ios`: deps for the iOS simulator target only.
       - `wasm`: KLIB deps for the WASM target only.
     - plugins: optional list of compiler plugins applied to all selected platform targets.
+    - ios_framework_module_name: Swift/Objective-C module name for the generated iOS framework.
+      Required when `platforms` contains `ios`.
     - tags: optional list of tags applied to all selected platform targets.
     """
     selected_platforms = _normalize_platforms(platforms)
     if deps == None:
         deps = {}
     if not type(deps) == "dict":
-        fail("deps must be a dict with keys common/android/jvm/wasm")
+        fail("deps must be a dict with keys common/android/ios/jvm/wasm")
     for key in deps.keys():
-        if key not in ["common", "android", "jvm", "wasm"]:
-            fail("Unsupported deps key '{}'. Expected one of: common, android, jvm, wasm".format(key))
+        if key not in ["common", "android", "ios", "jvm", "wasm"]:
+            fail("Unsupported deps key '{}'. Expected one of: common, android, ios, jvm, wasm".format(key))
 
     normalized_plugins = _normalize_dep_list(plugins, "plugins")
 
     if not type(srcs) == "dict":
-        fail("srcs must be a dict with keys common/android/jvm/wasm")
+        fail("srcs must be a dict with keys common/android/ios/jvm/wasm")
     for key in srcs.keys():
-        if key not in ["common", "android", "jvm", "wasm"]:
-            fail("Unsupported srcs key '{}'. Expected one of: common, android, jvm, wasm".format(key))
+        if key not in ["common", "android", "ios", "jvm", "wasm"]:
+            fail("Unsupported srcs key '{}'. Expected one of: common, android, ios, jvm, wasm".format(key))
 
     common = _normalize_same_package_srcs(srcs.get("common", []), "common_srcs")
     android = _normalize_same_package_srcs(srcs.get("android", []), "android_srcs")
+    ios = _normalize_same_package_srcs(srcs.get("ios", []), "ios_srcs")
     jvm = _normalize_same_package_srcs(srcs.get("jvm", []), "jvm_srcs")
     wasm = _normalize_same_package_srcs(srcs.get("wasm", []), "wasm_srcs")
 
@@ -523,6 +540,7 @@ def kt_multiplatform_library(
 
     common_deps = _normalize_dep_list(deps.get("common"), "deps[\"common\"]")
     android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
+    ios_deps = _normalize_dep_list(deps.get("ios"), "deps[\"ios\"]")
     jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
     wasm_deps = _normalize_dep_list(deps.get("wasm"), "deps[\"wasm\"]")
     user_tags = _normalize_tag_list(tags)
@@ -570,6 +588,31 @@ def kt_multiplatform_library(
         if android_custom_package:
             android_kwargs["custom_package"] = android_custom_package
         _kt_android_library(**android_kwargs)
+
+    if _has_platform(selected_platforms, "ios"):
+        if not ios_framework_module_name:
+            fail("kt_multiplatform_library with platform 'ios' requires ios_framework_module_name")
+        common_ios_deps = [_resolve_dep_for_variant(dep, "ios") for dep in common_deps]
+        ios_variant_deps = [_resolve_dep_for_variant(dep, "ios") for dep in ios_deps]
+        ios_framework_files = _private_target_name(name, "ios_framework_files")
+        kt_ios_framework_files(
+            name = ios_framework_files,
+            common_srcs = common,
+            deps = common_ios_deps + ios_variant_deps,
+            module_name = ios_framework_module_name,
+            platform_srcs = ios,
+            plugins = normalized_plugins,
+            tags = user_tags,
+            target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
+            visibility = ["//visibility:private"],
+        )
+        apple_dynamic_framework_import(
+            name = _private_target_name(name, "ios"),
+            framework_imports = [":{}".format(ios_framework_files)],
+            tags = user_tags,
+            target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
+            visibility = ["//visibility:private"],
+        )
 
     if _has_platform(selected_platforms, "wasm"):
         common_wasm_deps = [_resolve_dep_for_variant(dep, "wasm") for dep in common_deps]

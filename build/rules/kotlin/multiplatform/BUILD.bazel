@@ -1,6 +1,21 @@
+load(":compiler_plugin_test.bzl", "kt_native_compiler_plugin_test")
+
 exports_files([
+    "compiler_plugin.bzl",
+    "compiler_plugin_test.bzl",
     "defs.bzl",
+    "ios.bzl",
     "kmp_maven_variants_repository.bzl",
     "wasm.bzl",
     "wasm_kotlinc.sh",
 ])
+
+kt_native_compiler_plugin_test(
+    name = "compose_compiler_plugin_native_deps_test",
+    plugin = "//build/toolchains/kotlin/compose:compose_compiler_plugin",
+)
+
+kt_native_compiler_plugin_test(
+    name = "serialization_compiler_plugin_native_deps_test",
+    plugin = "//build/toolchains/kotlin/serialization:serialization_compiler_plugin",
+)

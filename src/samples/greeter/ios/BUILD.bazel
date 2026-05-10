@@ -6,6 +6,7 @@ swift_library(
     module_name = "VictorGreeterIOS",
     deps = [
         "//src/samples/greeter/proto:victor_api",
+        "//src/samples/greeter/shared:library",
         "@com_github_apple_swift_nio//:NIOCore",
         "@com_github_apple_swift_nio//:NIOPosix",
         "@com_github_grpc_grpc_swift//:GRPC",
