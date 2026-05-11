@@ -2,7 +2,11 @@
 
 load("@build_bazel_rules_apple//apple:ios.bzl", _ios_application = "ios_application", _ios_unit_test = "ios_unit_test")
 load("@build_bazel_rules_swift//swift:swift_library.bzl", _swift_library = "swift_library")
-load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_variant_forward")
+load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
+load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_platform_forward")
+
+_HOST_IS_MACOS = "@platforms//os:macos" in HOST_CONSTRAINTS or "@platforms//os:osx" in HOST_CONSTRAINTS
+_HOST_INCOMPATIBLE = ["@platforms//:incompatible"]
 
 IOS_TARGET_COMPATIBLE_WITH = select({
     "@platforms//os:ios": [],
@@ -13,13 +17,6 @@ IOS_TEST_TARGET_COMPATIBLE_WITH = select({
     "@platforms//os:macos": [],
     "//conditions:default": ["@platforms//:incompatible"],
 })
-
-def _with_manual_tag(tags):
-    if tags == None:
-        return ["manual"]
-    if "manual" in tags:
-        return tags
-    return tags + ["manual"]
 
 def _impl_target_name(name):
     return "{}__impl".format(name)
@@ -40,21 +37,49 @@ def _public_common_kwargs(kwargs):
             public_kwargs[attr_name] = value
     return public_kwargs
 
+def _target_compatible_with_or_default(target_compatible_with, default):
+    if not _HOST_IS_MACOS:
+        return _HOST_INCOMPATIBLE
+    if target_compatible_with == None:
+        return default
+    return target_compatible_with
+
+def _transitioned_label_list(owner_name, labels, platform, attr_name, testonly = None):
+    if labels == None:
+        return None
+    if type(labels) != "list":
+        return labels
+
+    transitioned = []
+    for index, label in enumerate(labels):
+        dep_name = "{}__{}_{}_forward".format(owner_name, attr_name, index)
+        transition_kwargs = {}
+        if testonly != None:
+            transition_kwargs["testonly"] = testonly
+        kmp_platform_forward(
+            name = dep_name,
+            actual = label,
+            platform = platform,
+            visibility = ["//visibility:private"],
+            **transition_kwargs
+        )
+        transitioned.append(":{}".format(dep_name))
+    return transitioned
+
 def ios_application(name, tags = None, target_compatible_with = None, **kwargs):
     """ios_application with repository compatibility defaults."""
-    if target_compatible_with == None:
-        target_compatible_with = IOS_TARGET_COMPATIBLE_WITH
+    target_compatible_with = _target_compatible_with_or_default(target_compatible_with, IOS_TARGET_COMPATIBLE_WITH)
+    if tags != None:
+        kwargs["tags"] = tags
     _ios_application(
         name = name,
-        tags = _with_manual_tag(tags),
         target_compatible_with = target_compatible_with,
         **kwargs
     )
 
 def ios_unit_test(name, target_compatible_with = None, **kwargs):
     """ios_unit_test with repository macOS-host compatibility defaults."""
-    if target_compatible_with == None:
-        target_compatible_with = IOS_TEST_TARGET_COMPATIBLE_WITH
+    target_compatible_with = _target_compatible_with_or_default(target_compatible_with, IOS_TEST_TARGET_COMPATIBLE_WITH)
     _ios_unit_test(
         name = name,
         target_compatible_with = target_compatible_with,
@@ -63,14 +88,14 @@ def ios_unit_test(name, target_compatible_with = None, **kwargs):
 
 def swift_library(name, deps = None, target_compatible_with = None, visibility = None, **kwargs):
     """swift_library with repository iOS-platform compatibility defaults."""
-    if target_compatible_with == None:
-        target_compatible_with = IOS_TARGET_COMPATIBLE_WITH
+    target_compatible_with = _target_compatible_with_or_default(target_compatible_with, IOS_TARGET_COMPATIBLE_WITH)
 
     public_kwargs = _public_common_kwargs(kwargs)
     public_kwargs["target_compatible_with"] = target_compatible_with
-    if deps != None:
+    if deps != None and _HOST_IS_MACOS:
+        kwargs["deps"] = _transitioned_label_list(name, deps, "iosSimulatorArm64", "deps", kwargs.get("testonly"))
+    elif deps != None:
         kwargs["deps"] = deps
-    kwargs["tags"] = _with_manual_tag(kwargs.get("tags"))
 
     impl = _impl_target_name(name)
     _swift_library(
@@ -79,10 +104,10 @@ def swift_library(name, deps = None, target_compatible_with = None, visibility =
         visibility = ["//visibility:private"],
         **kwargs
     )
-    kmp_variant_forward(
+    kmp_platform_forward(
         name = name,
         actual = ":{}".format(impl),
-        variant = "ios",
+        platform = "iosSimulatorArm64",
         visibility = visibility,
         **public_kwargs
     )

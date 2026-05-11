@@ -1,12 +1,10 @@
 """Internal Kotlin/Native iOS framework rules for KMP targets."""
 
-load("@rules_java//java/common/rules:java_runtime.bzl", "JavaRuntimeInfo")
 load("@rules_kotlin//kotlin/internal:defs.bzl", "KtCompilerPluginInfo", "KtPluginConfiguration")
 load("//build/rules/kotlin/multiplatform:compiler_plugin.bzl", "KtNativeCompilerPluginInfo")
 
-_IOS_FRAGMENT = "iosMain"
-_IOS_SIMULATOR_ARM64_KONAN_TARGET = "ios_simulator_arm64"
 _KONANC_MAIN = "org.jetbrains.kotlin.cli.utilities.MainKt"
+_NATIVE_TOOLCHAIN_TYPE = "//build/rules/kotlin/multiplatform:native_toolchain_type"
 
 def _dedupe_files(files):
     seen = {}
@@ -84,8 +82,23 @@ def _plugin_flags(plugin_data):
         ])
     return flags
 
-def _fragment_source_flags(fragment, files):
-    return ["-Xfragment-sources={}:{}".format(fragment, file.path) for file in files]
+def _dedupe_strings(values):
+    seen = {}
+    deduped = []
+    for value in values:
+        if seen.get(value):
+            continue
+        seen[value] = True
+        deduped.append(value)
+    return deduped
+
+def _fragment_source_flags(files, source_set_names):
+    if len(files) != len(source_set_names):
+        fail("expected source_set_names to match srcs length")
+    return [
+        "-Xfragment-sources={}:{}".format(source_set_names[index], files[index].path)
+        for index in range(len(files))
+    ]
 
 def _library_flags(files):
     flags = []
@@ -102,13 +115,17 @@ def _dependency_flags(ctx, libraries):
     ] + _library_flags(libraries)
 
 def _compile_flags(ctx, libraries):
+    fragments = _dedupe_strings(ctx.attr.source_set_names)
     return _dependency_flags(ctx, libraries) + [
         "-Xmulti-platform",
         "-Xexpect-actual-classes",
-        "-Xfragments={}".format(_IOS_FRAGMENT),
-        "-Xfragments=commonMain",
-        "-Xfragment-refines={}:commonMain".format(_IOS_FRAGMENT),
-    ] + _fragment_source_flags("commonMain", ctx.files.common_srcs) + _fragment_source_flags(_IOS_FRAGMENT, ctx.files.platform_srcs)
+    ] + [
+        "-Xfragments={}".format(fragment)
+        for fragment in fragments
+    ] + [
+        "-Xfragment-refines={}".format(refine)
+        for refine in ctx.attr.fragment_refines
+    ] + _fragment_source_flags(ctx.files.srcs, ctx.attr.source_set_names)
 
 def _framework_flags(ctx, libraries):
     return _dependency_flags(ctx, libraries) + [
@@ -134,10 +151,10 @@ def _repo_relative_path(file):
     return file.basename
 
 def _java_executable(ctx):
-    return ctx.attr._java_runtime[JavaRuntimeInfo].java_executable_exec_path
+    return ctx.toolchains[_NATIVE_TOOLCHAIN_TYPE].kmp_native.java_runtime.java_executable_exec_path
 
 def _java_runtime_files(ctx):
-    return ctx.attr._java_runtime[JavaRuntimeInfo].files.to_list()
+    return ctx.toolchains[_NATIVE_TOOLCHAIN_TYPE].kmp_native.java_runtime.files.to_list()
 
 def _write_link_manifest(ctx, name, files):
     output = ctx.actions.declare_file("{}_{}.txt".format(ctx.label.name, name))
@@ -159,12 +176,13 @@ def _kt_ios_framework_files_impl(ctx):
     modulemap = framework_files[2]
     info_plist = framework_files[3]
 
-    source_files = ctx.files.common_srcs + ctx.files.platform_srcs
+    source_files = ctx.files.srcs
     libraries = _collect_dep_klibs(ctx.attr.deps)
     plugin_data = _compile_plugin_data(ctx.attr.plugins)
     plugin_jars = plugin_data.classpath.to_list()
-    llvm_files = ctx.files._llvm_dependency
-    libffi_files = ctx.files._libffi_dependency
+    native_toolchain = ctx.toolchains[_NATIVE_TOOLCHAIN_TYPE].kmp_native
+    llvm_files = native_toolchain.llvm_files.to_list()
+    libffi_files = native_toolchain.libffi_files.to_list()
     llvm_manifest = _write_link_manifest(ctx, "llvm_files", llvm_files)
     libffi_manifest = _write_link_manifest(ctx, "libffi_files", libffi_files)
     plugin_flags = _plugin_flags(plugin_data)
@@ -178,10 +196,10 @@ def _kt_ios_framework_files_impl(ctx):
         plugin_jars +
         llvm_files +
         libffi_files +
-        ctx.files._kotlin_native_home +
+        native_toolchain.home_files.to_list() +
         _java_runtime_files(ctx) +
         [
-            ctx.file._kotlin_native_compiler,
+            native_toolchain.compiler,
             compile_args_file,
             framework_args_file,
             llvm_manifest,
@@ -318,7 +336,7 @@ fi
 """,
         arguments = [
             _java_executable(ctx),
-            ctx.file._kotlin_native_compiler.path,
+            native_toolchain.compiler.path,
             _KONANC_MAIN,
             ctx.attr.module_name,
             framework_binary.path,
@@ -339,34 +357,17 @@ fi
 kt_ios_framework_files = rule(
     implementation = _kt_ios_framework_files_impl,
     attrs = {
-        "common_srcs": attr.label_list(allow_files = [".kt"]),
         "deps": attr.label_list(),
+        "fragment_refines": attr.string_list(),
         "konan_target": attr.string(
-            default = _IOS_SIMULATOR_ARM64_KONAN_TARGET,
-            doc = "Kotlin/Native target. The repository currently resolves Maven KLIBs for ios_simulator_arm64.",
+            mandatory = True,
+            doc = "Kotlin/Native target.",
         ),
         "module_name": attr.string(mandatory = True),
-        "platform_srcs": attr.label_list(allow_files = [".kt"]),
         "plugins": attr.label_list(cfg = "exec"),
-        "_java_runtime": attr.label(
-            cfg = "exec",
-            default = Label("@bazel_tools//tools/jdk:current_host_java_runtime"),
-            providers = [JavaRuntimeInfo],
-        ),
-        "_kotlin_native_compiler": attr.label(
-            allow_single_file = True,
-            cfg = "exec",
-            default = Label("@kotlin_native_prebuilt_macos_aarch64//:konan/lib/kotlin-native-compiler-embeddable.jar"),
-        ),
-        "_kotlin_native_home": attr.label(
-            default = Label("@kotlin_native_prebuilt_macos_aarch64//:all"),
-        ),
-        "_libffi_dependency": attr.label(
-            default = Label("@kotlin_native_libffi_3_3_1_macos_arm64//:all"),
-        ),
-        "_llvm_dependency": attr.label(
-            default = Label("@kotlin_native_llvm_19_aarch64_macos_essentials_81//:all"),
-        ),
+        "source_set_names": attr.string_list(),
+        "srcs": attr.label_list(allow_files = [".kt"]),
     },
-    doc = "Compiles an ios_simulator_arm64 Kotlin/Native dynamic framework.",
+    doc = "Compiles a Kotlin/Native dynamic framework.",
+    toolchains = [_NATIVE_TOOLCHAIN_TYPE],
 )

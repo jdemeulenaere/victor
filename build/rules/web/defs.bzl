@@ -2,7 +2,7 @@
 
 load("@npm//:typescript/package_json.bzl", typescript_bin = "bin")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
-load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_variant_binary", "kmp_variant_forward", "kmp_variant_test")
+load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_platform_binary", "kmp_platform_forward", "kmp_platform_test")
 load("//build/rules/npm:defs.bzl", "npm_node_modules")
 
 _TSC_COMMON_ARGS = [
@@ -30,6 +30,25 @@ def _vite_config_path(vite_config):
     if vite_config.startswith(":"):
         return vite_config[1:]
     return vite_config
+
+def _transitioned_label_list(owner_name, labels, platform, artifact, attr_name):
+    if not labels:
+        return []
+    if type(labels) != "list":
+        return labels
+
+    transitioned = []
+    for index, label in enumerate(labels):
+        dep_name = "{}__{}_{}_forward".format(owner_name, attr_name, index)
+        kmp_platform_forward(
+            name = dep_name,
+            actual = label,
+            artifact = artifact,
+            platform = platform,
+            visibility = ["//visibility:private"],
+        )
+        transitioned.append(":{}".format(dep_name))
+    return transitioned
 
 def web_app(
         name,
@@ -66,7 +85,8 @@ def web_app(
     dev_impl = "dev__impl"
     typecheck_impl = "typecheck__impl"
     vite_config_path = _vite_config_path(vite_config)
-    common_inputs = [":node_modules", vite_config] + deps + srcs
+    transitioned_deps = _transitioned_label_list(name, deps, "wasmJs", "web_imports", "deps")
+    common_inputs = [":node_modules", vite_config] + transitioned_deps + srcs
 
     vite_bin.vite_binary(
         name = dev_impl,
@@ -78,7 +98,6 @@ def web_app(
         ],
         data = common_inputs,
         chdir = native.package_name(),
-        tags = ["manual"],
         visibility = ["//visibility:private"],
     )
 
@@ -92,7 +111,6 @@ def web_app(
         srcs = common_inputs,
         out_dirs = ["dist"],
         chdir = native.package_name(),
-        tags = ["manual"],
         visibility = ["//visibility:private"],
     )
 
@@ -101,13 +119,13 @@ def web_app(
         args = _TSC_COMMON_ARGS + ts_srcs,
         data = common_inputs,
         chdir = native.package_name(),
-        tags = ["manual"],
         visibility = ["//visibility:private"],
     )
 
-    kmp_variant_binary(
+    kmp_platform_binary(
         name = "dev",
         actual = ":{}".format(dev_impl),
+        artifact = "web_imports",
         chdir = native.package_name(),
         forward_args = [
             "dev",
@@ -115,22 +133,24 @@ def web_app(
             "--config",
             vite_config_path,
         ],
-        variant = "wasm_imports",
+        platform = "wasmJs",
         visibility = visibility,
     )
 
-    kmp_variant_forward(
+    kmp_platform_forward(
         name = name,
         actual = ":{}".format(build_impl),
-        variant = "wasm_imports",
+        artifact = "web_imports",
+        platform = "wasmJs",
         visibility = visibility,
     )
 
-    kmp_variant_test(
+    kmp_platform_test(
         name = "typecheck",
         actual = ":{}".format(typecheck_impl),
+        artifact = "web_imports",
         chdir = native.package_name(),
         forward_args = _TSC_COMMON_ARGS + ts_srcs,
-        variant = "wasm_imports",
+        platform = "wasmJs",
         visibility = visibility,
     )

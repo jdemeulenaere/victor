@@ -1,4 +1,4 @@
-"""Macros and wrappers for Kotlin expect/actual multiplatform libraries."""
+"""Public Kotlin Multiplatform rules and repository wrappers."""
 
 load("@build_bazel_rules_apple//apple:apple.bzl", "apple_dynamic_framework_import")
 load("@build_bazel_rules_swift//swift:providers.bzl", "SwiftInfo")
@@ -27,34 +27,86 @@ load("//build/rules/backend:providers.bzl", "BackendEndpointConfigInfo")
 load("//build/rules/kotlin/multiplatform:ios.bzl", "kt_ios_framework_files")
 load("//build/rules/kotlin/multiplatform:wasm.bzl", "KtWasmInfo", "kt_wasm_files", "kt_wasm_imports", "kt_wasm_library")
 
-_SUPPORTED_PLATFORMS = ["android", "ios", "jvm", "wasm"]
-_KMP_VARIANTS = ["jvm", "android", "wasm", "wasm_imports", "ios"]
-_KMP_VARIANT_SETTING = "//build/rules/kotlin/multiplatform/config:kmp_variant"
+_ARTIFACT_LIBRARY = "library"
+_ARTIFACT_WEB_IMPORTS = "web_imports"
+_KMP_ARTIFACTS = [_ARTIFACT_LIBRARY, _ARTIFACT_WEB_IMPORTS]
+_KMP_ARTIFACT_SETTING = "//build/rules/kotlin/multiplatform/config:kmp_artifact"
+_KMP_PLATFORM_SETTING = "//build/rules/kotlin/multiplatform/config:kmp_platform"
 _THIRD_PARTY_MAVEN_PREFIX = "@third_party_maven//:"
+
+_KMP_TARGETS = [
+    "android",
+    "iosArm64",
+    "iosSimulatorArm64",
+    "iosX64",
+    "jsBrowser",
+    "jsNode",
+    "jvm",
+    "linuxX64",
+    "macosArm64",
+    "macosX64",
+    "mingwX64",
+    "wasmJs",
+]
+
+_APPLE_FRAMEWORK_TARGETS = {
+    "iosArm64": "ios_arm64",
+    "iosSimulatorArm64": "ios_simulator_arm64",
+    "iosX64": "ios_x64",
+    "macosArm64": "macos_arm64",
+    "macosX64": "macos_x64",
+}
+
+_TARGET_SOURCE_SET_FALLBACKS = {
+    "iosArm64": ["ios"],
+    "iosSimulatorArm64": ["ios"],
+    "iosX64": ["ios"],
+    "jsBrowser": ["js"],
+    "jsNode": ["js"],
+    "linuxX64": ["linux"],
+    "macosArm64": ["macos"],
+    "macosX64": ["macos"],
+    "mingwX64": ["mingw"],
+}
+
 _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH = select({
     "@platforms//os:ios": [],
     "@platforms//os:macos": [],
     "//conditions:default": ["@platforms//:incompatible"],
 })
 
-def _kmp_variant_impl(ctx):
-    variant = ctx.build_setting_value
-    if variant not in _KMP_VARIANTS:
-        fail("Unsupported KMP variant '{}'. Expected one of: {}".format(variant, ", ".join(_KMP_VARIANTS)))
+def _kmp_platform_impl(ctx):
+    platform = ctx.build_setting_value
+    if platform not in _KMP_TARGETS:
+        fail("Unsupported KMP platform '{}'. Expected one of: {}".format(platform, ", ".join(_KMP_TARGETS)))
     return []
 
-kmp_variant = rule(
-    implementation = _kmp_variant_impl,
+kmp_platform = rule(
+    implementation = _kmp_platform_impl,
     build_setting = config.string(flag = True),
 )
 
-def _kmp_variant_transition_impl(settings, attr):
-    return {_KMP_VARIANT_SETTING: attr.variant}
+def _kmp_artifact_impl(ctx):
+    artifact = ctx.build_setting_value
+    if artifact not in _KMP_ARTIFACTS:
+        fail("Unsupported KMP artifact '{}'. Expected one of: {}".format(artifact, ", ".join(_KMP_ARTIFACTS)))
+    return []
 
-_kmp_variant_transition = transition(
-    implementation = _kmp_variant_transition_impl,
+kmp_artifact = rule(
+    implementation = _kmp_artifact_impl,
+    build_setting = config.string(flag = True),
+)
+
+def _kmp_transition_impl(settings, attr):
+    return {
+        _KMP_ARTIFACT_SETTING: attr.artifact,
+        _KMP_PLATFORM_SETTING: attr.platform,
+    }
+
+_kmp_transition = transition(
+    implementation = _kmp_transition_impl,
     inputs = [],
-    outputs = [_KMP_VARIANT_SETTING],
+    outputs = [_KMP_ARTIFACT_SETTING, _KMP_PLATFORM_SETTING],
 )
 
 _FORWARDED_PROVIDER_TYPES = [
@@ -102,11 +154,12 @@ def _function_transition_allowlist_attr():
 
 def _transition_attrs():
     return {
+        "artifact": attr.string(default = _ARTIFACT_LIBRARY),
         "deps": attr.label_list(
-            cfg = _kmp_variant_transition,
+            cfg = _kmp_transition,
             mandatory = True,
         ),
-        "variant": attr.string(mandatory = True),
+        "platform": attr.string(mandatory = True),
         "_allowlist_function_transition": _function_transition_allowlist_attr(),
     }
 
@@ -166,40 +219,35 @@ def _transitioned_executable_providers(ctx):
     runfiles = runfiles.merge(default.data_runfiles)
     return [DefaultInfo(executable = output, runfiles = runfiles)]
 
-def _kmp_transitioned_binary_impl(ctx):
-    return _transitioned_executable_providers(ctx)
-
 def _transitioned_executable_attrs():
     return {
         "actual": attr.label(
-            cfg = _kmp_variant_transition,
+            cfg = _kmp_transition,
             executable = True,
             mandatory = True,
         ),
+        "artifact": attr.string(default = _ARTIFACT_LIBRARY),
         "chdir": attr.string(),
         "forward_args": attr.string_list(),
-        "variant": attr.string(mandatory = True),
+        "platform": attr.string(mandatory = True),
         "_allowlist_function_transition": _function_transition_allowlist_attr(),
     }
 
 _kmp_transitioned_binary = rule(
-    implementation = _kmp_transitioned_binary_impl,
+    implementation = _transitioned_executable_providers,
     attrs = _transitioned_executable_attrs(),
     executable = True,
 )
 
-def _kmp_transitioned_test_impl(ctx):
-    return _transitioned_executable_providers(ctx)
-
 _kmp_transitioned_test = rule(
-    implementation = _kmp_transitioned_test_impl,
+    implementation = _transitioned_executable_providers,
     attrs = _transitioned_executable_attrs(),
     test = True,
 )
 
 def _normalize_same_package_srcs(srcs, attr_name):
     normalized = []
-    for src in srcs:
+    for src in srcs or []:
         if not type(src) == "string":
             fail("{} values must be strings, got {}".format(attr_name, type(src)))
         if src.startswith("//") or src.startswith("@"):
@@ -207,28 +255,65 @@ def _normalize_same_package_srcs(srcs, attr_name):
         normalized.append(src[1:] if src.startswith(":") else src)
     return normalized
 
-def _fragment_sources_flags(fragment_name, srcs):
+def _repo_source_path(src):
     package_name = native.package_name()
     if package_name:
-        return ["{}:{}/{}".format(fragment_name, package_name, src) for src in srcs]
-    return ["{}:{}".format(fragment_name, src) for src in srcs]
+        return "{}/{}".format(package_name, src)
+    return src
 
-def _resolve_dep_for_variant(dep, suffix):
+def _normalize_string_list(values, attr_name, list_description):
+    if values == None:
+        return []
+    if not type(values) == "list":
+        fail("{} must be a list of {}".format(attr_name, list_description))
+    normalized = []
+    for value in values:
+        if not type(value) == "string":
+            fail("{} values must be strings, got {}".format(attr_name, type(value)))
+        normalized.append(value)
+    return normalized
+
+def _normalize_dep_list(values, attr_name):
+    return _normalize_string_list(values, attr_name, "label strings")
+
+def _normalize_name_list(values, attr_name):
+    return _normalize_string_list(values, attr_name, "strings")
+
+def _normalize_tag_list(values):
+    return _normalize_name_list(values, "tags")
+
+def _dedupe(values):
+    seen = {}
+    result = []
+    for value in values:
+        if seen.get(value):
+            continue
+        seen[value] = True
+        result.append(value)
+    return result
+
+def _maven_variant_keys(platform):
+    if platform == "wasmJs":
+        return ["wasmJs", "wasm"]
+    if platform == "iosSimulatorArm64":
+        return [platform, "ios"]
+    if platform in _APPLE_FRAMEWORK_TARGETS:
+        return [platform]
+    if platform in ["jsBrowser", "jsNode"]:
+        return [platform, "js"]
+    return [platform]
+
+def _resolve_dep_for_platform(dep, platform):
     if dep.startswith(_THIRD_PARTY_MAVEN_PREFIX):
         variants = KMP_MAVEN_VARIANTS.get(dep)
         if variants:
-            variant = variants.get(suffix)
-            if variant:
-                return variant
-        if suffix == "ios":
-            fail("No Kotlin/iOS simulator Maven variant found for {}".format(dep))
-        if suffix == "wasm":
-            fail("No Kotlin/WASM Maven variant found for {}".format(dep))
-        return dep
-
-    # Other external repositories are generally regular platform-neutral deps and should not be remapped.
-    if dep.startswith("@"):
-        return dep
+            for key in _maven_variant_keys(platform):
+                variant = variants.get(key)
+                if variant:
+                    return variant
+        if platform in ["jvm", "android"]:
+            return dep
+        fail("No Kotlin/{} Maven variant found for {}".format(platform, dep))
 
     return dep
 
@@ -238,133 +323,24 @@ def _label_string(name):
         return "//{}:{}".format(package_name, name)
     return "//:{}".format(name)
 
-def _kmp_variant_condition(variant):
-    return "//build/rules/kotlin/multiplatform/config:kmp_variant_{}".format(variant)
+def _config_setting_name(platform, artifact = _ARTIFACT_LIBRARY):
+    return "kmp_{}_{}".format(platform, artifact)
+
+def _config_condition(platform, artifact = _ARTIFACT_LIBRARY):
+    return "//build/rules/kotlin/multiplatform/config:{}".format(_config_setting_name(platform, artifact))
 
 def _private_target_name(name, suffix):
     return "{}__{}".format(name, suffix)
 
-def _normalize_dep_list(values, attr_name):
-    if values == None:
-        return []
-    if not type(values) == "list":
-        fail("{} must be a list of label strings".format(attr_name))
-    normalized = []
-    for value in values:
-        if not type(value) == "string":
-            fail("{} values must be strings, got {}".format(attr_name, type(value)))
-        normalized.append(value)
-    return normalized
-
-def _normalize_tag_list(values):
-    if values == None:
-        return []
-    if not type(values) == "list":
-        fail("tags must be a list of strings")
-    normalized = []
-    for value in values:
-        if not type(value) == "string":
-            fail("tags values must be strings, got {}".format(type(value)))
-        normalized.append(value)
-    return normalized
-
-def _platform_opts_name(name, platform_suffix):
-    return "{}__{}_kmp_opts".format(name, platform_suffix)
-
-def _normalize_platforms(platforms):
-    if not type(platforms) == "list":
-        fail("platforms must be a list containing any of: {}".format(", ".join(_SUPPORTED_PLATFORMS)))
-    if not platforms:
-        fail("kt_multiplatform_library requires at least one platform")
-
-    seen = {}
-    normalized = []
-    for platform in platforms:
-        if not type(platform) == "string":
-            fail("platforms values must be strings, got {}".format(type(platform)))
-        if platform not in _SUPPORTED_PLATFORMS:
-            fail("Unsupported platform '{}'. Expected one of: {}".format(platform, ", ".join(_SUPPORTED_PLATFORMS)))
-        if seen.get(platform):
-            fail("Duplicate platform '{}'".format(platform))
-        seen[platform] = True
-        normalized.append(platform)
-    return normalized
-
-def _has_platform(platforms, platform):
-    return platform in platforms
-
-def _variant_platform(variant):
-    return "wasm" if variant == "wasm_imports" else variant
-
-def _selected_variant_target(name, variant):
-    if variant == "wasm_imports":
-        return ":{}".format(_private_target_name(name, "wasm_imports"))
-    return ":{}".format(_private_target_name(name, variant))
-
-def _public_alias_variants(name, selected_platforms):
-    variants = {
-        _kmp_variant_condition(variant): _selected_variant_target(name, variant)
-        for variant in _KMP_VARIANTS
-        if _variant_platform(variant) in selected_platforms
-    }
-    if _has_platform(selected_platforms, "jvm") and not _has_platform(selected_platforms, "android"):
-        # Android libraries can consume plain JVM bytecode when no Android-specific variant exists.
-        variants[_kmp_variant_condition("android")] = _selected_variant_target(name, "jvm")
-    return variants
-
-def _define_public_alias(name, selected_platforms, visibility):
-    native.alias(
-        name = name,
-        actual = select(
-            _public_alias_variants(name, selected_platforms),
-            no_match_error = "KMP target {} does not provide the selected variant. Available platforms: {}".format(
-                _label_string(name),
-                ", ".join(selected_platforms),
-            ),
-        ),
-        visibility = visibility,
-    )
-
-def kmp_variant_forward(name, actual, variant, visibility = None, **kwargs):
-    _kmp_transitioned_dep(
-        name = name,
-        deps = [actual],
-        variant = variant,
-        visibility = visibility,
-        **kwargs
-    )
-
-def kmp_variant_binary(name, actual, variant, visibility = None, **kwargs):
-    _kmp_transitioned_binary(
-        name = name,
-        actual = actual,
-        variant = variant,
-        visibility = visibility,
-        **kwargs
-    )
-
-def kmp_variant_test(name, actual, variant, visibility = None, **kwargs):
-    _kmp_transitioned_test(
-        name = name,
-        actual = actual,
-        variant = variant,
-        visibility = visibility,
-        **kwargs
-    )
-
 def _impl_target_name(name):
     return "{}__impl".format(name)
+
+def _platform_opts_name(name, target_id):
+    return "{}__{}_kmp_opts".format(name, target_id)
 
 def _set_optional_attr(kwargs, attr_name, value):
     if value != None:
         kwargs[attr_name] = value
-
-def _mark_manual(kwargs):
-    tags = kwargs.get("tags")
-    if tags == None:
-        kwargs["tags"] = ["manual"]
-    elif "manual" not in tags:
-        kwargs["tags"] = tags + ["manual"]
 
 def _public_common_kwargs(kwargs):
     public_kwargs = {}
@@ -383,31 +359,74 @@ def _public_common_kwargs(kwargs):
             public_kwargs[attr_name] = value
     return public_kwargs
 
-def _define_platform_opts(name, platform_suffix, platform_fragment, common_srcs, platform_srcs):
-    kt_kotlinc_options(
-        name = _platform_opts_name(name, platform_suffix),
-        x_expect_actual_classes = True,
-        x_fragment_refines = ["{}:commonMain".format(platform_fragment)],
-        x_fragment_sources = _fragment_sources_flags(platform_fragment, platform_srcs) + _fragment_sources_flags("commonMain", common_srcs),
-        x_fragments = [platform_fragment, "commonMain"],
-        x_multi_platform = True,
+def _transitioned_label_list(owner_name, labels, platform, artifact, attr_name, testonly = None):
+    if labels == None:
+        return None
+    if type(labels) != "list":
+        return labels
+
+    transitioned = []
+    for index, label in enumerate(labels):
+        dep_name = "{}__{}_{}_{}_forward".format(owner_name, attr_name, platform, index)
+        transition_kwargs = {}
+        if testonly != None:
+            transition_kwargs["testonly"] = testonly
+        kmp_platform_forward(
+            name = dep_name,
+            actual = label,
+            artifact = artifact,
+            platform = platform,
+            visibility = ["//visibility:private"],
+            **transition_kwargs
+        )
+        transitioned.append(":{}".format(dep_name))
+    return transitioned
+
+def kmp_platform_forward(name, actual, platform, artifact = _ARTIFACT_LIBRARY, visibility = None, **kwargs):
+    _kmp_transitioned_dep(
+        name = name,
+        artifact = artifact,
+        deps = [actual],
+        platform = platform,
+        visibility = visibility,
+        **kwargs
+    )
+
+def kmp_platform_binary(name, actual, platform, artifact = _ARTIFACT_LIBRARY, visibility = None, **kwargs):
+    _kmp_transitioned_binary(
+        name = name,
+        actual = actual,
+        artifact = artifact,
+        platform = platform,
+        visibility = visibility,
+        **kwargs
+    )
+
+def kmp_platform_test(name, actual, platform, artifact = _ARTIFACT_LIBRARY, visibility = None, **kwargs):
+    _kmp_transitioned_test(
+        name = name,
+        actual = actual,
+        artifact = artifact,
+        platform = platform,
+        visibility = visibility,
+        **kwargs
     )
 
 def _define_transitioned_rule(
         name,
         rule_fn,
         forward_fn,
-        variant,
+        platform,
         visibility,
         kwargs,
         deps = None,
         exports = None,
         runtime_deps = None):
     public_kwargs = _public_common_kwargs(kwargs)
-    _set_optional_attr(kwargs, "deps", deps)
-    _set_optional_attr(kwargs, "exports", exports)
-    _set_optional_attr(kwargs, "runtime_deps", runtime_deps)
-    _mark_manual(kwargs)
+    testonly = kwargs.get("testonly")
+    _set_optional_attr(kwargs, "deps", _transitioned_label_list(name, deps, platform, _ARTIFACT_LIBRARY, "deps", testonly))
+    _set_optional_attr(kwargs, "exports", _transitioned_label_list(name, exports, platform, _ARTIFACT_LIBRARY, "exports", testonly))
+    _set_optional_attr(kwargs, "runtime_deps", _transitioned_label_list(name, runtime_deps, platform, _ARTIFACT_LIBRARY, "runtime_deps", testonly))
 
     impl = _impl_target_name(name)
     rule_fn(
@@ -418,18 +437,18 @@ def _define_transitioned_rule(
     forward_fn(
         name = name,
         actual = ":{}".format(impl),
-        variant = variant,
+        platform = platform,
         visibility = visibility,
         **public_kwargs
     )
 
 def kt_jvm_library(name, deps = None, exports = None, runtime_deps = None, visibility = None, **kwargs):
-    """kt_jvm_library wrapper that resolves public KMP deps to JVM variants."""
+    """kt_jvm_library wrapper that resolves public KMP deps to JVM artifacts."""
     _define_transitioned_rule(
         name = name,
         rule_fn = _kt_jvm_library,
-        forward_fn = kmp_variant_forward,
-        variant = "jvm",
+        forward_fn = kmp_platform_forward,
+        platform = "jvm",
         visibility = visibility,
         kwargs = kwargs,
         deps = deps,
@@ -438,12 +457,12 @@ def kt_jvm_library(name, deps = None, exports = None, runtime_deps = None, visib
     )
 
 def kt_jvm_test(name, deps = None, runtime_deps = None, visibility = None, **kwargs):
-    """kt_jvm_test wrapper that resolves public KMP deps to JVM variants."""
+    """kt_jvm_test wrapper that resolves public KMP deps to JVM artifacts."""
     _define_transitioned_rule(
         name = name,
         rule_fn = _kt_jvm_test,
-        forward_fn = kmp_variant_test,
-        variant = "jvm",
+        forward_fn = kmp_platform_test,
+        platform = "jvm",
         visibility = visibility,
         kwargs = kwargs,
         deps = deps,
@@ -451,12 +470,12 @@ def kt_jvm_test(name, deps = None, runtime_deps = None, visibility = None, **kwa
     )
 
 def kt_jvm_binary(name, deps = None, runtime_deps = None, visibility = None, **kwargs):
-    """kt_jvm_binary wrapper that resolves public KMP deps to JVM variants."""
+    """kt_jvm_binary wrapper that resolves public KMP deps to JVM artifacts."""
     _define_transitioned_rule(
         name = name,
         rule_fn = _kt_jvm_binary,
-        forward_fn = kmp_variant_binary,
-        variant = "jvm",
+        forward_fn = kmp_platform_binary,
+        platform = "jvm",
         visibility = visibility,
         kwargs = kwargs,
         deps = deps,
@@ -464,179 +483,468 @@ def kt_jvm_binary(name, deps = None, runtime_deps = None, visibility = None, **k
     )
 
 def kt_android_library(name, deps = None, exports = None, visibility = None, **kwargs):
-    """kt_android_library wrapper that resolves public KMP deps to Android variants."""
+    """kt_android_library wrapper that resolves public KMP deps to Android artifacts."""
     _define_transitioned_rule(
         name = name,
         rule_fn = _kt_android_library,
-        forward_fn = kmp_variant_forward,
-        variant = "android",
+        forward_fn = kmp_platform_forward,
+        platform = "android",
         visibility = visibility,
         kwargs = kwargs,
         deps = deps,
         exports = exports,
     )
 
+def kmp_source_set(srcs = None, deps = None, exports = None, runtime_deps = None, depends_on = None):
+    """Declares one production Kotlin source set for kt_multiplatform_library."""
+    return struct(
+        kind = "kmp_source_set",
+        depends_on = depends_on or [],
+        deps = deps or [],
+        exports = exports or [],
+        runtime_deps = runtime_deps or [],
+        srcs = srcs or [],
+    )
+
+def _optional_dict(value, attr_name):
+    if value == None:
+        return {}
+    if type(value) != "dict":
+        fail("{} must be a dict".format(attr_name))
+    return value
+
+def _source_set_names_from_maps(maps):
+    seen = {}
+    names = []
+    for source_set_map in maps:
+        for name in source_set_map.keys():
+            if not type(name) == "string":
+                fail("source set names must be strings, got {}".format(type(name)))
+            if seen.get(name):
+                continue
+            seen[name] = True
+            names.append(name)
+    return names
+
+def _with_helper_default_depends_on(name, depends_on, source_sets):
+    depends_on = depends_on or []
+    if name != "common" and "common" in source_sets and "common" not in depends_on:
+        return ["common"] + depends_on
+    return depends_on
+
+def kmp_source_sets(srcs, deps = None, exports = None, runtime_deps = None, depends_on = None):
+    """Builds kmp_source_set structs from source-set keyed attribute maps."""
+    srcs = _optional_dict(srcs, "kmp_source_sets srcs")
+    deps = _optional_dict(deps, "kmp_source_sets deps")
+    exports = _optional_dict(exports, "kmp_source_sets exports")
+    runtime_deps = _optional_dict(runtime_deps, "kmp_source_sets runtime_deps")
+    depends_on = _optional_dict(depends_on, "kmp_source_sets depends_on")
+
+    names = _source_set_names_from_maps([srcs, deps, exports, runtime_deps, depends_on])
+    names_set = {
+        name: True
+        for name in names
+    }
+
+    source_sets = {}
+    for name in names:
+        source_sets[name] = kmp_source_set(
+            depends_on = _with_helper_default_depends_on(name, depends_on.get(name), names_set),
+            deps = deps.get(name),
+            exports = exports.get(name),
+            runtime_deps = runtime_deps.get(name),
+            srcs = srcs.get(name),
+        )
+    return source_sets
+
+def kmp_jvm(source_set = None):
+    return struct(kind = "kmp_target", type = "jvm", source_set = source_set)
+
+def kmp_android(source_set = None, namespace = None, manifest = None):
+    return struct(
+        kind = "kmp_target",
+        manifest = manifest,
+        namespace = namespace,
+        source_set = source_set,
+        type = "android",
+    )
+
+def kmp_wasm_js(source_set = None, module_name = None):
+    return struct(
+        kind = "kmp_target",
+        module_name = module_name,
+        source_set = source_set,
+        type = "wasm_js",
+    )
+
+def kmp_apple_framework(source_set = None, module_name = None):
+    return struct(
+        kind = "kmp_target",
+        module_name = module_name,
+        source_set = source_set,
+        type = "apple_framework",
+    )
+
+def kmp_js_browser(source_set = None, module_name = None):
+    return struct(kind = "kmp_target", module_name = module_name, source_set = source_set, type = "js_browser")
+
+def kmp_js_node(source_set = None, module_name = None):
+    return struct(kind = "kmp_target", module_name = module_name, source_set = source_set, type = "js_node")
+
+def kmp_targets(target_ids, android_namespace = None, android_manifest = None, apple_framework_module_name = None):
+    """Builds common kt_multiplatform_library target structs from target IDs."""
+    if type(target_ids) != "list":
+        fail("kmp_targets target_ids must be a list")
+
+    targets = {}
+    has_android = False
+    has_apple = False
+    for target_id in target_ids:
+        if not type(target_id) == "string":
+            fail("KMP target IDs must be strings, got {}".format(type(target_id)))
+        if targets.get(target_id):
+            fail("Duplicate KMP target '{}'".format(target_id))
+        if target_id == "jvm":
+            targets[target_id] = kmp_jvm()
+        elif target_id == "android":
+            has_android = True
+            targets[target_id] = kmp_android(
+                manifest = android_manifest,
+                namespace = android_namespace,
+            )
+        elif target_id == "wasmJs":
+            targets[target_id] = kmp_wasm_js()
+        elif target_id in _APPLE_FRAMEWORK_TARGETS:
+            has_apple = True
+            if not apple_framework_module_name:
+                fail("kmp_targets with Apple target '{}' requires apple_framework_module_name".format(target_id))
+            targets[target_id] = kmp_apple_framework(module_name = apple_framework_module_name)
+        elif target_id == "jsBrowser":
+            targets[target_id] = kmp_js_browser()
+        elif target_id == "jsNode":
+            targets[target_id] = kmp_js_node()
+        elif target_id in ["linuxX64", "mingwX64"]:
+            fail("KMP target '{}' is recognized, but this repository currently does not register a Kotlin/Native artifact rule for it".format(target_id))
+        else:
+            fail("Unsupported KMP target '{}'. Expected one of: {}".format(target_id, ", ".join(_KMP_TARGETS)))
+
+    if android_namespace != None and not has_android:
+        fail("kmp_targets android_namespace requires target 'android'")
+    if android_manifest != None and not has_android:
+        fail("kmp_targets android_manifest requires target 'android'")
+    if apple_framework_module_name != None and not has_apple:
+        fail("kmp_targets apple_framework_module_name requires an Apple framework target")
+    return targets
+
+def _normalize_source_sets(source_sets):
+    if not type(source_sets) == "dict":
+        fail("kt_multiplatform_library source_sets must be a dict")
+    if not source_sets.get("common"):
+        fail("kt_multiplatform_library requires a 'common' source set")
+
+    normalized = {}
+    for name, source_set in source_sets.items():
+        if not type(name) == "string":
+            fail("source set names must be strings, got {}".format(type(name)))
+        if not hasattr(source_set, "kind") or source_set.kind != "kmp_source_set":
+            fail("source_sets['{}'] must be created with kmp_source_set(...)".format(name))
+        depends_on = _normalize_name_list(source_set.depends_on, "source_sets['{}'].depends_on".format(name))
+        normalized[name] = struct(
+            depends_on = depends_on,
+            deps = _normalize_dep_list(source_set.deps, "source_sets['{}'].deps".format(name)),
+            exports = _normalize_dep_list(source_set.exports, "source_sets['{}'].exports".format(name)),
+            runtime_deps = _normalize_dep_list(source_set.runtime_deps, "source_sets['{}'].runtime_deps".format(name)),
+            srcs = _normalize_same_package_srcs(source_set.srcs, "source_sets['{}'].srcs".format(name)),
+        )
+
+    for name, source_set in normalized.items():
+        for parent in source_set.depends_on:
+            if parent not in normalized:
+                fail("source set '{}' depends on unknown source set '{}'".format(name, parent))
+
+    _validate_no_source_set_cycles(normalized)
+    return normalized
+
+def _validate_no_source_set_cycles(source_sets):
+    for start in source_sets.keys():
+        visiting = {}
+        visited = {}
+        stack = [struct(name = start, path = [], state = "enter")]
+        done = False
+        for _ in range(10000):
+            if not stack:
+                done = True
+                break
+            frame = stack.pop()
+            if frame.state == "exit":
+                visiting[frame.name] = False
+                visited[frame.name] = True
+                continue
+            if visited.get(frame.name):
+                continue
+            if visiting.get(frame.name):
+                fail("Cycle in kt_multiplatform_library source_sets: {}".format(" -> ".join(frame.path + [frame.name])))
+            visiting[frame.name] = True
+            stack.append(struct(name = frame.name, path = frame.path, state = "exit"))
+            for parent in source_sets[frame.name].depends_on:
+                stack.append(struct(name = parent, path = frame.path + [frame.name], state = "enter"))
+        if not done:
+            fail("kt_multiplatform_library source_sets graph is too deep")
+
+def _default_source_set_for_target(target_id, source_sets):
+    candidates = [target_id] + _TARGET_SOURCE_SET_FALLBACKS.get(target_id, []) + ["common"]
+    for candidate in candidates:
+        if candidate in source_sets:
+            return candidate
+    return None
+
+def _normalize_targets(targets, source_sets):
+    if not type(targets) == "dict":
+        fail("kt_multiplatform_library targets must be a dict")
+    if not targets:
+        fail("kt_multiplatform_library requires at least one target")
+
+    normalized = {}
+    for target_id, target in targets.items():
+        if target_id not in _KMP_TARGETS:
+            fail("Unsupported KMP target '{}'. Expected one of: {}".format(target_id, ", ".join(_KMP_TARGETS)))
+        if not hasattr(target, "kind") or target.kind != "kmp_target":
+            fail("targets['{}'] must be created with a kmp_* target helper".format(target_id))
+
+        source_set = target.source_set
+        if source_set == None:
+            source_set = _default_source_set_for_target(target_id, source_sets)
+        if source_set == None:
+            fail("targets['{}'] must set source_set because no default source set exists".format(target_id))
+        if source_set not in source_sets:
+            fail("targets['{}'] references unknown source set '{}'".format(target_id, source_set))
+
+        if target_id == "jvm" and target.type != "jvm":
+            fail("target 'jvm' must use kmp_jvm(...)")
+        if target_id == "android" and target.type != "android":
+            fail("target 'android' must use kmp_android(...)")
+        if target_id == "wasmJs" and target.type != "wasm_js":
+            fail("target 'wasmJs' must use kmp_wasm_js(...)")
+        if target_id in _APPLE_FRAMEWORK_TARGETS and target.type != "apple_framework":
+            fail("target '{}' must use kmp_apple_framework(...)".format(target_id))
+        if target_id == "jsBrowser" and target.type != "js_browser":
+            fail("target 'jsBrowser' must use kmp_js_browser(...)")
+        if target_id == "jsNode" and target.type != "js_node":
+            fail("target 'jsNode' must use kmp_js_node(...)")
+        if target_id in ["linuxX64", "mingwX64"]:
+            fail("KMP target '{}' is recognized, but this repository currently does not register a Kotlin/Native artifact rule for it".format(target_id))
+
+        normalized[target_id] = struct(
+            manifest = target.manifest if hasattr(target, "manifest") else None,
+            module_name = target.module_name if hasattr(target, "module_name") else None,
+            namespace = target.namespace if hasattr(target, "namespace") else None,
+            source_set = source_set,
+            type = target.type,
+        )
+
+    return normalized
+
+def _source_set_closure(source_sets, root):
+    ordered = []
+    seen = {}
+    stack = [struct(expanded = False, name = root)]
+    done = False
+    for _ in range(10000):
+        if not stack:
+            done = True
+            break
+        frame = stack.pop()
+        if frame.expanded:
+            ordered.append(frame.name)
+            continue
+        if seen.get(frame.name):
+            continue
+        seen[frame.name] = True
+        stack.append(struct(expanded = True, name = frame.name))
+        for parent in reversed(source_sets[frame.name].depends_on):
+            if not seen.get(parent):
+                stack.append(struct(expanded = False, name = parent))
+    if not done:
+        fail("kt_multiplatform_library source_sets graph is too deep")
+    return ordered
+
+def _target_source_layout(source_sets, closure):
+    srcs = []
+    source_set_names = []
+    fragment_sources = []
+    for source_set in closure:
+        for src in source_sets[source_set].srcs:
+            srcs.append(src)
+            source_set_names.append(source_set)
+            fragment_sources.append("{}:{}".format(source_set, _repo_source_path(src)))
+    return struct(
+        fragment_sources = fragment_sources,
+        source_set_names = source_set_names,
+        srcs = srcs,
+    )
+
+def _target_fragment_refines(source_sets, closure):
+    closure_set = {}
+    for source_set in closure:
+        closure_set[source_set] = True
+    values = []
+    for source_set in closure:
+        for parent in source_sets[source_set].depends_on:
+            if closure_set.get(parent):
+                values.append("{}:{}".format(source_set, parent))
+    return values
+
+def _target_label_attr(source_sets, closure, attr_name, platform):
+    labels = []
+    for source_set in closure:
+        labels.extend(getattr(source_sets[source_set], attr_name))
+    return [_resolve_dep_for_platform(label, platform) for label in _dedupe(labels)]
+
+def _define_platform_opts(name, target_id, closure, fragment_sources, fragment_refines):
+    kt_kotlinc_options(
+        name = _platform_opts_name(name, target_id),
+        x_expect_actual_classes = True,
+        x_fragment_refines = fragment_refines,
+        x_fragment_sources = fragment_sources,
+        x_fragments = closure,
+        x_multi_platform = True,
+    )
+
+def _define_public_alias(name, target_specs, visibility):
+    variants = {}
+    for target_id, target in target_specs.items():
+        if target.type == "wasm_js":
+            variants[_config_condition(target_id, _ARTIFACT_LIBRARY)] = ":{}".format(_private_target_name(name, target_id))
+            variants[_config_condition(target_id, _ARTIFACT_WEB_IMPORTS)] = ":{}".format(_private_target_name(name, "{}_imports".format(target_id)))
+        else:
+            variants[_config_condition(target_id, _ARTIFACT_LIBRARY)] = ":{}".format(_private_target_name(name, target_id))
+
+    if "jvm" in target_specs and "android" not in target_specs:
+        variants[_config_condition("android", _ARTIFACT_LIBRARY)] = ":{}".format(_private_target_name(name, "jvm"))
+
+    native.alias(
+        name = name,
+        actual = select(
+            variants,
+            no_match_error = "KMP target {} does not provide the selected platform/artifact. Available targets: {}".format(
+                _label_string(name),
+                ", ".join(sorted(target_specs.keys())),
+            ),
+        ),
+        visibility = visibility,
+    )
+
 def kt_multiplatform_library(
         name,
-        srcs,
-        platforms,
-        deps = None,
+        source_sets,
+        targets,
         plugins = None,
-        android_manifest = None,
-        android_custom_package = None,
-        ios_framework_module_name = None,
         tags = None,
         visibility = None):
-    """Creates a Kotlin Multiplatform-style library with one public label.
-
-    This macro follows the Kotlin Gradle plugin model for platform compilations:
-    - each platform target compiles common + platform sources together
-    - Kotlin fragment flags model source-set relations (`commonMain` refined by each platform source set)
-    - `:<name>` selects the correct private implementation target for the consumer's KMP variant
-
-    Args:
-    - platforms: required list containing any of `android`, `ios`, `jvm`, `wasm`.
-      The current iOS platform compiles `ios_simulator_arm64` Kotlin/Native artifacts.
-      Android consumers select the JVM variant when a library provides `jvm` but no `android` platform.
-    - srcs: required dictionary with keys `common`, `jvm`, `android`, `ios`, `wasm`.
-    - deps: optional dictionary with keys:
-      - `common`: deps added to all selected platform targets. `@third_party_maven` Kotlin Multiplatform
-        labels are resolved through Gradle Module Metadata when available; other external labels are used as-is.
-        first-party KMP labels are selected through the public target's KMP variant.
-      - `jvm`: regular deps for the JVM target only.
-      - `android`: regular deps for the Android target only.
-      - `ios`: deps for the iOS simulator target only.
-      - `wasm`: KLIB deps for the WASM target only.
-    - plugins: optional list of compiler plugins applied to all selected platform targets.
-    - ios_framework_module_name: Swift/Objective-C module name for the generated iOS framework.
-      Required when `platforms` contains `ios`.
-    - tags: optional list of tags applied to all selected platform targets.
-    """
-    selected_platforms = _normalize_platforms(platforms)
-    if deps == None:
-        deps = {}
-    if not type(deps) == "dict":
-        fail("deps must be a dict with keys common/android/ios/jvm/wasm")
-    for key in deps.keys():
-        if key not in ["common", "android", "ios", "jvm", "wasm"]:
-            fail("Unsupported deps key '{}'. Expected one of: common, android, ios, jvm, wasm".format(key))
-
+    """Creates a Kotlin Multiplatform library from explicit source sets and targets."""
+    normalized_source_sets = _normalize_source_sets(source_sets)
+    normalized_targets = _normalize_targets(targets, normalized_source_sets)
     normalized_plugins = _normalize_dep_list(plugins, "plugins")
-
-    if not type(srcs) == "dict":
-        fail("srcs must be a dict with keys common/android/ios/jvm/wasm")
-    for key in srcs.keys():
-        if key not in ["common", "android", "ios", "jvm", "wasm"]:
-            fail("Unsupported srcs key '{}'. Expected one of: common, android, ios, jvm, wasm".format(key))
-
-    common = _normalize_same_package_srcs(srcs.get("common", []), "common_srcs")
-    android = _normalize_same_package_srcs(srcs.get("android", []), "android_srcs")
-    ios = _normalize_same_package_srcs(srcs.get("ios", []), "ios_srcs")
-    jvm = _normalize_same_package_srcs(srcs.get("jvm", []), "jvm_srcs")
-    wasm = _normalize_same_package_srcs(srcs.get("wasm", []), "wasm_srcs")
-
-    if not common:
-        fail("kt_multiplatform_library requires non-empty common_srcs")
-
-    common_deps = _normalize_dep_list(deps.get("common"), "deps[\"common\"]")
-    android_deps = _normalize_dep_list(deps.get("android"), "deps[\"android\"]")
-    ios_deps = _normalize_dep_list(deps.get("ios"), "deps[\"ios\"]")
-    jvm_deps = _normalize_dep_list(deps.get("jvm"), "deps[\"jvm\"]")
-    wasm_deps = _normalize_dep_list(deps.get("wasm"), "deps[\"wasm\"]")
     user_tags = _normalize_tag_list(tags)
 
-    if _has_platform(selected_platforms, "jvm"):
-        common_jvm_deps = [_resolve_dep_for_variant(dep, "jvm") for dep in common_deps]
-        _define_platform_opts(
-            name = name,
-            platform_suffix = "jvm",
-            platform_fragment = "jvmMain",
-            common_srcs = common,
-            platform_srcs = jvm,
-        )
-        _kt_jvm_library(
-            name = _private_target_name(name, "jvm"),
-            srcs = common + jvm,
-            kotlinc_opts = ":{}".format(_platform_opts_name(name, "jvm")),
-            plugins = normalized_plugins,
-            tags = user_tags,
-            visibility = ["//visibility:private"],
-            deps = common_jvm_deps + jvm_deps,
-        )
+    for target_id, target in normalized_targets.items():
+        closure = _source_set_closure(normalized_source_sets, target.source_set)
+        source_layout = _target_source_layout(normalized_source_sets, closure)
+        fragment_refines = _target_fragment_refines(normalized_source_sets, closure)
+        srcs = source_layout.srcs
+        source_set_names = source_layout.source_set_names
+        deps = _target_label_attr(normalized_source_sets, closure, "deps", target_id)
+        exports = _target_label_attr(normalized_source_sets, closure, "exports", target_id)
+        runtime_deps = _target_label_attr(normalized_source_sets, closure, "runtime_deps", target_id)
 
-    if _has_platform(selected_platforms, "android"):
-        common_android_deps = [_resolve_dep_for_variant(dep, "android") for dep in common_deps]
-        _define_platform_opts(
-            name = name,
-            platform_suffix = "android",
-            platform_fragment = "androidMain",
-            common_srcs = common,
-            platform_srcs = android,
-        )
+        if target.type == "jvm":
+            _define_platform_opts(name, target_id, closure, source_layout.fragment_sources, fragment_refines)
+            _kt_jvm_library(
+                name = _private_target_name(name, target_id),
+                srcs = srcs,
+                deps = deps,
+                exports = exports,
+                kotlinc_opts = ":{}".format(_platform_opts_name(name, target_id)),
+                plugins = normalized_plugins,
+                runtime_deps = runtime_deps,
+                tags = user_tags,
+                visibility = ["//visibility:private"],
+            )
 
-        android_kwargs = dict(
-            name = _private_target_name(name, "android"),
-            srcs = common + android,
-            kotlinc_opts = ":{}".format(_platform_opts_name(name, "android")),
-            plugins = normalized_plugins,
-            tags = user_tags,
-            visibility = ["//visibility:private"],
-            deps = common_android_deps + android_deps,
-        )
-        if android_manifest:
-            android_kwargs["manifest"] = android_manifest
-        if android_custom_package:
-            android_kwargs["custom_package"] = android_custom_package
-        _kt_android_library(**android_kwargs)
+        elif target.type == "android":
+            _define_platform_opts(name, target_id, closure, source_layout.fragment_sources, fragment_refines)
+            android_kwargs = dict(
+                name = _private_target_name(name, target_id),
+                srcs = srcs,
+                deps = deps,
+                exports = exports,
+                kotlinc_opts = ":{}".format(_platform_opts_name(name, target_id)),
+                plugins = normalized_plugins,
+                tags = user_tags,
+                visibility = ["//visibility:private"],
+            )
+            if target.manifest:
+                android_kwargs["manifest"] = target.manifest
+            if target.namespace:
+                android_kwargs["custom_package"] = target.namespace
+            _kt_android_library(**android_kwargs)
 
-    if _has_platform(selected_platforms, "ios"):
-        if not ios_framework_module_name:
-            fail("kt_multiplatform_library with platform 'ios' requires ios_framework_module_name")
-        common_ios_deps = [_resolve_dep_for_variant(dep, "ios") for dep in common_deps]
-        ios_variant_deps = [_resolve_dep_for_variant(dep, "ios") for dep in ios_deps]
-        ios_framework_files = _private_target_name(name, "ios_framework_files")
-        kt_ios_framework_files(
-            name = ios_framework_files,
-            common_srcs = common,
-            deps = common_ios_deps + ios_variant_deps,
-            module_name = ios_framework_module_name,
-            platform_srcs = ios,
-            plugins = normalized_plugins,
-            tags = user_tags,
-            target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
-            visibility = ["//visibility:private"],
-        )
-        apple_dynamic_framework_import(
-            name = _private_target_name(name, "ios"),
-            framework_imports = [":{}".format(ios_framework_files)],
-            tags = user_tags,
-            target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
-            visibility = ["//visibility:private"],
-        )
+        elif target.type == "wasm_js":
+            wasm_deps = deps + [KOTLIN_STDLIB_WASM_LABEL]
+            module_name = target.module_name or name
+            kt_wasm_library(
+                name = _private_target_name(name, target_id),
+                deps = wasm_deps,
+                fragment_refines = fragment_refines,
+                module_name = module_name,
+                plugins = normalized_plugins,
+                source_set_names = source_set_names,
+                srcs = srcs,
+                tags = user_tags,
+                visibility = ["//visibility:private"],
+            )
+            kt_wasm_files(
+                name = _private_target_name(name, "{}_files".format(target_id)),
+                module = ":{}".format(_private_target_name(name, target_id)),
+                module_name = module_name,
+                visibility = ["//visibility:private"],
+            )
+            kt_wasm_imports(
+                name = _private_target_name(name, "{}_imports".format(target_id)),
+                files = ":{}".format(_private_target_name(name, "{}_files".format(target_id))),
+                out = name,
+                visibility = ["//visibility:private"],
+            )
 
-    if _has_platform(selected_platforms, "wasm"):
-        common_wasm_deps = [_resolve_dep_for_variant(dep, "wasm") for dep in common_deps]
-        kt_wasm_library(
-            name = _private_target_name(name, "wasm"),
-            common_srcs = common,
-            deps = common_wasm_deps + wasm_deps + [KOTLIN_STDLIB_WASM_LABEL],
-            module_name = name,
-            platform_srcs = wasm,
-            plugins = normalized_plugins,
-            tags = user_tags,
-            visibility = ["//visibility:private"],
-        )
-        kt_wasm_files(
-            name = _private_target_name(name, "wasm_files"),
-            module = ":{}".format(_private_target_name(name, "wasm")),
-            module_name = name,
-            visibility = ["//visibility:private"],
-        )
-        kt_wasm_imports(
-            name = _private_target_name(name, "wasm_imports"),
-            files = ":{}".format(_private_target_name(name, "wasm_files")),
-            out = name,
-            visibility = ["//visibility:private"],
-        )
+        elif target.type == "apple_framework":
+            if not target.module_name:
+                fail("targets['{}'] uses kmp_apple_framework and requires module_name".format(target_id))
+            framework_files = _private_target_name(name, "{}_framework_files".format(target_id))
+            kt_ios_framework_files(
+                name = framework_files,
+                deps = deps,
+                fragment_refines = fragment_refines,
+                konan_target = _APPLE_FRAMEWORK_TARGETS[target_id],
+                module_name = target.module_name,
+                plugins = normalized_plugins,
+                source_set_names = source_set_names,
+                srcs = srcs,
+                tags = user_tags,
+                target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
+                visibility = ["//visibility:private"],
+            )
+            apple_dynamic_framework_import(
+                name = _private_target_name(name, target_id),
+                framework_imports = [":{}".format(framework_files)],
+                tags = user_tags,
+                target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
+                visibility = ["//visibility:private"],
+            )
 
-    _define_public_alias(name, selected_platforms, visibility)
+        elif target.type in ["js_browser", "js_node"]:
+            fail("Kotlin/JS target '{}' is recognized but not implemented yet; use kmp_wasm_js for the current web sample".format(target_id))
+
+        else:
+            fail("Unsupported target type '{}' for target '{}'".format(target.type, target_id))
+
+    _define_public_alias(name, normalized_targets, visibility)

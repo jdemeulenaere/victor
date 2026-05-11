@@ -245,13 +245,10 @@ def _metadata_variants(module_metadata, resolved_artifacts, repo_name):
         return {}
 
     variants = {}
-    android_label = _select_module_metadata_variant(module_metadata, resolved_artifacts, repo_name, "android")
-    if android_label:
-        variants["android"] = android_label
-
-    jvm_label = _select_module_metadata_variant(module_metadata, resolved_artifacts, repo_name, "jvm")
-    if jvm_label:
-        variants["jvm"] = jvm_label
+    for platform in ["android", "jvm"]:
+        label = _select_module_metadata_variant(module_metadata, resolved_artifacts, repo_name, platform)
+        if label:
+            variants[platform] = label
 
     return variants
 
@@ -362,6 +359,16 @@ def _select_klib_version_key(artifacts, resolved_versions, group, artifact, requ
 def _mark_klib_unavailable(resolving, unavailable, key):
     unavailable[key] = True
     resolving[key] = False
+
+def _new_klib_resolution_state():
+    return struct(
+        build_labels = {},
+        labels = {},
+        resolved_versions = {},
+        resolving = {},
+        targets = {},
+        unavailable = {},
+    )
 
 def _resolve_klib(
         repository_ctx,
@@ -577,12 +584,7 @@ def _resolve_wasm_klib(
         repositories,
         metadata_cache,
         artifacts,
-        resolved_wasm_versions,
-        wasm_targets,
-        wasm_labels,
-        wasm_build_labels,
-        resolving,
-        unavailable,
+        state,
         group,
         artifact,
         requested_version,
@@ -593,12 +595,12 @@ def _resolve_wasm_klib(
         repositories,
         metadata_cache,
         artifacts,
-        resolved_wasm_versions,
-        wasm_targets,
-        wasm_labels,
-        wasm_build_labels,
-        resolving,
-        unavailable,
+        state.resolved_versions,
+        state.targets,
+        state.labels,
+        state.build_labels,
+        state.resolving,
+        state.unavailable,
         group,
         artifact,
         requested_version,
@@ -635,12 +637,7 @@ def _resolve_ios_simulator_klib(
         repositories,
         metadata_cache,
         artifacts,
-        resolved_ios_simulator_versions,
-        ios_simulator_targets,
-        ios_simulator_labels,
-        ios_simulator_build_labels,
-        resolving,
-        unavailable,
+        state,
         group,
         artifact,
         requested_version,
@@ -651,12 +648,12 @@ def _resolve_ios_simulator_klib(
         repositories,
         metadata_cache,
         artifacts,
-        resolved_ios_simulator_versions,
-        ios_simulator_targets,
-        ios_simulator_labels,
-        ios_simulator_build_labels,
-        resolving,
-        unavailable,
+        state.resolved_versions,
+        state.targets,
+        state.labels,
+        state.build_labels,
+        state.resolving,
+        state.unavailable,
         group,
         artifact,
         requested_version,
@@ -701,18 +698,8 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
         )
 
     variants = {}
-    ios_simulator_build_labels = {}
-    ios_simulator_labels = {}
-    ios_simulator_targets = {}
-    resolved_ios_simulator_versions = {}
-    ios_simulator_resolving = {}
-    ios_simulator_unavailable = {}
-    wasm_build_labels = {}
-    wasm_labels = {}
-    wasm_targets = {}
-    resolved_wasm_versions = {}
-    wasm_resolving = {}
-    wasm_unavailable = {}
+    ios_simulator_state = _new_klib_resolution_state()
+    wasm_state = _new_klib_resolution_state()
     for coordinate in sorted(base_coordinates.keys()):
         base = base_coordinates[coordinate]
         group = base.group
@@ -741,18 +728,14 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
                 repositories,
                 metadata_cache,
                 artifacts,
-                resolved_wasm_versions,
-                wasm_targets,
-                wasm_labels,
-                wasm_build_labels,
-                wasm_resolving,
-                wasm_unavailable,
+                wasm_state,
                 group,
                 artifact,
                 version,
                 required = False,
             )
             if wasm_variant:
+                platform_variants["wasmJs"] = wasm_variant
                 platform_variants["wasm"] = wasm_variant
         if module_metadata and _select_ios_simulator_module_metadata_variant(module_metadata):
             ios_variant = _resolve_ios_simulator_klib(
@@ -761,18 +744,14 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
                 repositories,
                 metadata_cache,
                 artifacts,
-                resolved_ios_simulator_versions,
-                ios_simulator_targets,
-                ios_simulator_labels,
-                ios_simulator_build_labels,
-                ios_simulator_resolving,
-                ios_simulator_unavailable,
+                ios_simulator_state,
                 group,
                 artifact,
                 version,
                 required = False,
             )
             if ios_variant:
+                platform_variants["iosSimulatorArm64"] = ios_variant
                 platform_variants["ios"] = ios_variant
 
         if platform_variants:
@@ -784,12 +763,7 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
         repositories,
         metadata_cache,
         artifacts,
-        resolved_wasm_versions,
-        wasm_targets,
-        wasm_labels,
-        wasm_build_labels,
-        wasm_resolving,
-        wasm_unavailable,
+        wasm_state,
         _KOTLIN_STDLIB_GROUP,
         _KOTLIN_STDLIB_ARTIFACT,
         _version_for_coordinate(artifacts, _KOTLIN_STDLIB_GROUP, _KOTLIN_STDLIB_ARTIFACT),
@@ -813,9 +787,11 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
     build_lines = [
         'package(default_visibility = ["//visibility:public"])',
         "",
+        'exports_files(["variants.bzl"])',
+        "",
     ]
-    _append_klib_filegroups(build_lines, ios_simulator_targets)
-    _append_klib_filegroups(build_lines, wasm_targets)
+    _append_klib_filegroups(build_lines, ios_simulator_state.targets)
+    _append_klib_filegroups(build_lines, wasm_state.targets)
 
     repository_ctx.file("BUILD.bazel", "\n".join(build_lines))
     repository_ctx.file("variants.bzl", "\n".join(lines))

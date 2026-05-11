@@ -28,6 +28,10 @@ register_toolchains("//build/toolchains/android:arm64_v8a_packaging_only_toolcha
 
 register_toolchains("//build/toolchains/kotlin:jvm21_toolchain")
 
+register_toolchains("//build/toolchains/kotlin:native_macos_aarch64_toolchain")
+
+register_toolchains("//build/toolchains/kotlin:wasm_toolchain")
+
 include("//build/toolchains/kotlin:native/native.MODULE.bazel")
 
 register_toolchains("//build/toolchains/python/proto:python_pip_runtime_source_toolchain")
