@@ -1,43 +1,53 @@
-load("//build/rules:defs.bzl", "kt_jvm_test", "kt_multiplatform_library")
+load(
+    "//build/rules:defs.bzl",
+    "kmp_source_sets",
+    "kmp_targets",
+    "kt_jvm_test",
+    "kt_multiplatform_library",
+)
 
 kt_multiplatform_library(
     name = "library",
-    srcs = {
-        "common": [
-            "ComposeGreeting.kt",
-            "Greeting.kt",
-        ],
-        "android": ["Platform.android.kt"],
-        "ios": [
-            "Platform.ios.kt",
-            "SharedGreetingComposeController.kt",
-        ],
-        "jvm": ["Platform.jvm.kt"],
-        "wasm": ["Platform.wasm.kt"],
-    },
-    android_custom_package = "victor.example.multiplatform",
-    ios_framework_module_name = "GreeterSharedLibrary",
-    platforms = [
-        "android",
-        "ios",
-        "jvm",
-        "wasm",
-    ],
     plugins = [
         "//build/toolchains/kotlin/compose:compose_compiler_plugin",
         "//build/toolchains/kotlin/serialization:serialization_compiler_plugin",
     ],
+    source_sets = kmp_source_sets(
+        srcs = {
+            "android": ["Platform.android.kt"],
+            "common": [
+                "ComposeGreeting.kt",
+                "Greeting.kt",
+            ],
+            "ios": [
+                "Platform.ios.kt",
+                "SharedGreetingComposeController.kt",
+            ],
+            "jvm": ["Platform.jvm.kt"],
+            "wasmJs": ["Platform.wasm.kt"],
+        },
+        deps = {
+            "common": [
+                "@third_party_maven//:androidx_compose_runtime_runtime",
+                "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_serialization_json",
+            ],
+            "ios": [
+                "@third_party_maven//:org_jetbrains_compose_foundation_foundation",
+                "@third_party_maven//:org_jetbrains_compose_ui_ui",
+            ],
+        },
+    ),
+    targets = kmp_targets(
+        [
+            "android",
+            "iosSimulatorArm64",
+            "jvm",
+            "wasmJs",
+        ],
+        android_namespace = "victor.example.multiplatform",
+        apple_framework_module_name = "GreeterSharedLibrary",
+    ),
     visibility = ["//visibility:public"],
-    deps = {
-        "common": [
-            "@third_party_maven//:androidx_compose_runtime_runtime",
-            "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_serialization_json",
-        ],
-        "ios": [
-            "@third_party_maven//:org_jetbrains_compose_foundation_foundation",
-            "@third_party_maven//:org_jetbrains_compose_ui_ui",
-        ],
-    },
 )
 
 kt_jvm_test(

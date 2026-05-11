@@ -1,47 +1,130 @@
-load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_variant")
+load("//build/rules/kotlin/multiplatform:defs.bzl", "kmp_artifact", "kmp_platform")
 
-kmp_variant(
-    name = "kmp_variant",
+kmp_platform(
+    name = "kmp_platform",
     build_setting_default = "jvm",
     visibility = ["//visibility:public"],
 )
 
+kmp_artifact(
+    name = "kmp_artifact",
+    build_setting_default = "library",
+    visibility = ["//visibility:public"],
+)
+
 config_setting(
-    name = "kmp_variant_android",
+    name = "kmp_android_library",
     flag_values = {
-        ":kmp_variant": "android",
+        ":kmp_artifact": "library",
+        ":kmp_platform": "android",
     },
     visibility = ["//visibility:public"],
 )
 
 config_setting(
-    name = "kmp_variant_ios",
+    name = "kmp_iosArm64_library",
     flag_values = {
-        ":kmp_variant": "ios",
+        ":kmp_artifact": "library",
+        ":kmp_platform": "iosArm64",
     },
     visibility = ["//visibility:public"],
 )
 
 config_setting(
-    name = "kmp_variant_jvm",
+    name = "kmp_iosSimulatorArm64_library",
     flag_values = {
-        ":kmp_variant": "jvm",
+        ":kmp_artifact": "library",
+        ":kmp_platform": "iosSimulatorArm64",
     },
     visibility = ["//visibility:public"],
 )
 
 config_setting(
-    name = "kmp_variant_wasm",
+    name = "kmp_iosX64_library",
     flag_values = {
-        ":kmp_variant": "wasm",
+        ":kmp_artifact": "library",
+        ":kmp_platform": "iosX64",
     },
     visibility = ["//visibility:public"],
 )
 
 config_setting(
-    name = "kmp_variant_wasm_imports",
+    name = "kmp_jsBrowser_library",
     flag_values = {
-        ":kmp_variant": "wasm_imports",
+        ":kmp_artifact": "library",
+        ":kmp_platform": "jsBrowser",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_jsNode_library",
+    flag_values = {
+        ":kmp_artifact": "library",
+        ":kmp_platform": "jsNode",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_jvm_library",
+    flag_values = {
+        ":kmp_artifact": "library",
+        ":kmp_platform": "jvm",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_linuxX64_library",
+    flag_values = {
+        ":kmp_artifact": "library",
+        ":kmp_platform": "linuxX64",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_macosArm64_library",
+    flag_values = {
+        ":kmp_artifact": "library",
+        ":kmp_platform": "macosArm64",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_macosX64_library",
+    flag_values = {
+        ":kmp_artifact": "library",
+        ":kmp_platform": "macosX64",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_mingwX64_library",
+    flag_values = {
+        ":kmp_artifact": "library",
+        ":kmp_platform": "mingwX64",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_wasmJs_library",
+    flag_values = {
+        ":kmp_artifact": "library",
+        ":kmp_platform": "wasmJs",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "kmp_wasmJs_web_imports",
+    flag_values = {
+        ":kmp_artifact": "web_imports",
+        ":kmp_platform": "wasmJs",
     },
     visibility = ["//visibility:public"],
 )

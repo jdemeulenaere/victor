@@ -6,9 +6,20 @@ exports_files([
     "defs.bzl",
     "ios.bzl",
     "kmp_maven_variants_repository.bzl",
+    "toolchains.bzl",
     "wasm.bzl",
     "wasm_kotlinc.sh",
 ])
+
+toolchain_type(
+    name = "native_toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+toolchain_type(
+    name = "wasm_toolchain_type",
+    visibility = ["//visibility:public"],
+)
 
 kt_native_compiler_plugin_test(
     name = "compose_compiler_plugin_native_deps_test",

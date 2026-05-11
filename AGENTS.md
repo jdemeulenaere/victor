@@ -12,4 +12,5 @@ This repository is a Bazel-first monorepo with starter examples for Kotlin, Pyth
   - Run executables with `bazel run <target>`.
 - Run `./build.sh` after changing any source file to ensure that everything still compiles.
 - Run `./test.sh` after changing any source file to ensure that all tests still pass.
+- Do not use `tags = ["manual"]`; all targets should build and test through `//...`.
 - When adding dependencies or tools, use the latest stable released version whenever possible.

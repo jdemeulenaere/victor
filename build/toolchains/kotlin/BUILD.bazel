@@ -1,6 +1,37 @@
 load("@rules_kotlin//kotlin:core.bzl", "define_kt_toolchain")
+load("//build/rules/kotlin/multiplatform:toolchains.bzl", "kmp_native_toolchain", "kmp_wasm_toolchain")
 
 define_kt_toolchain(
     name = "jvm21_toolchain",
     jvm_target = "21",
+)
+
+kmp_native_toolchain(
+    name = "native_macos_aarch64_impl",
+    compiler = "@kotlin_native_prebuilt_macos_aarch64//:konan/lib/kotlin-native-compiler-embeddable.jar",
+    home = "@kotlin_native_prebuilt_macos_aarch64//:all",
+    java_runtime = "@bazel_tools//tools/jdk:current_host_java_runtime",
+    libffi = "@kotlin_native_libffi_3_3_1_macos_arm64//:all",
+    llvm = "@kotlin_native_llvm_19_aarch64_macos_essentials_81//:all",
+)
+
+toolchain(
+    name = "native_macos_aarch64_toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+    toolchain = ":native_macos_aarch64_impl",
+    toolchain_type = "//build/rules/kotlin/multiplatform:native_toolchain_type",
+)
+
+kmp_wasm_toolchain(
+    name = "wasm_impl",
+    kotlinc_script = "//build/rules/kotlin/multiplatform:wasm_kotlinc.sh",
+)
+
+toolchain(
+    name = "wasm_toolchain",
+    toolchain = ":wasm_impl",
+    toolchain_type = "//build/rules/kotlin/multiplatform:wasm_toolchain_type",
 )
