@@ -1,7 +1,9 @@
 """Public Kotlin Multiplatform rules and repository wrappers."""
 
 load("@build_bazel_rules_apple//apple:apple.bzl", "apple_dynamic_framework_import")
+load("@build_bazel_rules_apple//apple:providers.bzl", "AppleDynamicFrameworkInfo", "AppleFrameworkImportInfo")
 load("@build_bazel_rules_swift//swift:providers.bzl", "SwiftInfo")
+load("@build_bazel_rules_swift//swift/internal:swift_interop_info.bzl", "SwiftInteropInfo")
 load(
     "@rules_android//providers:providers.bzl",
     "AndroidCcLinkParamsInfo",
@@ -22,9 +24,10 @@ load("@rules_kotlin//kotlin:android.bzl", _kt_android_library = "kt_android_libr
 load("@rules_kotlin//kotlin:core.bzl", "kt_kotlinc_options")
 load("@rules_kotlin//kotlin:jvm.bzl", _kt_jvm_binary = "kt_jvm_binary", _kt_jvm_library = "kt_jvm_library", _kt_jvm_test = "kt_jvm_test")
 load("@rules_kotlin//kotlin/internal:defs.bzl", "KtJvmInfo")
+load("@rules_kotlin//kotlin/internal:opts.bzl", "KotlincOptions")
 load("@third_party_maven_kmp_variants//:variants.bzl", "KMP_MAVEN_VARIANTS", "KOTLIN_STDLIB_WASM_LABEL")
 load("//build/rules/backend:providers.bzl", "BackendEndpointConfigInfo")
-load("//build/rules/kotlin/multiplatform:ios.bzl", "kt_ios_framework_files")
+load("//build/rules/kotlin/multiplatform:ios.bzl", "KtNativeKlibInfo", "kt_ios_framework_files")
 load("//build/rules/kotlin/multiplatform:wasm.bzl", "KtWasmInfo", "kt_wasm_files", "kt_wasm_imports", "kt_wasm_library")
 
 _ARTIFACT_LIBRARY = "library"
@@ -117,15 +120,19 @@ _FORWARDED_PROVIDER_TYPES = [
     AndroidLibraryResourceClassJarProvider,
     AndroidLintRulesInfo,
     AndroidNativeLibsInfo,
+    AppleDynamicFrameworkInfo,
+    AppleFrameworkImportInfo,
     BackendEndpointConfigInfo,
     BaselineProfileProvider,
     DataBindingV2Info,
     JavaInfo,
     KtJvmInfo,
+    KtNativeKlibInfo,
     KtWasmInfo,
     ProguardSpecInfo,
     StarlarkAndroidResourcesInfo,
     SwiftInfo,
+    SwiftInteropInfo,
 ]
 
 def _single_actual(actual):
@@ -166,6 +173,38 @@ def _transition_attrs():
 _kmp_transitioned_dep = rule(
     implementation = _kmp_transitioned_dep_impl,
     attrs = _transition_attrs(),
+)
+
+def _kt_ios_framework_library_impl(ctx):
+    framework_files = ctx.attr.framework_files
+    framework_import = ctx.attr.framework_import
+    providers = [DefaultInfo(files = framework_files[DefaultInfo].files)]
+
+    if KtNativeKlibInfo in framework_files:
+        providers.append(framework_files[KtNativeKlibInfo])
+
+    for provider_type in [
+        AppleDynamicFrameworkInfo,
+        AppleFrameworkImportInfo,
+        CcInfo,
+        SwiftInfo,
+        SwiftInteropInfo,
+    ]:
+        if provider_type in framework_import:
+            providers.append(framework_import[provider_type])
+    if OutputGroupInfo in framework_import:
+        providers.append(framework_import[OutputGroupInfo])
+    return providers
+
+_kt_ios_framework_library = rule(
+    implementation = _kt_ios_framework_library_impl,
+    attrs = {
+        "framework_files": attr.label(
+            mandatory = True,
+            providers = [KtNativeKlibInfo],
+        ),
+        "framework_import": attr.label(mandatory = True),
+    },
 )
 
 def _shell_quote(value):
@@ -252,14 +291,8 @@ def _normalize_same_package_srcs(srcs, attr_name):
             fail("{} values must be strings, got {}".format(attr_name, type(src)))
         if src.startswith("//") or src.startswith("@"):
             fail("{} must reference files in the current package: {}".format(attr_name, src))
-        normalized.append(src[1:] if src.startswith(":") else src)
+        normalized.append(src)
     return normalized
-
-def _repo_source_path(src):
-    package_name = native.package_name()
-    if package_name:
-        return "{}/{}".format(package_name, src)
-    return src
 
 def _normalize_string_list(values, attr_name, list_description):
     if values == None:
@@ -337,6 +370,9 @@ def _impl_target_name(name):
 
 def _platform_opts_name(name, target_id):
     return "{}__{}_kmp_opts".format(name, target_id)
+
+def _platform_base_opts_name(name, target_id):
+    return "{}__{}_base_kmp_opts".format(name, target_id)
 
 def _set_optional_attr(kwargs, attr_name, value):
     if value != None:
@@ -771,14 +807,11 @@ def _source_set_closure(source_sets, root):
 def _target_source_layout(source_sets, closure):
     srcs = []
     source_set_names = []
-    fragment_sources = []
     for source_set in closure:
         for src in source_sets[source_set].srcs:
             srcs.append(src)
             source_set_names.append(source_set)
-            fragment_sources.append("{}:{}".format(source_set, _repo_source_path(src)))
     return struct(
-        fragment_sources = fragment_sources,
         source_set_names = source_set_names,
         srcs = srcs,
     )
@@ -800,14 +833,56 @@ def _target_label_attr(source_sets, closure, attr_name, platform):
         labels.extend(getattr(source_sets[source_set], attr_name))
     return [_resolve_dep_for_platform(label, platform) for label in _dedupe(labels)]
 
-def _define_platform_opts(name, target_id, closure, fragment_sources, fragment_refines):
-    kt_kotlinc_options(
+def _kmp_kotlinc_options_impl(ctx):
+    base_options = ctx.attr.base[KotlincOptions]
+    values = {
+        field: getattr(base_options, field)
+        for field in dir(base_options)
+        if not field.startswith("to_")
+    }
+    srcs = ctx.files.srcs
+    if len(srcs) != len(ctx.attr.source_set_names):
+        fail("expected source_set_names to match srcs length")
+
+    fragment_sources = [
+        "{}:{}".format(ctx.attr.source_set_names[index], srcs[index].path)
+        for index in range(len(srcs))
+    ]
+
+    values.update({
+        "x_expect_actual_classes": True,
+        "x_fragment_refines": ctx.attr.fragment_refines,
+        "x_fragment_sources": fragment_sources,
+        "x_fragments": ctx.attr.fragments,
+        "x_multi_platform": True,
+    })
+
+    return [KotlincOptions(**values)]
+
+_kmp_kotlinc_options = rule(
+    implementation = _kmp_kotlinc_options_impl,
+    attrs = {
+        "base": attr.label(
+            mandatory = True,
+            providers = [KotlincOptions],
+        ),
+        "fragment_refines": attr.string_list(),
+        "fragments": attr.string_list(),
+        "source_set_names": attr.string_list(),
+        "srcs": attr.label_list(allow_files = [".kt"]),
+    },
+)
+
+def _define_platform_opts(name, target_id, srcs, source_set_names, fragments, fragment_refines):
+    base = _platform_base_opts_name(name, target_id)
+    kt_kotlinc_options(name = base)
+    _kmp_kotlinc_options(
         name = _platform_opts_name(name, target_id),
-        x_expect_actual_classes = True,
-        x_fragment_refines = fragment_refines,
-        x_fragment_sources = fragment_sources,
-        x_fragments = closure,
-        x_multi_platform = True,
+        base = ":{}".format(base),
+        fragment_refines = fragment_refines,
+        fragments = fragments,
+        source_set_names = source_set_names,
+        srcs = srcs,
     )
 
 def _define_public_alias(name, target_specs, visibility):
@@ -856,28 +931,33 @@ def kt_multiplatform_library(
         deps = _target_label_attr(normalized_source_sets, closure, "deps", target_id)
         exports = _target_label_attr(normalized_source_sets, closure, "exports", target_id)
         runtime_deps = _target_label_attr(normalized_source_sets, closure, "runtime_deps", target_id)
+        transition_owner = _private_target_name(name, target_id)
+        platform_deps = _transitioned_label_list(transition_owner, deps, target_id, _ARTIFACT_LIBRARY, "deps")
+        platform_exports = _transitioned_label_list(transition_owner, exports, target_id, _ARTIFACT_LIBRARY, "exports")
+        platform_compile_deps = _dedupe(platform_deps + platform_exports)
+        platform_runtime_deps = _transitioned_label_list(transition_owner, runtime_deps, target_id, _ARTIFACT_LIBRARY, "runtime_deps")
 
         if target.type == "jvm":
-            _define_platform_opts(name, target_id, closure, source_layout.fragment_sources, fragment_refines)
+            _define_platform_opts(name, target_id, srcs, source_set_names, closure, fragment_refines)
             _kt_jvm_library(
                 name = _private_target_name(name, target_id),
                 srcs = srcs,
-                deps = deps,
-                exports = exports,
+                deps = platform_compile_deps,
+                exports = platform_exports,
                 kotlinc_opts = ":{}".format(_platform_opts_name(name, target_id)),
                 plugins = normalized_plugins,
-                runtime_deps = runtime_deps,
+                runtime_deps = platform_runtime_deps,
                 tags = user_tags,
                 visibility = ["//visibility:private"],
             )
 
         elif target.type == "android":
-            _define_platform_opts(name, target_id, closure, source_layout.fragment_sources, fragment_refines)
+            _define_platform_opts(name, target_id, srcs, source_set_names, closure, fragment_refines)
             android_kwargs = dict(
                 name = _private_target_name(name, target_id),
                 srcs = srcs,
-                deps = deps,
-                exports = exports,
+                deps = platform_compile_deps,
+                exports = platform_exports,
                 kotlinc_opts = ":{}".format(_platform_opts_name(name, target_id)),
                 plugins = normalized_plugins,
                 tags = user_tags,
@@ -890,7 +970,7 @@ def kt_multiplatform_library(
             _kt_android_library(**android_kwargs)
 
         elif target.type == "wasm_js":
-            wasm_deps = deps + [KOTLIN_STDLIB_WASM_LABEL]
+            wasm_deps = _dedupe(platform_compile_deps + [KOTLIN_STDLIB_WASM_LABEL])
             module_name = target.module_name or name
             kt_wasm_library(
                 name = _private_target_name(name, target_id),
@@ -920,9 +1000,11 @@ def kt_multiplatform_library(
             if not target.module_name:
                 fail("targets['{}'] uses kmp_apple_framework and requires module_name".format(target_id))
             framework_files = _private_target_name(name, "{}_framework_files".format(target_id))
+            framework_import = _private_target_name(name, "{}_framework_import".format(target_id))
             kt_ios_framework_files(
                 name = framework_files,
-                deps = deps,
+                deps = platform_deps,
+                exports = platform_exports,
                 fragment_refines = fragment_refines,
                 konan_target = _APPLE_FRAMEWORK_TARGETS[target_id],
                 module_name = target.module_name,
@@ -934,8 +1016,16 @@ def kt_multiplatform_library(
                 visibility = ["//visibility:private"],
             )
             apple_dynamic_framework_import(
-                name = _private_target_name(name, target_id),
+                name = framework_import,
                 framework_imports = [":{}".format(framework_files)],
+                tags = user_tags,
+                target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
+                visibility = ["//visibility:private"],
+            )
+            _kt_ios_framework_library(
+                name = _private_target_name(name, target_id),
+                framework_files = ":{}".format(framework_files),
+                framework_import = ":{}".format(framework_import),
                 tags = user_tags,
                 target_compatible_with = _IOS_OR_MACOS_TARGET_COMPATIBLE_WITH,
                 visibility = ["//visibility:private"],

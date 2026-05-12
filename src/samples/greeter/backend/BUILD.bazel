@@ -3,8 +3,9 @@ load("//build/rules:defs.bzl", "backend_endpoint_config", "deploy_grpc_server")
 
 backend_endpoint_config(
     name = "backend_config",
+    android_package = "victor.greeter.shared",
+    apple_framework_name = "GreeterBackendConfig",
     backend = ":deploy",
-    custom_package = "victor.greeter.shared",
     visibility = ["//visibility:public"],
 )
 

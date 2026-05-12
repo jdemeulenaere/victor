@@ -1,8 +1,18 @@
 """Shared backend endpoint config generation rules."""
 
+load("@build_bazel_rules_apple//apple:providers.bzl", "AppleDynamicFrameworkInfo", "AppleFrameworkImportInfo")
+load("@build_bazel_rules_swift//swift:providers.bzl", "SwiftInfo")
+load("@build_bazel_rules_swift//swift/internal:swift_interop_info.bzl", "SwiftInteropInfo")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_java//java:defs.bzl", "JavaInfo")
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 load("@rules_kotlin//kotlin/internal:defs.bzl", "KtJvmInfo")
+load(
+    "//build/rules/kotlin/multiplatform:defs.bzl",
+    "kmp_source_sets",
+    "kmp_targets",
+    "kt_multiplatform_library",
+)
+load("//build/rules/kotlin/multiplatform:ios.bzl", "KtNativeKlibInfo")
 load(":providers.bzl", "BackendDeployInfo", "BackendEndpointConfigInfo")
 
 BackendStringFlagInfo = provider(fields = ["value"])
@@ -141,14 +151,14 @@ def _backend_service_url_config_src_impl(ctx):
     out = ctx.actions.declare_file("{}.kt".format(ctx.label.name))
     ctx.actions.write(
         out,
-        _render_backend_config(ctx.attr.custom_package, service_url, default_port = default_port),
+        _render_backend_config(ctx.attr.android_package, service_url, default_port = default_port),
     )
     return [DefaultInfo(files = depset([out]))]
 
 _backend_service_url_config_src = rule(
     implementation = _backend_service_url_config_src_impl,
     attrs = {
-        "custom_package": attr.string(mandatory = True),
+        "android_package": attr.string(mandatory = True),
         "deploy_profile": attr.string(default = "deploy"),
         "deploy_service_url": attr.label(),
         "local_default_port": attr.int(default = DEFAULT_LOCAL_SERVICE_URL_PORT),
@@ -161,15 +171,26 @@ def _backend_endpoint_config_impl(ctx):
     library = ctx.attr.library
     backend = ctx.attr.backend[BackendDeployInfo]
 
-    return [
+    providers = [
         library[DefaultInfo],
-        library[JavaInfo],
-        library[KtJvmInfo],
         BackendEndpointConfigInfo(
             deploy_service_url_flag = _repo_label(ctx.attr.deploy_service_url.label),
             service = backend.service,
         ),
     ]
+    for provider_type in [
+        JavaInfo,
+        KtJvmInfo,
+        KtNativeKlibInfo,
+        AppleDynamicFrameworkInfo,
+        AppleFrameworkImportInfo,
+        SwiftInfo,
+        SwiftInteropInfo,
+        CcInfo,
+    ]:
+        if provider_type in library:
+            providers.append(library[provider_type])
+    return providers
 
 _backend_endpoint_config = rule(
     implementation = _backend_endpoint_config_impl,
@@ -186,15 +207,15 @@ _backend_endpoint_config = rule(
         ),
         "library": attr.label(
             mandatory = True,
-            providers = [JavaInfo, KtJvmInfo],
         ),
     },
-    provides = [JavaInfo, KtJvmInfo, BackendEndpointConfigInfo],
+    provides = [BackendEndpointConfigInfo],
 )
 
 def backend_endpoint_config(
         name,
-        custom_package,
+        android_package,
+        apple_framework_name,
         backend,
         local_service_url = DEFAULT_LOCAL_SERVICE_URL,
         local_default_port = DEFAULT_LOCAL_SERVICE_URL_PORT,
@@ -213,7 +234,7 @@ def backend_endpoint_config(
     )
 
     src_kwargs = {
-        "custom_package": custom_package,
+        "android_package": android_package,
         "deploy_profile": deploy_profile,
         "deploy_service_url": ":{}".format(deploy_service_url),
         "local_default_port": local_default_port,
@@ -226,10 +247,25 @@ def backend_endpoint_config(
         name = src,
         **src_kwargs
     )
-    kt_jvm_library(
+    kt_multiplatform_library(
         name = library,
-        srcs = [":{}".format(src)],
-        deps = ["//src/common/grpc/client:backend_endpoint"],
+        source_sets = kmp_source_sets(
+            srcs = {
+                "common": [":{}".format(src)],
+            },
+            exports = {
+                "common": ["//src/common/grpc/client:backend_endpoint"],
+            },
+        ),
+        targets = kmp_targets(
+            [
+                "android",
+                "iosSimulatorArm64",
+                "jvm",
+            ],
+            android_namespace = android_package,
+            apple_framework_module_name = apple_framework_name,
+        ),
         visibility = ["//visibility:private"],
     )
     _backend_endpoint_config(

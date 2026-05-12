@@ -1,3 +1,4 @@
+import GreeterBackendConfig
 import GreeterSharedLibrary
 import GRPC
 import NIOCore
@@ -6,8 +7,7 @@ import SwiftUI
 import UIKit
 import VictorApiIosSwiftClientProto
 
-private let backendHost = "127.0.0.1"
-private let backendPort = 8080
+private let backendEndpoint = BackendConfig.shared.endpoint
 private let defaultName = "world"
 
 protocol GreeterServing: AnyObject {
@@ -19,14 +19,23 @@ final class GrpcGreeterClient: GreeterServing {
     private let channel: GRPCChannel
     private let client: Victor_Api_V1_GreeterNIOClient
 
-    init(host: String = backendHost, port: Int = backendPort) throws {
+    init(endpoint: BackendEndpoint = backendEndpoint) throws {
         channel =
             try GRPCChannelPool.with(
-                target: .host(host, port: port),
-                transportSecurity: .plaintext,
+                target: .host(endpoint.host, port: Int(endpoint.port)),
+                transportSecurity: Self.transportSecurity(for: endpoint),
                 eventLoopGroup: eventLoopGroup
             )
         client = Victor_Api_V1_GreeterNIOClient(channel: channel)
+    }
+
+    private static func transportSecurity(
+        for endpoint: BackendEndpoint
+    ) -> GRPCChannelPool.Configuration.TransportSecurity {
+        if endpoint.usePlaintext {
+            return .plaintext
+        }
+        return .tls(.makeClientConfigurationBackedByNIOSSL())
     }
 
     func sayHello(name: String, completion: @escaping (Result<String, Error>) -> Void) {
@@ -140,7 +149,7 @@ struct GreeterView: View {
             Text("gRPC Swift + iOS Demo")
                 .font(.title2)
                 .fontWeight(.semibold)
-            Text("Target: \(backendHost):\(backendPort)")
+            Text("Target: \(backendEndpoint.serviceUrl)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             SharedGreetingComposeView(name: model.name)
