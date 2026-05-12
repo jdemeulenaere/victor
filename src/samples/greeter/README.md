@@ -99,7 +99,7 @@ bazel run //src/samples/greeter/ios:app
 bazel test //src/samples/greeter/ios:app_test
 ```
 
-The iOS app currently points at `127.0.0.1:8080` in Swift code.
+The iOS app uses the generated backend endpoint config shared with Android.
 
 ## Deploy
 
@@ -162,6 +162,15 @@ bazel mobile-install --incremental \
   --//build/rules/backend:backend_service_url_profile=deploy \
   --//src/samples/greeter/backend:backend_config_deploy_service_url="${CLOUD_RUN_URL}" \
   //src/samples/greeter/android:app
+```
+
+Run the iOS app against the deployed backend:
+
+```bash
+bazel run \
+  --//build/rules/backend:backend_service_url_profile=deploy \
+  --//src/samples/greeter/backend:backend_config_deploy_service_url="${CLOUD_RUN_URL}" \
+  //src/samples/greeter/ios:app
 ```
 
 The Python client currently uses an insecure local gRPC channel, so use it with

@@ -6,6 +6,8 @@ load("//build/rules/kotlin/multiplatform:compiler_plugin.bzl", "KtNativeCompiler
 _KONANC_MAIN = "org.jetbrains.kotlin.cli.utilities.MainKt"
 _NATIVE_TOOLCHAIN_TYPE = "//build/rules/kotlin/multiplatform:native_toolchain_type"
 
+KtNativeKlibInfo = provider(fields = ["klib"])
+
 def _dedupe_files(files):
     seen = {}
     deduped = []
@@ -19,6 +21,9 @@ def _dedupe_files(files):
 def _collect_dep_klibs(deps):
     files = []
     for dep in deps:
+        if KtNativeKlibInfo in dep:
+            files.append(dep[KtNativeKlibInfo].klib)
+            continue
         if DefaultInfo in dep:
             files.extend([
                 file
@@ -127,11 +132,17 @@ def _compile_flags(ctx, libraries):
         for refine in ctx.attr.fragment_refines
     ] + _fragment_source_flags(ctx.files.srcs, ctx.attr.source_set_names)
 
-def _framework_flags(ctx, libraries):
+def _export_library_flags(files):
+    flags = []
+    for file in files:
+        flags.append("-Xexport-library={}".format(file.path))
+    return flags
+
+def _framework_flags(ctx, libraries, exported_libraries):
     return _dependency_flags(ctx, libraries) + [
         "-produce",
         "framework",
-    ]
+    ] + _export_library_flags(exported_libraries)
 
 def _framework_outputs(ctx):
     framework_root = "{}/{}.framework".format(ctx.label.name, ctx.attr.module_name)
@@ -175,9 +186,11 @@ def _kt_ios_framework_files_impl(ctx):
     header = framework_files[1]
     modulemap = framework_files[2]
     info_plist = framework_files[3]
+    klib = ctx.actions.declare_file("{}/{}.klib".format(ctx.label.name, ctx.attr.module_name))
 
     source_files = ctx.files.srcs
-    libraries = _collect_dep_klibs(ctx.attr.deps)
+    libraries = _collect_dep_klibs(ctx.attr.deps + ctx.attr.exports)
+    exported_libraries = _collect_dep_klibs(ctx.attr.exports)
     plugin_data = _compile_plugin_data(ctx.attr.plugins)
     plugin_jars = plugin_data.classpath.to_list()
     native_toolchain = ctx.toolchains[_NATIVE_TOOLCHAIN_TYPE].kmp_native
@@ -187,7 +200,7 @@ def _kt_ios_framework_files_impl(ctx):
     libffi_manifest = _write_link_manifest(ctx, "libffi_files", libffi_files)
     plugin_flags = _plugin_flags(plugin_data)
     compile_flags = _compile_flags(ctx, libraries) + plugin_flags
-    framework_flags = _framework_flags(ctx, libraries)
+    framework_flags = _framework_flags(ctx, libraries, exported_libraries)
     compile_args_file = _write_args_file(ctx, "compile", compile_flags + [file.path for file in source_files])
     framework_args_file = _write_args_file(ctx, "framework", framework_flags)
     inputs = (
@@ -209,7 +222,7 @@ def _kt_ios_framework_files_impl(ctx):
 
     ctx.actions.run_shell(
         inputs = depset(inputs),
-        outputs = framework_files,
+        outputs = framework_files + [klib],
         command = """
 set -euo pipefail
 
@@ -221,14 +234,15 @@ framework_binary="$5"
 header="$6"
 modulemap="$7"
 info_plist="$8"
-compile_args_file="$9"
-framework_args_file="${10}"
-llvm_manifest="${11}"
-libffi_manifest="${12}"
+klib="${9}"
+compile_args_file="${10}"
+framework_args_file="${11}"
+llvm_manifest="${12}"
+libffi_manifest="${13}"
 
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/konan-action.XXXXXX")"
 trap 'rm -rf "${work_dir}"' EXIT
-mkdir -p "${work_dir}/cache" "${work_dir}/konan-data/dependencies/cache" "${work_dir}/tmp" "$(dirname "${framework_binary}")" "$(dirname "${header}")" "$(dirname "${modulemap}")" "$(dirname "${info_plist}")"
+mkdir -p "${work_dir}/cache" "${work_dir}/konan-data/dependencies/cache" "${work_dir}/tmp" "$(dirname "${framework_binary}")" "$(dirname "${header}")" "$(dirname "${modulemap}")" "$(dirname "${info_plist}")" "$(dirname "${klib}")"
 
 absolute_path() {
   case "$1" in
@@ -321,6 +335,7 @@ run_konanc "${cache_args[@]}" @"${compile_args_file}" -produce library -o "${wor
 
 run_konanc "${cache_args[@]}" @"${framework_args_file}" -Xinclude="${work_dir}/${module_name}.klib" -o "${work_dir}/${module_name}"
 
+cp "${work_dir}/${module_name}.klib" "${klib}"
 cp "${work_dir}/${module_name}.framework/${module_name}" "${framework_binary}"
 cp "${work_dir}/${module_name}.framework/Headers/${module_name}.h" "${header}"
 cp "${work_dir}/${module_name}.framework/Modules/module.modulemap" "${modulemap}"
@@ -343,6 +358,7 @@ fi
             header.path,
             modulemap.path,
             info_plist.path,
+            klib.path,
             compile_args_file.path,
             framework_args_file.path,
             llvm_manifest.path,
@@ -352,12 +368,16 @@ fi
         progress_message = "Compiling Kotlin/Native iOS simulator framework %{label}",
     )
 
-    return [DefaultInfo(files = depset(framework_files))]
+    return [
+        DefaultInfo(files = depset(framework_files)),
+        KtNativeKlibInfo(klib = klib),
+    ]
 
 kt_ios_framework_files = rule(
     implementation = _kt_ios_framework_files_impl,
     attrs = {
         "deps": attr.label_list(),
+        "exports": attr.label_list(),
         "fragment_refines": attr.string_list(),
         "konan_target": attr.string(
             mandatory = True,

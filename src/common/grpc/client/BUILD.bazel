@@ -1,8 +1,20 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
+load("//build/rules:defs.bzl", "kmp_source_sets", "kmp_targets", "kt_multiplatform_library")
 
-kt_jvm_library(
+kt_multiplatform_library(
     name = "backend_endpoint",
-    srcs = ["BackendEndpoint.kt"],
+    source_sets = kmp_source_sets(srcs = {
+        "common": ["BackendEndpoint.kt"],
+    }),
+    targets = kmp_targets(
+        [
+            "android",
+            "iosSimulatorArm64",
+            "jvm",
+        ],
+        android_namespace = "victor.backend.client",
+        apple_framework_module_name = "VictorBackendClient",
+    ),
     visibility = ["//visibility:public"],
 )
 
