@@ -1,0 +1,4 @@
+interface:
+  display_name: "Navigation 3"
+  short_description: "Build Android apps with Navigation 3"
+  default_prompt: "Use $navigation-3 to implement Jetpack Navigation 3 patterns in this Android project."
