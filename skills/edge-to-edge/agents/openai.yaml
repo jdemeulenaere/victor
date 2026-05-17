@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edge To Edge"
+  short_description: "Fix Compose system bar inset issues"
+  default_prompt: "Use $edge-to-edge to add or troubleshoot adaptive edge-to-edge support in this Android Compose app."
