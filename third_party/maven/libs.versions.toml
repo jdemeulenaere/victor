@@ -1,6 +1,6 @@
 [versions]
 # keep-sorted start
-androidx-activity = "1.8.2"
+androidx-activity = "1.12.4"
 androidx-collection = "1.6.0"
 androidx-compose = "1.10.6"
 androidx-compose-material3 = "1.4.0"
@@ -28,9 +28,11 @@ skiko = "0.9.37.4"
 androidx-activity = { module = "androidx.activity:activity", version.ref = "androidx-activity" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-collection = { module = "androidx.collection:collection-jvm", version.ref = "androidx-collection" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidx-compose" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3-android", version.ref = "androidx-compose-material3" }
 androidx-compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "androidx-compose" }
 androidx-compose-runtime-annotation-jvm = { module = "androidx.compose.runtime:runtime-annotation-jvm", version.ref = "androidx-compose-runtime-annotation-jvm" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidx-compose" }
 androidx-compose-ui-geometry = { module = "androidx.compose.ui:ui-geometry", version.ref = "androidx-compose" }
 androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "androidx-compose" }
 androidx-compose-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidx-compose" }
