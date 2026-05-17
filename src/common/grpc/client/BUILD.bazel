@@ -1,5 +1,5 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
-load("//build/rules:defs.bzl", "kmp_source_sets", "kmp_targets", "kt_multiplatform_library")
+load("//build/rules:defs.bzl", "kmp_source_sets", "kmp_targets", "kt_multiplatform_library", "swift_library")
 
 kt_multiplatform_library(
     name = "backend_endpoint",
@@ -25,6 +25,19 @@ kt_jvm_library(
     deps = [
         ":backend_endpoint",
         "@third_party_maven//:io_grpc_grpc_okhttp",
+    ],
+)
+
+swift_library(
+    name = "backend_channel_swift",
+    srcs = ["BackendChannel.swift"],
+    module_name = "VictorBackendChannel",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":backend_endpoint",
+        "@com_github_apple_swift_nio//:NIOCore",
+        "@com_github_apple_swift_nio//:NIOPosix",
+        "@com_github_grpc_grpc_swift//:GRPC",
     ],
 )
 

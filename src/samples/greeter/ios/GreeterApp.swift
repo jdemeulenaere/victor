@@ -1,41 +1,36 @@
 import GreeterBackendConfig
 import GreeterSharedLibrary
-import GRPC
-import NIOCore
-import NIOPosix
 import SwiftUI
 import UIKit
 import VictorApiIosSwiftClientProto
+import VictorBackendChannel
+import VictorBackendClient
 
-private let backendEndpoint = BackendConfig.shared.endpoint
+private let backendEndpoint = sharedBackendEndpoint(from: BackendConfig.shared.endpoint)
 private let defaultName = "world"
+
+private func sharedBackendEndpoint(
+    from endpoint: GreeterBackendConfig.BackendEndpoint
+) -> VictorBackendClient.BackendEndpoint {
+    VictorBackendClient.BackendEndpoint(
+        serviceUrl: endpoint.serviceUrl,
+        host: endpoint.host,
+        port: endpoint.port,
+        usePlaintext: endpoint.usePlaintext
+    )
+}
 
 protocol GreeterServing: AnyObject {
     func sayHello(name: String, completion: @escaping (Result<String, Error>) -> Void)
 }
 
 final class GrpcGreeterClient: GreeterServing {
-    private let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-    private let channel: GRPCChannel
+    private let backendChannel: BackendChannel
     private let client: Victor_Api_V1_GreeterNIOClient
 
-    init(endpoint: BackendEndpoint = backendEndpoint) throws {
-        channel =
-            try GRPCChannelPool.with(
-                target: .host(endpoint.host, port: Int(endpoint.port)),
-                transportSecurity: Self.transportSecurity(for: endpoint),
-                eventLoopGroup: eventLoopGroup
-            )
-        client = Victor_Api_V1_GreeterNIOClient(channel: channel)
-    }
-
-    private static func transportSecurity(
-        for endpoint: BackendEndpoint
-    ) -> GRPCChannelPool.Configuration.TransportSecurity {
-        if endpoint.usePlaintext {
-            return .plaintext
-        }
-        return .tls(.makeClientConfigurationBackedByNIOSSL())
+    init(endpoint: VictorBackendClient.BackendEndpoint = backendEndpoint) throws {
+        backendChannel = try buildChannel(endpoint: endpoint)
+        client = Victor_Api_V1_GreeterNIOClient(channel: backendChannel.channel)
     }
 
     func sayHello(name: String, completion: @escaping (Result<String, Error>) -> Void) {
@@ -52,12 +47,8 @@ final class GrpcGreeterClient: GreeterServing {
     }
 
     deinit {
-        channel.close().whenComplete { [eventLoopGroup] _ in
-            eventLoopGroup.shutdownGracefully { error in
-                if let error {
-                    print("Failed to shut down gRPC event loop group: \(error)")
-                }
-            }
+        backendChannel.close { error in
+            print("Failed to shut down gRPC channel: \(error)")
         }
     }
 }
