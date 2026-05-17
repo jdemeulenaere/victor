@@ -1,0 +1,61 @@
+load(
+    "//build/rules:defs.bzl",
+    "kmp_source_sets",
+    "kmp_targets",
+    "kotlinx_rpc_proto",
+    "kt_multiplatform_library",
+)
+
+kotlinx_rpc_proto(
+    name = "chat_rpc_proto",
+    src = "src/commonMain/proto/chat.proto",
+    grpc_outs = [
+        "kotlinx/rpc/sample/messages/Chat.kt",
+    ],
+    proto_root = "src/commonMain/proto",
+    protobuf_outs = [
+        "kotlinx/rpc/sample/messages/Chat.ext.kt",
+        "kotlinx/rpc/sample/messages/Chat.kt",
+        "kotlinx/rpc/sample/messages/_rpc_internal/Chat.kt",
+    ],
+)
+
+kt_multiplatform_library(
+    name = "library",
+    plugins = [
+        "//build/toolchains/kotlin/rpc:rpc_compiler_plugin",
+    ],
+    source_sets = kmp_source_sets(
+        srcs = {
+            "android": [
+                "src/androidMain/kotlin/kotlinx/rpc/sample/Platform.android.kt",
+            ],
+            "common": [
+                ":chat_rpc_proto",
+                "src/commonMain/kotlin/kotlinx/rpc/sample/Platform.kt",
+            ],
+            "ios": [
+                "src/iosMain/kotlin/kotlinx/rpc/sample/Platform.ios.kt",
+            ],
+            "jvm": [
+                "src/jvmMain/kotlin/kotlinx/rpc/sample/Platform.jvm.kt",
+            ],
+        },
+        deps = {
+            "common": [
+                "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_grpc_core",
+                "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_protobuf_core",
+            ],
+        },
+    ),
+    targets = kmp_targets(
+        [
+            "android",
+            "iosSimulatorArm64",
+            "jvm",
+        ],
+        android_namespace = "kotlinx.rpc.sample.shared",
+        apple_framework_module_name = "GrpcKmpSampleShared",
+    ),
+    visibility = ["//visibility:public"],
+)

@@ -1,3 +1,4 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(":compiler_plugin_test.bzl", "kt_native_compiler_plugin_test")
 
 exports_files([
@@ -10,6 +11,30 @@ exports_files([
     "wasm.bzl",
     "wasm_kotlinc.sh",
 ])
+
+genquery(
+    name = "kmp_maven_android_compose_variant_deps",
+    expression = "deps(set(@third_party_maven_kmp_variants//:org_jetbrains_compose_foundation_foundation_android_metadata_variant @third_party_maven_kmp_variants//:org_jetbrains_compose_material3_material3_android_metadata_variant @third_party_maven_kmp_variants//:org_jetbrains_compose_ui_ui_android_metadata_variant))",
+    opts = ["--output=label"],
+    scope = [
+        "@third_party_maven_kmp_variants//:org_jetbrains_compose_foundation_foundation_android_metadata_variant",
+        "@third_party_maven_kmp_variants//:org_jetbrains_compose_material3_material3_android_metadata_variant",
+        "@third_party_maven_kmp_variants//:org_jetbrains_compose_ui_ui_android_metadata_variant",
+    ],
+)
+
+sh_test(
+    name = "kmp_maven_variants_test",
+    srcs = ["kmp_maven_variants_test.sh"],
+    args = [
+        "$(location @third_party_maven_kmp_variants//:variants.bzl)",
+        "$(location :kmp_maven_android_compose_variant_deps)",
+    ],
+    data = [
+        ":kmp_maven_android_compose_variant_deps",
+        "@third_party_maven_kmp_variants//:variants.bzl",
+    ],
+)
 
 toolchain_type(
     name = "native_toolchain_type",
@@ -29,4 +54,9 @@ kt_native_compiler_plugin_test(
 kt_native_compiler_plugin_test(
     name = "serialization_compiler_plugin_native_deps_test",
     plugin = "//build/toolchains/kotlin/serialization:serialization_compiler_plugin",
+)
+
+kt_native_compiler_plugin_test(
+    name = "rpc_compiler_plugin_native_deps_test",
+    plugin = "//build/toolchains/kotlin/rpc:rpc_compiler_plugin",
 )

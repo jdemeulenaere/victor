@@ -1,0 +1,39 @@
+load("//build/rules:defs.bzl", "ios_application", "swift_library")
+
+filegroup(
+    name = "app_icons",
+    srcs = glob([
+        "iosApp/Assets.xcassets/AppIcon.appiconset/**",
+        "iosApp/Assets.xcassets/Contents.json",
+    ]),
+)
+
+filegroup(
+    name = "asset_catalog_resources",
+    srcs = glob(["iosApp/Assets.xcassets/AccentColor.colorset/**"]),
+)
+
+swift_library(
+    name = "app_lib",
+    srcs = [
+        "iosApp/ContentView.swift",
+        "iosApp/iOSApp.swift",
+    ],
+    module_name = "GrpcKmpSampleIOS",
+    deps = ["//src/samples/grpc-kmp-app/composeApp:app"],
+)
+
+ios_application(
+    name = "app",
+    app_icons = [":app_icons"],
+    bundle_id = "kotlinx.rpc.sample.ios",
+    families = [
+        "iphone",
+        "ipad",
+    ],
+    infoplists = ["iosApp/Info.plist"],
+    minimum_os_version = "15.0",
+    resources = [":asset_catalog_resources"],
+    visibility = ["//visibility:public"],
+    deps = [":app_lib"],
+)

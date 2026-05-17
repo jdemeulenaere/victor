@@ -97,13 +97,15 @@ def _dedupe_strings(values):
         deduped.append(value)
     return deduped
 
-def _fragment_source_flags(files, source_set_names):
-    if len(files) != len(source_set_names):
+def _fragment_source_flags(src_targets, source_set_names):
+    if len(src_targets) != len(source_set_names):
         fail("expected source_set_names to match srcs length")
-    return [
-        "-Xfragment-sources={}:{}".format(source_set_names[index], files[index].path)
-        for index in range(len(files))
-    ]
+    flags = []
+    for index in range(len(src_targets)):
+        source_set_name = source_set_names[index]
+        for src in src_targets[index][DefaultInfo].files.to_list():
+            flags.append("-Xfragment-sources={}:{}".format(source_set_name, src.path))
+    return flags
 
 def _library_flags(files):
     flags = []
@@ -130,7 +132,7 @@ def _compile_flags(ctx, libraries):
     ] + [
         "-Xfragment-refines={}".format(refine)
         for refine in ctx.attr.fragment_refines
-    ] + _fragment_source_flags(ctx.files.srcs, ctx.attr.source_set_names)
+    ] + _fragment_source_flags(ctx.attr.srcs, ctx.attr.source_set_names)
 
 def _export_library_flags(files):
     flags = []

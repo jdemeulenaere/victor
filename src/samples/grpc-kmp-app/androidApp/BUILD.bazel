@@ -1,0 +1,23 @@
+load("//build/rules:defs.bzl", "android_binary", "kt_android_library")
+
+kt_android_library(
+    name = "app_lib",
+    srcs = ["src/main/kotlin/kotlinx/rpc/sample/MainActivity.kt"],
+    custom_package = "kotlinx.rpc.sample",
+    plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
+    deps = [
+        "//src/samples/grpc-kmp-app/composeApp:app",
+        "@third_party_maven//:androidx_activity_activity",
+        "@third_party_maven//:androidx_activity_activity_compose",
+        "@third_party_maven//:io_grpc_grpc_okhttp",
+    ],
+)
+
+android_binary(
+    name = "app",
+    custom_package = "kotlinx.rpc.sample",
+    manifest = "src/main/AndroidManifest.xml",
+    resource_files = glob(["src/main/res/**"]),
+    visibility = ["//visibility:public"],
+    deps = [":app_lib"],
+)

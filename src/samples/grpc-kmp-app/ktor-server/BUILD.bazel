@@ -1,0 +1,25 @@
+load("//build/rules:defs.bzl", "kt_jvm_binary", "kt_jvm_library")
+
+kt_jvm_library(
+    name = "ktor_server_lib",
+    srcs = ["src/main/kotlin/kotlinx/rpc/sample/Application.kt"],
+    deps = [
+        "//src/samples/grpc-kmp-app/server-shared:server_shared",
+        "//src/samples/grpc-kmp-app/shared:library",
+        "@third_party_maven//:ch_qos_logback_logback_classic",
+        "@third_party_maven//:io_grpc_grpc_netty",
+        "@third_party_maven//:io_ktor_ktor_server_core_jvm",
+        "@third_party_maven//:io_ktor_ktor_server_netty_jvm",
+        "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_grpc_ktor_server_jvm",
+        "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_grpc_server_jvm",
+    ],
+)
+
+kt_jvm_binary(
+    name = "ktor_server",
+    main_class = "kotlinx.rpc.sample.ApplicationKt",
+    resource_strip_prefix = "src/samples/grpc-kmp-app/ktor-server/src/main/resources",
+    resources = ["src/main/resources/logback.xml"],
+    visibility = ["//visibility:public"],
+    runtime_deps = [":ktor_server_lib"],
+)

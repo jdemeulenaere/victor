@@ -1,0 +1,12 @@
+load("//build/rules:defs.bzl", "kt_jvm_library")
+
+kt_jvm_library(
+    name = "server_shared",
+    srcs = ["src/main/kotlin/kotlinx/rpc/sample/MessageServiceImpl.kt"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/samples/grpc-kmp-app/shared:library",
+        "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_coroutines_core_jvm",
+        "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_grpc_server_jvm",
+    ],
+)

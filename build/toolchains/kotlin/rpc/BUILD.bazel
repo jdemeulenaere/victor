@@ -1,0 +1,12 @@
+load("//build/rules/kotlin/multiplatform:compiler_plugin.bzl", "kt_compiler_plugin")
+
+kt_compiler_plugin(
+    name = "rpc_compiler_plugin",
+    id = "org.jetbrains.kotlinx.rpc",
+    native_deps = ["@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_compiler_plugin_cli"],
+    options = {
+        "annotation-type-safety": "true",
+    },
+    visibility = ["//visibility:public"],
+    deps = ["@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_compiler_plugin_cli"],
+)

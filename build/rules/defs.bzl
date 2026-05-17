@@ -20,6 +20,7 @@ load(
     _kt_jvm_test = "kt_jvm_test",
     _kt_multiplatform_library = "kt_multiplatform_library",
 )
+load("//build/rules/kotlin/rpc:defs.bzl", _kotlinx_rpc_proto = "kotlinx_rpc_proto")
 load("//build/rules/proto:defs.bzl", _grpc_proto = "grpc_proto")
 load("//build/rules/python/grpc:defs.bzl", _py_grpc_library = "py_grpc_library")
 load("//build/rules/web:defs.bzl", _web_app = "web_app")
@@ -44,6 +45,7 @@ kmp_source_sets = _kmp_source_sets
 kmp_targets = _kmp_targets
 kmp_wasm_js = _kmp_wasm_js
 kt_android_library = _kt_android_library
+kotlinx_rpc_proto = _kotlinx_rpc_proto
 kt_jvm_binary = _kt_jvm_binary
 kt_jvm_library = _kt_jvm_library
 kt_jvm_test = _kt_jvm_test

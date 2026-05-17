@@ -144,7 +144,7 @@ def _single_actual(actual):
 
 def _kmp_transitioned_dep_impl(ctx):
     actual = _single_actual(ctx.attr.deps)
-    providers = [actual[DefaultInfo]]
+    providers = [DefaultInfo(files = actual[DefaultInfo].files)]
     for provider_type in _FORWARDED_PROVIDER_TYPES:
         if provider_type in actual:
             providers.append(actual[provider_type])
@@ -289,8 +289,10 @@ def _normalize_same_package_srcs(srcs, attr_name):
     for src in srcs or []:
         if not type(src) == "string":
             fail("{} values must be strings, got {}".format(attr_name, type(src)))
-        if src.startswith("//") or src.startswith("@"):
-            fail("{} must reference files in the current package: {}".format(attr_name, src))
+        if src.startswith("@"):
+            fail("{} must reference files or generated targets in the current package: {}".format(attr_name, src))
+        if src.startswith("//"):
+            fail("{} must reference files or generated targets in the current package: {}".format(attr_name, src))
         normalized.append(src)
     return normalized
 
@@ -840,14 +842,15 @@ def _kmp_kotlinc_options_impl(ctx):
         for field in dir(base_options)
         if not field.startswith("to_")
     }
-    srcs = ctx.files.srcs
-    if len(srcs) != len(ctx.attr.source_set_names):
+    src_targets = ctx.attr.srcs
+    if len(src_targets) != len(ctx.attr.source_set_names):
         fail("expected source_set_names to match srcs length")
 
-    fragment_sources = [
-        "{}:{}".format(ctx.attr.source_set_names[index], srcs[index].path)
-        for index in range(len(srcs))
-    ]
+    fragment_sources = []
+    for index in range(len(src_targets)):
+        source_set_name = ctx.attr.source_set_names[index]
+        for src in src_targets[index][DefaultInfo].files.to_list():
+            fragment_sources.append("{}:{}".format(source_set_name, src.path))
 
     values.update({
         "x_expect_actual_classes": True,

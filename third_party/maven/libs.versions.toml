@@ -13,10 +13,16 @@ androidx-test-monitor = "1.8.0"
 armeria = "1.38.0"
 grpc = "1.80.0"
 jetbrains-compose = "1.10.3"
+jetbrains-compose-material3 = "1.9.0"
 junit = "4.13.2"
 kotlin = "2.3.20"
+kotlinx-coroutines = "1.10.2"
+kotlinx-datetime = "0.7.1"
+kotlinx-rpc = "0.11.0-grpc-188"
+kotlinx-rpc-compiler-plugin = "2.3.20-0.11.0-grpc-188"
 kotlinx-serialization = "1.11.0"
 ktfmt = "0.62"
+ktor = "3.4.1"
 logback = "1.5.32"
 protobuf = "4.34.1"
 robolectric = "4.16.1"
@@ -38,6 +44,7 @@ androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics", ver
 androidx-compose-ui-test-junit4-android = { module = "androidx.compose.ui:ui-test-junit4-android", version.ref = "androidx-compose" }
 androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose" }
 androidx-compose-ui-text = { module = "androidx.compose.ui:ui-text", version.ref = "androidx-compose" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-compose" }
 androidx-compose-ui-unit = { module = "androidx.compose.ui:ui-unit", version.ref = "androidx-compose" }
 androidx-compose-ui-util = { module = "androidx.compose.ui:ui-util", version.ref = "androidx-compose" }
 androidx-lifecycle-common = { module = "androidx.lifecycle:lifecycle-common", version.ref = "androidx-lifecycle" }
@@ -51,11 +58,16 @@ androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-te
 androidx-test-monitor = { module = "androidx.test:monitor", version.ref = "androidx-test-monitor" }
 armeria = { module = "com.linecorp.armeria:armeria", version.ref = "armeria" }
 armeria-grpc = { module = "com.linecorp.armeria:armeria-grpc", version.ref = "armeria" }
+grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
 jetbrains-compose-desktop = { module = "org.jetbrains.compose.desktop:desktop-jvm", version.ref = "jetbrains-compose" }
 jetbrains-compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "jetbrains-compose" }
+jetbrains-compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "jetbrains-compose-material3" }
+jetbrains-compose-material3-desktop = { module = "org.jetbrains.compose.material3:material3-desktop", version.ref = "jetbrains-compose-material3" }
 jetbrains-compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "jetbrains-compose" }
+jetbrains-compose-ui-backhandler-android = { module = "org.jetbrains.compose.ui:ui-backhandler-android", version.ref = "jetbrains-compose" }
 jetbrains-compose-ui-test-junit4-desktop = { module = "org.jetbrains.compose.ui:ui-test-junit4-desktop", version.ref = "jetbrains-compose" }
+jetbrains-compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "jetbrains-compose" }
 jetbrains-skiko-awt-runtime-linux-arm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64", version.ref = "skiko" }
 jetbrains-skiko-awt-runtime-linux-x64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-linux-x64", version.ref = "skiko" }
 jetbrains-skiko-awt-runtime-macos-arm64 = { module = "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64", version.ref = "skiko" }
@@ -65,8 +77,28 @@ jetbrains-skiko-awt-runtime-windows-x64 = { module = "org.jetbrains.skiko:skiko-
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-compose-compiler-plugin = { module = "org.jetbrains.kotlin:kotlin-compose-compiler-plugin", version.ref = "kotlin" }
 kotlin-serialization-compiler-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-datetime-jvm = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", version.ref = "kotlinx-datetime" }
+kotlinx-rpc-compiler-plugin-cli = { module = "org.jetbrains.kotlinx:kotlinx-rpc-compiler-plugin-cli", version.ref = "kotlinx-rpc-compiler-plugin" }
+kotlinx-rpc-grpc-client = { module = "org.jetbrains.kotlinx:kotlinx-rpc-grpc-client", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-grpc-client-jvm = { module = "org.jetbrains.kotlinx:kotlinx-rpc-grpc-client-jvm", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-grpc-core = { module = "org.jetbrains.kotlinx:kotlinx-rpc-grpc-core", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-grpc-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-rpc-grpc-core-jvm", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-grpc-ktor-server-jvm = { module = "org.jetbrains.kotlinx:kotlinx-rpc-grpc-ktor-server-jvm", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-grpc-server = { module = "org.jetbrains.kotlinx:kotlinx-rpc-grpc-server", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-grpc-server-jvm = { module = "org.jetbrains.kotlinx:kotlinx-rpc-grpc-server-jvm", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-protobuf-core = { module = "org.jetbrains.kotlinx:kotlinx-rpc-protobuf-core", version.ref = "kotlinx-rpc" }
+kotlinx-rpc-protobuf-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-rpc-protobuf-core-jvm", version.ref = "kotlinx-rpc" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-cio-jvm = { module = "io.ktor:ktor-client-cio-jvm", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-core-jvm = { module = "io.ktor:ktor-client-core-jvm", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }

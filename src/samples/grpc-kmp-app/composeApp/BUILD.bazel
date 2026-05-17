@@ -1,0 +1,79 @@
+load(
+    "//build/rules:defs.bzl",
+    "kmp_source_sets",
+    "kmp_targets",
+    "kt_jvm_binary",
+    "kt_multiplatform_library",
+)
+
+kt_multiplatform_library(
+    name = "app",
+    plugins = ["//build/toolchains/kotlin/compose:compose_compiler_plugin"],
+    source_sets = kmp_source_sets(
+        srcs = {
+            "android": [
+                "src/androidMain/kotlin/kotlinx/rpc/sample/ServerHost.android.kt",
+            ],
+            "common": [
+                "src/commonMain/kotlin/kotlinx/rpc/sample/App.kt",
+                "src/commonMain/kotlin/kotlinx/rpc/sample/ServerHost.kt",
+            ],
+            "ios": [
+                "src/iosMain/kotlin/kotlinx/rpc/sample/MainViewController.kt",
+                "src/iosMain/kotlin/kotlinx/rpc/sample/ServerHost.ios.kt",
+            ],
+            "jvm": [
+                "src/jvmMain/kotlin/kotlinx/rpc/sample/main.kt",
+                "src/jvmMain/kotlin/kotlinx/rpc/sample/ServerHost.jvm.kt",
+            ],
+        },
+        runtime_deps = {
+            "jvm": [
+                "//build/toolchains/kotlin/compose:skiko_runtime",
+                "@third_party_maven//:io_grpc_grpc_okhttp",
+            ],
+        },
+        deps = {
+            "android": [
+                "@third_party_maven//:io_ktor_ktor_client_cio_jvm",
+            ],
+            "common": [
+                "//src/samples/grpc-kmp-app/shared:library",
+                "@third_party_maven//:androidx_compose_runtime_runtime",
+                "@third_party_maven//:io_ktor_ktor_client_core",
+                "@third_party_maven//:org_jetbrains_compose_foundation_foundation",
+                "@third_party_maven//:org_jetbrains_compose_material3_material3",
+                "@third_party_maven//:org_jetbrains_compose_ui_ui",
+                "@third_party_maven//:org_jetbrains_compose_ui_ui_tooling_preview",
+                "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_coroutines_core",
+                "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_datetime",
+                "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_rpc_grpc_client",
+            ],
+            "ios": [
+                "@third_party_maven//:io_ktor_ktor_client_cio",
+            ],
+            "jvm": [
+                "@third_party_maven//:io_ktor_ktor_client_cio_jvm",
+                "@third_party_maven//:org_jetbrains_compose_desktop_desktop_jvm",
+                "@third_party_maven//:org_jetbrains_kotlinx_kotlinx_coroutines_swing",
+            ],
+        },
+    ),
+    targets = kmp_targets(
+        [
+            "android",
+            "iosSimulatorArm64",
+            "jvm",
+        ],
+        android_namespace = "kotlinx.rpc.sample.compose",
+        apple_framework_module_name = "ComposeApp",
+    ),
+    visibility = ["//visibility:public"],
+)
+
+kt_jvm_binary(
+    name = "desktop",
+    main_class = "kotlinx.rpc.sample.MainKt",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":app"],
+)

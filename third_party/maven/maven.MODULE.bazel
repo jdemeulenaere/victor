@@ -11,6 +11,22 @@ kmp_maven_variants_repository(
     maven_repo = "third_party_maven",
 )
 
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "kotlinx_rpc_protoc_gen_grpc_kotlin_multiplatform_all",
+    downloaded_file_path = "protoc-gen-grpc-kotlin-multiplatform-0.11.0-grpc-188-all.jar",
+    sha256 = "0799b31943dce5159d4a874814e5dc2f9f61d77de4550952d3b6cda0c6830045",
+    urls = ["https://redirector.kotlinlang.org/maven/kxrpc-grpc/org/jetbrains/kotlinx/protoc-gen-grpc-kotlin-multiplatform/0.11.0-grpc-188/protoc-gen-grpc-kotlin-multiplatform-0.11.0-grpc-188-all.jar"],
+)
+
+http_file(
+    name = "kotlinx_rpc_protoc_gen_kotlin_multiplatform_all",
+    downloaded_file_path = "protoc-gen-kotlin-multiplatform-0.11.0-grpc-188-all.jar",
+    sha256 = "61ff8fa923515a80879334ad8b52313ff87b4f637279c01e79ff7dcabd78a5fa",
+    urls = ["https://redirector.kotlinlang.org/maven/kxrpc-grpc/org/jetbrains/kotlinx/protoc-gen-kotlin-multiplatform/0.11.0-grpc-188/protoc-gen-kotlin-multiplatform-0.11.0-grpc-188-all.jar"],
+)
+
 maven.from_toml(
     name = "third_party",
     libs_versions_toml = "//third_party/maven:libs.versions.toml",
@@ -38,6 +54,7 @@ maven.install(
     repositories = [
         "https://repo.maven.apache.org/maven2",
         "https://maven.google.com",
+        "https://redirector.kotlinlang.org/maven/kxrpc-grpc",
     ],
     use_starlark_android_rules = True,
     version_conflict_policy = "pinned",

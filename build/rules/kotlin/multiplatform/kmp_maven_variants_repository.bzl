@@ -2,6 +2,7 @@
 
 _ANDROID_ENV = "android"
 _ANDROID_PLATFORM = "androidJvm"
+_ANDROID_BUILD_TYPE = "com.android.build.api.attributes.BuildTypeAttr"
 _GRADLE_CATEGORY = "org.gradle.category"
 _GRADLE_JVM_ENVIRONMENT = "org.gradle.jvm.environment"
 _GRADLE_USAGE = "org.gradle.usage"
@@ -82,6 +83,16 @@ def _artifact_base_url(repository, group, artifact, version):
 def _module_metadata_path(group, artifact, version):
     return "module_metadata_{}_{}_{}.module".format(_sanitize_label_part(group), _sanitize_label_part(artifact), _sanitize_label_part(version))
 
+def _candidate_module_metadata_repositories(repositories, group, artifact):
+    coordinate = _coordinate_key(group, artifact)
+    aar_coordinate = "{}:aar".format(coordinate)
+    candidates = []
+    for repository, repository_artifacts in repositories.items():
+        if coordinate in repository_artifacts or aar_coordinate in repository_artifacts:
+            candidates.append(repository)
+
+    return candidates if candidates else repositories.keys()
+
 def _version_for_coordinate(artifacts, group, artifact):
     for artifact_key in artifacts.keys():
         parts = _artifact_key_parts(artifact_key)
@@ -107,11 +118,11 @@ def _fetch_module_metadata(repository_ctx, curl, repositories, metadata_cache, g
     if key in metadata_cache:
         return metadata_cache[key]
 
-    for repository in repositories.keys():
+    for repository in _candidate_module_metadata_repositories(repositories, group, artifact):
         url = _module_metadata_url(repository, group, artifact, version)
         path = _module_metadata_path(group, artifact, version)
         result = repository_ctx.execute(
-            [curl, "-L", "--fail", "-s", "-o", path, url],
+            [curl, "-L", "--fail", "-s", "--connect-timeout", "5", "--max-time", "15", "--retry", "1", "-o", path, url],
             quiet = True,
         )
         if result.return_code == 0:
@@ -126,7 +137,7 @@ def _fetch_module_metadata(repository_ctx, curl, repositories, metadata_cache, g
 
 def _is_library_variant(variant):
     attributes = variant.get("attributes", {})
-    return attributes.get(_GRADLE_CATEGORY) == _LIBRARY_CATEGORY and variant.get("available-at") != None
+    return attributes.get(_GRADLE_CATEGORY) == _LIBRARY_CATEGORY
 
 def _is_wasm_library_variant(variant):
     attributes = variant.get("attributes", {})
@@ -150,18 +161,7 @@ def _is_api_or_runtime_variant(variant):
     usage = variant.get("attributes", {}).get(_GRADLE_USAGE)
     return usage in ["java-api", "kotlin-api", "java-runtime", "kotlin-runtime"]
 
-def _candidate_variant_label(resolved_artifacts, repo_name, variant):
-    available_at = variant.get("available-at")
-    if not available_at:
-        return None
-    return _resolved_module_label(
-        resolved_artifacts,
-        repo_name,
-        available_at.get("group"),
-        available_at.get("module"),
-    )
-
-def _variant_score(variant, platform):
+def _variant_score(variant, platform, allow_jvm_fallback = True):
     attributes = variant.get("attributes", {})
     kotlin_platform = attributes.get(_KOTLIN_PLATFORM)
     jvm_environment = attributes.get(_GRADLE_JVM_ENVIRONMENT)
@@ -169,8 +169,12 @@ def _variant_score(variant, platform):
 
     if platform == "android":
         if kotlin_platform == _ANDROID_PLATFORM and jvm_environment == _ANDROID_ENV:
-            return 500
-        if kotlin_platform == _JVM_PLATFORM and jvm_environment == _STANDARD_JVM_ENV:
+            build_type = attributes.get(_ANDROID_BUILD_TYPE)
+            build_type_score = 40 if build_type == None or build_type == "release" else 0
+            return 500 + build_type_score
+        if kotlin_platform == _JVM_PLATFORM and jvm_environment == _ANDROID_ENV:
+            return 450
+        if allow_jvm_fallback and kotlin_platform == _JVM_PLATFORM and jvm_environment == _STANDARD_JVM_ENV:
             return 300
         return 0
 
@@ -200,22 +204,35 @@ def _usage_score(variant, prefer_runtime = False):
         return 10
     return 0
 
-def _select_module_metadata_variant(module_metadata, resolved_artifacts, repo_name, platform):
-    best = None
-    best_score = 0
+def _has_exact_android_variant(module_metadata):
     for variant in module_metadata.get("variants", []):
         if not _is_library_variant(variant) or not _is_api_or_runtime_variant(variant):
             continue
-        label = _candidate_variant_label(resolved_artifacts, repo_name, variant)
-        if not label:
+
+        attributes = variant.get("attributes", {})
+        if attributes.get(_KOTLIN_PLATFORM) in [_ANDROID_PLATFORM, _JVM_PLATFORM] and attributes.get(_GRADLE_JVM_ENVIRONMENT) == _ANDROID_ENV:
+            return True
+
+    return False
+
+def _select_module_metadata_variant(module_metadata, platform, prefer_runtime = False):
+    best = None
+    best_score = 0
+    allow_jvm_fallback = not (platform == "android" and _has_exact_android_variant(module_metadata))
+    for variant in module_metadata.get("variants", []):
+        if not _is_library_variant(variant) or not _is_api_or_runtime_variant(variant):
             continue
 
-        score = _variant_score(variant, platform)
+        score = _variant_score(
+            variant,
+            platform,
+            allow_jvm_fallback = allow_jvm_fallback,
+        )
         if score == 0:
             continue
-        score = score + _usage_score(variant)
+        score = score + _usage_score(variant, prefer_runtime = prefer_runtime)
         if best == None or score > best_score:
-            best = label
+            best = variant
             best_score = score
 
     return best
@@ -239,18 +256,6 @@ def _select_wasm_module_metadata_variant(module_metadata):
 
 def _select_ios_simulator_module_metadata_variant(module_metadata):
     return _select_klib_module_metadata_variant(module_metadata, _is_ios_simulator_library_variant)
-
-def _metadata_variants(module_metadata, resolved_artifacts, repo_name):
-    if not module_metadata:
-        return {}
-
-    variants = {}
-    for platform in ["android", "jvm"]:
-        label = _select_module_metadata_variant(module_metadata, resolved_artifacts, repo_name, platform)
-        if label:
-            variants[platform] = label
-
-    return variants
 
 def _dependency_version(dependency):
     version = dependency.get("version", {})
@@ -369,6 +374,236 @@ def _new_klib_resolution_state():
         targets = {},
         unavailable = {},
     )
+
+def _new_platform_resolution_state():
+    return struct(
+        build_labels = {},
+        labels = {},
+        targets = {},
+        unavailable = {},
+    )
+
+def _platform_variant_target_name(group, artifact, platform):
+    return "{}_{}_metadata_variant".format(_maven_target_name(group, artifact), platform)
+
+def _repin_message():
+    return "run REPIN=1 bazel run @third_party_maven//:pin"
+
+def _locked_platform_version_key(artifacts, group, artifact, requested_version, platform, source_key):
+    locked_version = _locked_version_for_coordinate(artifacts, group, artifact)
+    if not locked_version:
+        requested = " requested as {}".format(requested_version) if requested_version else ""
+        source = " selected from {}".format(source_key) if source_key else ""
+        fail("Kotlin/{} dependency {}:{}{}{} is missing from maven_install.json; {}".format(
+            platform,
+            group,
+            artifact,
+            requested,
+            source,
+            _repin_message(),
+        ))
+
+    return struct(
+        key = _coordinate_version_key(group, artifact, locked_version),
+        version = locked_version,
+    )
+
+def _resolved_locked_module_label(artifacts, resolved_artifacts, repo_name, group, artifact, platform, source_key, required = True):
+    locked_version = _locked_version_for_coordinate(artifacts, group, artifact)
+    if not locked_version:
+        if not required:
+            return None
+        source = " selected from {}".format(source_key) if source_key else ""
+        fail("Kotlin/{} dependency {}:{}{} is missing from maven_install.json; {}".format(
+            platform,
+            group,
+            artifact,
+            source,
+            _repin_message(),
+        ))
+
+    label = _resolved_module_label(resolved_artifacts, repo_name, group, artifact)
+    if not label:
+        if not required:
+            return None
+        source = " selected from {}".format(source_key) if source_key else ""
+        fail("Kotlin/{} dependency {}:{}{} is locked but has no resolved Maven artifact; {}".format(
+            platform,
+            group,
+            artifact,
+            source,
+            _repin_message(),
+        ))
+
+    return label
+
+def _resolve_platform_variant(
+        repository_ctx,
+        curl,
+        repositories,
+        metadata_cache,
+        artifacts,
+        resolved_artifacts,
+        repo_name,
+        state,
+        group,
+        artifact,
+        requested_version,
+        platform,
+        required = True):
+    root_version = _locked_platform_version_key(
+        artifacts,
+        group,
+        artifact,
+        requested_version,
+        platform,
+        None,
+    ) if required else None
+    if not root_version:
+        locked_version = _locked_version_for_coordinate(artifacts, group, artifact)
+        if not locked_version:
+            return None
+        root_version = struct(
+            key = _coordinate_version_key(group, artifact, locked_version),
+            version = locked_version,
+        )
+
+    if state.labels.get(root_version.key):
+        return state.labels[root_version.key]
+    if state.unavailable.get(root_version.key):
+        return None
+
+    stack = [struct(
+        artifact = artifact,
+        group = group,
+        key = root_version.key,
+        required = required,
+        source_key = None,
+        version = root_version.version,
+    )]
+
+    resolved = False
+    for _ in range(10000):
+        if not stack:
+            resolved = True
+            break
+
+        frame = stack.pop()
+        key = frame.key
+        if state.labels.get(key) or state.unavailable.get(key):
+            continue
+
+        metadata_info = _fetch_module_metadata(
+            repository_ctx,
+            curl,
+            repositories,
+            metadata_cache,
+            frame.group,
+            frame.artifact,
+            frame.version,
+        )
+        module_metadata = metadata_info.metadata if metadata_info else None
+        variant = _select_module_metadata_variant(
+            module_metadata,
+            platform,
+            prefer_runtime = True,
+        ) if module_metadata else None
+        if not variant:
+            label = _resolved_locked_module_label(
+                artifacts,
+                resolved_artifacts,
+                repo_name,
+                frame.group,
+                frame.artifact,
+                platform,
+                frame.source_key,
+                required = frame.required,
+            )
+            if label:
+                state.labels[key] = label
+                state.build_labels[key] = label
+                continue
+            state.unavailable[key] = True
+            continue
+
+        available_at = variant.get("available-at")
+        if available_at:
+            label = _resolved_locked_module_label(
+                artifacts,
+                resolved_artifacts,
+                repo_name,
+                available_at.get("group"),
+                available_at.get("module"),
+                platform,
+                key,
+                required = frame.required,
+            )
+            if label:
+                state.labels[key] = label
+                state.build_labels[key] = label
+                continue
+            state.unavailable[key] = True
+            continue
+
+        if variant.get("files"):
+            label = _resolved_locked_module_label(
+                artifacts,
+                resolved_artifacts,
+                repo_name,
+                frame.group,
+                frame.artifact,
+                platform,
+                frame.source_key,
+                required = frame.required,
+            )
+            if label:
+                state.labels[key] = label
+                state.build_labels[key] = label
+                continue
+            state.unavailable[key] = True
+            continue
+
+        dep_keys = []
+        for dependency in variant.get("dependencies", []):
+            dep_group = dependency.get("group")
+            dep_artifact = dependency.get("module")
+            dep_version = _locked_platform_version_key(
+                artifacts,
+                dep_group,
+                dep_artifact,
+                _dependency_version(dependency),
+                platform,
+                key,
+            )
+            dep_keys.append(dep_version.key)
+            if not state.labels.get(dep_version.key) and not state.unavailable.get(dep_version.key):
+                stack.append(struct(
+                    artifact = dep_artifact,
+                    group = dep_group,
+                    key = dep_version.key,
+                    required = True,
+                    source_key = key,
+                    version = dep_version.version,
+                ))
+
+        target_name = _platform_variant_target_name(frame.group, frame.artifact, platform)
+        state.targets[key] = struct(
+            dep_keys = dep_keys,
+            platform = platform,
+            target_name = target_name,
+        )
+        state.labels[key] = _generated_label(repository_ctx, target_name)
+        state.build_labels[key] = ":{}".format(target_name)
+
+    if not resolved:
+        fail("Kotlin/{} dependency graph is too deep while resolving {}".format(platform, root_version.key))
+
+    if state.unavailable.get(root_version.key):
+        if required:
+            fail("No Kotlin/{} Maven variant found for {}".format(platform, root_version.key))
+        return None
+
+    return state.labels[root_version.key]
 
 def _resolve_klib(
         repository_ctx,
@@ -613,6 +848,7 @@ def _resolve_wasm_klib(
 
 def _is_native_bundled_dependency(group, artifact):
     return group == _KOTLIN_STDLIB_GROUP and artifact in [
+        "kotlin-reflect",
         "kotlin-stdlib",
         "kotlin-stdlib-common",
     ]
@@ -628,6 +864,33 @@ def _append_klib_filegroups(build_lines, targets):
         for dep in sorted(target.deps):
             build_lines.append("        {},".format(repr(dep)))
         build_lines.append("    ],")
+        build_lines.append(")")
+        build_lines.append("")
+
+def _append_platform_variant_targets(build_lines, targets, build_labels):
+    for key in sorted(targets.keys()):
+        target = targets[key]
+        deps = []
+        for dep_key in target.dep_keys:
+            dep_label = build_labels.get(dep_key)
+            if not dep_label:
+                fail("Kotlin/{} generated target {} has unresolved dependency {}".format(
+                    target.platform,
+                    target.target_name,
+                    dep_key,
+                ))
+            deps.append(dep_label)
+        deps = _dedupe(deps)
+        if target.platform == "android":
+            build_lines.append("android_library(")
+        else:
+            build_lines.append("java_library(")
+        build_lines.append("    name = {},".format(repr(target.target_name)))
+        if deps:
+            build_lines.append("    exports = [")
+            for dep in sorted(deps):
+                build_lines.append("        {},".format(repr(dep)))
+            build_lines.append("    ],")
         build_lines.append(")")
         build_lines.append("")
 
@@ -698,6 +961,8 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
         )
 
     variants = {}
+    android_state = _new_platform_resolution_state()
+    jvm_state = _new_platform_resolution_state()
     ios_simulator_state = _new_klib_resolution_state()
     wasm_state = _new_klib_resolution_state()
     for coordinate in sorted(base_coordinates.keys()):
@@ -716,11 +981,43 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
             version,
         )
         module_metadata = metadata_info.metadata if metadata_info else None
-        platform_variants = _metadata_variants(
-            module_metadata,
-            resolved_artifacts,
-            repository_ctx.attr.maven_repo,
-        )
+        platform_variants = {}
+        if module_metadata and _select_module_metadata_variant(module_metadata, "android"):
+            android_variant = _resolve_platform_variant(
+                repository_ctx,
+                curl,
+                repositories,
+                metadata_cache,
+                artifacts,
+                resolved_artifacts,
+                repository_ctx.attr.maven_repo,
+                android_state,
+                group,
+                artifact,
+                version,
+                "android",
+                required = False,
+            )
+            if android_variant:
+                platform_variants["android"] = android_variant
+        if module_metadata and _select_module_metadata_variant(module_metadata, "jvm"):
+            jvm_variant = _resolve_platform_variant(
+                repository_ctx,
+                curl,
+                repositories,
+                metadata_cache,
+                artifacts,
+                resolved_artifacts,
+                repository_ctx.attr.maven_repo,
+                jvm_state,
+                group,
+                artifact,
+                version,
+                "jvm",
+                required = False,
+            )
+            if jvm_variant:
+                platform_variants["jvm"] = jvm_variant
         if module_metadata and _select_wasm_module_metadata_variant(module_metadata):
             wasm_variant = _resolve_wasm_klib(
                 repository_ctx,
@@ -787,9 +1084,13 @@ def _kmp_maven_variants_repository_impl(repository_ctx):
     build_lines = [
         'package(default_visibility = ["//visibility:public"])',
         "",
+        'load("@rules_android//rules:rules.bzl", "android_library")',
+        "",
         'exports_files(["variants.bzl"])',
         "",
     ]
+    _append_platform_variant_targets(build_lines, android_state.targets, android_state.build_labels)
+    _append_platform_variant_targets(build_lines, jvm_state.targets, jvm_state.build_labels)
     _append_klib_filegroups(build_lines, ios_simulator_state.targets)
     _append_klib_filegroups(build_lines, wasm_state.targets)
 
